@@ -56,18 +56,30 @@ export const TOKENS = {
   car:          '🚗',
   hat:          '🎩',
   dog:          '🐕',
-  iron:         '👔',
   ship:         '🚢',
-  wheelbarrow:  '🛒',
+  cat:          '🐱',
+  rocket:       '🚀',
+  crown:        '👑',
+  lion:         '🦁',
+  frog:         '🐸',
+  robot:        '🤖',
+  dragon:       '🐉',
+  penguin:      '🐧',
 };
 
 export const TOKEN_COLORS = {
   car:         '#e74c3c',
   hat:         '#2c3e50',
   dog:         '#e67e22',
-  iron:        '#95a5a6',
   ship:        '#3498db',
-  wheelbarrow: '#27ae60',
+  cat:         '#9b59b6',
+  rocket:      '#00bcd4',
+  crown:       '#f39c12',
+  lion:        '#d35400',
+  frog:        '#2ecc71',
+  robot:       '#1abc9c',
+  dragon:      '#c0392b',
+  penguin:     '#34495e',
 };
 
 // Returns {row, col} for 11x11 grid (0-indexed)

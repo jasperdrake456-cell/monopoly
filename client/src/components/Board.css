@@ -51,17 +51,15 @@
 .tile--left   { flex-direction: row-reverse; writing-mode: vertical-rl; transform: rotate(180deg); }
 .tile--right  { flex-direction: row;         writing-mode: vertical-lr; }
 
-/* ── Color band (thick, like real board) ── */
-.tile-color-band {
-  flex-shrink: 0;
-  width: 100%;
-}
-.tile--bottom .tile-color-band { width: 100%; }
-.tile--top    .tile-color-band { width: 100%; }
-.tile--left   .tile-color-band,
-.tile--right  .tile-color-band {
-  width: auto;
-  height: 100%;
+/* ── Chance / Community card label ── */
+.tile-card-label {
+  font-size: 0.42rem;
+  font-weight: 900;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.2;
+  padding: 0 2px;
 }
 
 /* ── Property name ── */
