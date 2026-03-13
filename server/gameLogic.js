@@ -400,22 +400,6 @@ function declareBankruptcy(state, playerId, creditorId) {
   }
 }
 
-// ─── Auction ──────────────────────────────────────────────────────────────────
-
-function startAuction(state, propertyId) {
-  const ap = activePlayers(state);
-  state.auction = {
-    propertyId,
-    currentBid: 0,
-    highestBidder: null,
-    bidderOrder: ap.map(p => p.id),
-    currentBidderIndex: 0,
-    passed: [],
-  };
-  state.turnPhase = 'auction';
-  addLog(state, `Auction started for ${BOARD[propertyId].name}`);
-}
-
 // ─── Public actions ───────────────────────────────────────────────────────────
 
 function initGame(players, freeParkingEnabled) {
@@ -537,65 +521,11 @@ function doPassProperty(state, playerId) {
   const cp = currentPlayer(state);
   if (cp.id !== playerId) return { error: 'Not your turn' };
 
-  startAuction(state, cp.position);
+  // No auction — just skip buying and end the turn
+  const space = BOARD[cp.position];
+  addLog(state, `${cp.name} declined to buy ${space.name}`);
+  state.turnPhase = 'end';
   return {};
-}
-
-function doAuctionBid(state, playerId, amount) {
-  if (state.turnPhase !== 'auction' || !state.auction) return { error: 'No auction' };
-  const auc = state.auction;
-  const bidder = auc.bidderOrder[auc.currentBidderIndex];
-  if (bidder !== playerId) return { error: 'Not your turn to bid' };
-  const p = getPlayer(state, playerId);
-  if (amount <= auc.currentBid) return { error: 'Bid must be higher than current bid' };
-  if (amount > p.cash) return { error: 'Not enough money' };
-
-  auc.currentBid = amount;
-  auc.highestBidder = playerId;
-  addLog(state, `${p.name} bid $${amount} for ${BOARD[auc.propertyId].name}`);
-  advanceAuctionBidder(state);
-  return {};
-}
-
-function doAuctionPass(state, playerId) {
-  if (state.turnPhase !== 'auction' || !state.auction) return { error: 'No auction' };
-  const auc = state.auction;
-  const bidder = auc.bidderOrder[auc.currentBidderIndex];
-  if (bidder !== playerId) return { error: 'Not your turn to bid' };
-  const p = getPlayer(state, playerId);
-
-  auc.passed.push(playerId);
-  addLog(state, `${p.name} passed the auction`);
-  advanceAuctionBidder(state);
-  return {};
-}
-
-function advanceAuctionBidder(state) {
-  const auc = state.auction;
-  const remaining = auc.bidderOrder.filter(id => !auc.passed.includes(id));
-
-  if (remaining.length <= 1) {
-    // Auction ends
-    if (auc.highestBidder) {
-      const winner = getPlayer(state, auc.highestBidder);
-      winner.cash -= auc.currentBid;
-      winner.properties.push(auc.propertyId);
-      state.propertyStates[auc.propertyId].owner = auc.highestBidder;
-      addLog(state, `${winner.name} won the auction for ${BOARD[auc.propertyId].name} at $${auc.currentBid}`);
-    } else {
-      addLog(state, `No one bought ${BOARD[auc.propertyId].name} at auction`);
-    }
-    state.auction = null;
-    state.turnPhase = 'end';
-    return;
-  }
-
-  // Advance to next non-passed bidder
-  let next = (auc.currentBidderIndex + 1) % auc.bidderOrder.length;
-  while (auc.passed.includes(auc.bidderOrder[next])) {
-    next = (next + 1) % auc.bidderOrder.length;
-  }
-  auc.currentBidderIndex = next;
 }
 
 function doResolveCard(state, playerId) {
@@ -837,8 +767,6 @@ module.exports = {
   doRollDice,
   doBuyProperty,
   doPassProperty,
-  doAuctionBid,
-  doAuctionPass,
   doResolveCard,
   doEndTurn,
   doPayJailFine,

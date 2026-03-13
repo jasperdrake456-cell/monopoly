@@ -131,20 +131,6 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('auctionBid', ({ roomCode, amount }) => {
-    handleAction(socket, roomCode, (room) => {
-      if (!room.gameState) return { error: 'No game' };
-      return gl.doAuctionBid(room.gameState, socket.id, amount);
-    });
-  });
-
-  socket.on('auctionPass', ({ roomCode }) => {
-    handleAction(socket, roomCode, (room) => {
-      if (!room.gameState) return { error: 'No game' };
-      return gl.doAuctionPass(room.gameState, socket.id);
-    });
-  });
-
   socket.on('resolveCard', ({ roomCode }) => {
     handleAction(socket, roomCode, (room) => {
       if (!room.gameState) return { error: 'No game' };

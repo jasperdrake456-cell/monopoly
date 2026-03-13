@@ -4,11 +4,10 @@ import { BOARD, TOKENS, TOKEN_COLORS } from '../boardData';
 import './ActionPanel.css';
 
 export default function ActionPanel({ gameState, myId, roomCode, emit }) {
-  const { players, currentPlayerIndex, turnPhase, lastDice, auction, activeTrade } = gameState;
+  const { players, currentPlayerIndex, turnPhase, lastDice, activeTrade } = gameState;
   const currentPlayer = players[currentPlayerIndex];
   const myPlayer = players.find(p => p.id === myId);
   const isMyTurn = currentPlayer?.id === myId;
-  const [bidAmount, setBidAmount] = useState('');
   const [rolling, setRolling] = useState(false);
 
   if (!myPlayer || myPlayer.bankrupt) return (
@@ -24,55 +23,6 @@ export default function ActionPanel({ gameState, myId, roomCode, emit }) {
   }
 
   const currentSpaceName = BOARD[myPlayer.position]?.name || '';
-
-  // ── Auction UI ────────────────────────────────────────────────────────────
-  if (turnPhase === 'auction' && auction) {
-    const auc = auction;
-    const space = BOARD[auc.propertyId];
-    const activeBidder = auc.bidderOrder[auc.currentBidderIndex];
-    const isMyBid = activeBidder === myId;
-    const alreadyPassed = auc.passed?.includes(myId);
-
-    return (
-      <div className="action-panel">
-        <div className="ap-header">🔨 Auction</div>
-        <div className="auction-info">
-          <div className="auction-property">{space?.name}</div>
-          <div className="auction-bid">Current bid: <strong>${auc.currentBid}</strong>
-            {auc.highestBidder && (
-              <span> by {players.find(p => p.id === auc.highestBidder)?.name}</span>
-            )}
-          </div>
-          <div className="auction-bidder">
-            Bidding: <strong>{players.find(p => p.id === activeBidder)?.name}</strong>
-          </div>
-        </div>
-        {isMyBid && !alreadyPassed && (
-          <div className="auction-actions">
-            <input
-              type="number"
-              min={auc.currentBid + 1}
-              value={bidAmount}
-              onChange={e => setBidAmount(e.target.value)}
-              placeholder={`Min $${auc.currentBid + 1}`}
-              className="bid-input"
-            />
-            <button className="ap-btn primary" onClick={() => {
-              emit('auctionBid', { roomCode, amount: parseInt(bidAmount) });
-              setBidAmount('');
-            }} disabled={!bidAmount || parseInt(bidAmount) <= auc.currentBid}>
-              Bid
-            </button>
-            <button className="ap-btn danger" onClick={() => emit('auctionPass', { roomCode })}>
-              Pass
-            </button>
-          </div>
-        )}
-        {alreadyPassed && <div className="ap-status">You passed the auction.</div>}
-        {!isMyBid && !alreadyPassed && <div className="ap-status">Waiting for {players.find(p => p.id === activeBidder)?.name}...</div>}
-      </div>
-    );
-  }
 
   // ── Trade response ────────────────────────────────────────────────────────
   if (activeTrade && activeTrade.toId === myId) {
@@ -206,7 +156,7 @@ function BuyDecision({ gameState, myId, roomCode, emit }) {
           Buy ${space.price}
         </button>
         <button className="ap-btn secondary" onClick={() => emit('passProperty', { roomCode })}>
-          Auction
+          Skip
         </button>
       </div>
     </div>

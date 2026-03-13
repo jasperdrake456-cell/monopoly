@@ -1,30 +1,13 @@
 import React from 'react';
 import { GROUP_COLORS, TOKENS, TOKEN_COLORS, getTileOrientation } from '../boardData';
 
-const TYPE_ICONS = {
-  railroad:        '🚂',
-  utility:         '⚡',
-  chance:          '❓',
-  community_chest: '🎁',
-  tax:             '💰',
-  go_to_jail:      '👮',
-  free_parking:    '🅿️',
-};
-
 export default function Tile({ space, propertyState, playersHere, isHighlighted, currentPlayerId }) {
   const orient = getTileOrientation(space.id);
   const isCorner = orient === 'corner';
   const colorBar = space.group ? GROUP_COLORS[space.group] : null;
 
-  // Thick color bar as a border on the outer edge of the tile
-  const barStyle = {};
-  if (colorBar) {
-    const thickness = '14px';
-    if      (orient === 'bottom') barStyle.borderTop    = `${thickness} solid ${colorBar}`;
-    else if (orient === 'top')    barStyle.borderBottom = `${thickness} solid ${colorBar}`;
-    else if (orient === 'left')   barStyle.borderRight  = `${thickness} solid ${colorBar}`;
-    else if (orient === 'right')  barStyle.borderLeft   = `${thickness} solid ${colorBar}`;
-  }
+  // Thickness of the color band (mimics real board)
+  const BAND = 20;
 
   const tileClass = [
     'tile',
@@ -37,42 +20,81 @@ export default function Tile({ space, propertyState, playersHere, isHighlighted,
   const isHotel = houseCount === 5;
   const ownerColor = propertyState?.ownerColor;
 
+  // Color band style (always placed at the outer edge of the board)
+  const bandStyle = colorBar ? {
+    background: colorBar,
+    flexShrink: 0,
+    ...(orient === 'bottom' ? { width: '100%', height: `${BAND}px` } : {}),
+    ...(orient === 'top'    ? { width: '100%', height: `${BAND}px` } : {}),
+    ...(orient === 'left'   ? { height: '100%', width: `${BAND}px` } : {}),
+    ...(orient === 'right'  ? { height: '100%', width: `${BAND}px` } : {}),
+  } : null;
+
   return (
-    <div className={tileClass} style={barStyle} title={space.name}>
+    <div className={tileClass} title={space.name}>
       {isCorner ? <CornerContent space={space} /> : (
         <>
-          <div className="tile-name">{space.name}</div>
+          {/* Color band at outer edge */}
+          {bandStyle && <div style={bandStyle} />}
 
-          {space.type === 'property' && (
-            <div className="tile-price">${space.price}</div>
-          )}
-          {(space.type === 'railroad' || space.type === 'utility') && (
-            <>
-              <div className="tile-icon">{TYPE_ICONS[space.type]}</div>
+          {/* Tile body */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '1px' }}>
+            <div className="tile-name">{space.name}</div>
+
+            {space.type === 'property' && (
               <div className="tile-price">${space.price}</div>
-            </>
-          )}
-          {(space.type === 'chance' || space.type === 'community_chest') && (
-            <div className="tile-icon">{TYPE_ICONS[space.type]}</div>
-          )}
-          {space.type === 'tax' && (
-            <>
-              <div className="tile-icon">{TYPE_ICONS.tax}</div>
-              <div className="tile-price">Pay ${space.amount}</div>
-            </>
-          )}
+            )}
 
-          {/* Houses / hotel */}
-          {houseCount > 0 && (
-            <div className="tile-buildings">
-              {isHotel
-                ? <span className="building hotel">🏨</span>
-                : Array.from({ length: houseCount }).map((_, i) => (
-                    <span key={i} className="building house">🏠</span>
-                  ))
-              }
-            </div>
-          )}
+            {(space.type === 'railroad') && (
+              <>
+                <div className="rr-icon">🚂</div>
+                <div className="tile-price">${space.price}</div>
+              </>
+            )}
+            {space.type === 'utility' && space.id === 12 && (
+              <>
+                <div className="tile-icon">💡</div>
+                <div className="tile-price">${space.price}</div>
+              </>
+            )}
+            {space.type === 'utility' && space.id === 28 && (
+              <>
+                <div className="tile-icon">🚿</div>
+                <div className="tile-price">${space.price}</div>
+              </>
+            )}
+
+            {space.type === 'chance' && (
+              <div className="chance-card">
+                <div className="card-big-icon">❓</div>
+                <div className="card-title">Chance</div>
+              </div>
+            )}
+            {space.type === 'community_chest' && (
+              <div className="community-card">
+                <div className="card-big-icon">🎁</div>
+                <div className="card-title">Community Chest</div>
+              </div>
+            )}
+            {space.type === 'tax' && (
+              <>
+                <div className="tile-icon">💰</div>
+                <div className="tile-price">Pay ${space.amount}</div>
+              </>
+            )}
+
+            {/* Houses / hotel */}
+            {houseCount > 0 && (
+              <div className="tile-buildings">
+                {isHotel
+                  ? <span className="building hotel">🏨</span>
+                  : Array.from({ length: houseCount }).map((_, i) => (
+                      <span key={i} className="building house">🏠</span>
+                    ))
+                }
+              </div>
+            )}
+          </div>
 
           {/* Mortgage overlay */}
           {propertyState?.mortgaged && <div className="mortgage-overlay">MORTGAGED</div>}
@@ -84,17 +106,17 @@ export default function Tile({ space, propertyState, playersHere, isHighlighted,
         </>
       )}
 
-      {/* Player token badges */}
+      {/* Player token badges — always on top */}
       {playersHere.length > 0 && (
         <div className="tile-tokens">
           {playersHere.map(p => (
             <div
               key={p.id}
               className={`tile-token-badge ${p.id === currentPlayerId ? 'is-current' : ''}`}
-              style={{ background: TOKEN_COLORS[p.token] + '33', borderColor: TOKEN_COLORS[p.token] }}
+              style={{ background: TOKEN_COLORS[p.token] + '22', borderColor: TOKEN_COLORS[p.token] }}
               title={p.name}
             >
-              <span style={{ fontSize: '1rem' }}>{TOKENS[p.token]}</span>
+              <span style={{ fontSize: '1.1rem' }}>{TOKENS[p.token]}</span>
             </div>
           ))}
         </div>
@@ -106,33 +128,37 @@ export default function Tile({ space, propertyState, playersHere, isHighlighted,
 function CornerContent({ space }) {
   if (space.type === 'go') return (
     <div className="corner-content corner-go">
-      <span className="corner-arrow">→</span>
-      <span className="corner-title">GO</span>
-      <span className="corner-sub">Collect $200 salary as you pass</span>
+      <div className="go-arrow">→</div>
+      <div className="go-label">GO</div>
+      <div className="go-sub">Collect $200 salary as you pass</div>
     </div>
   );
+
   if (space.type === 'jail') return (
     <div className="corner-content corner-jail">
-      <div className="jail-visiting">Just Visiting</div>
+      <div className="jail-just-visiting">Just Visiting</div>
       <div className="jail-box">
-        <span className="jail-bars">🔒</span>
-        <span className="jail-label">JAIL</span>
+        <span className="jail-bars">⛓</span>
+        <span className="jail-box-label">JAIL</span>
       </div>
     </div>
   );
+
   if (space.type === 'free_parking') return (
     <div className="corner-content corner-fp">
-      <span className="corner-title">FREE</span>
-      <span className="corner-icon">🅿️</span>
-      <span className="corner-title">PARKING</span>
+      <div className="fp-label">Free</div>
+      <div className="fp-icon">🅿️</div>
+      <div className="fp-label">Parking</div>
     </div>
   );
+
   if (space.type === 'go_to_jail') return (
     <div className="corner-content corner-gtj">
-      <span className="corner-title" style={{ fontSize: '0.75rem' }}>Go To</span>
-      <span className="corner-icon">👮</span>
-      <span className="corner-title">JAIL!</span>
+      <div className="gtj-label">Go To</div>
+      <div className="gtj-icon">👮</div>
+      <div className="gtj-label">Jail!</div>
     </div>
   );
+
   return null;
 }
