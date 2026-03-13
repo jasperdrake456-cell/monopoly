@@ -73,26 +73,28 @@ export default function Dashboard({ gameState, myId, roomCode, emit }) {
         ))}
       </div>
 
-      {/* My Properties */}
+      {/* My Properties — scrollable section */}
       <div className="my-properties">
         <h3>My Properties</h3>
-        {myProperties.length === 0 && <p className="no-props">No properties yet</p>}
-        {Object.entries(grouped).map(([key, props]) => (
-          <div key={key} className="prop-group">
-            {props.map(({ space, ps }) => (
-              <PropertyCard
-                key={space.id}
-                space={space}
-                ps={ps}
-                onMortgage={() => handleMortgage(space.id)}
-                onBuild={() => handleBuildHouse(space.id)}
-                onSell={() => handleSellHouse(space.id)}
-                gameState={gameState}
-                myId={myId}
-              />
-            ))}
-          </div>
-        ))}
+        <div className="props-scroll">
+          {myProperties.length === 0 && <p className="no-props">No properties yet</p>}
+          {Object.entries(grouped).map(([key, props]) => (
+            <div key={key} className="prop-group">
+              {props.map(({ space, ps }) => (
+                <PropertyCard
+                  key={space.id}
+                  space={space}
+                  ps={ps}
+                  onMortgage={() => handleMortgage(space.id)}
+                  onBuild={() => handleBuildHouse(space.id)}
+                  onSell={() => handleSellHouse(space.id)}
+                  gameState={gameState}
+                  myId={myId}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

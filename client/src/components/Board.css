@@ -1,16 +1,18 @@
 .board-wrap {
+  flex: 1;
+  min-height: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 1rem;
-  overflow: auto;
+  overflow: hidden;
+  padding: 6px;
 }
 
 /* ── Outer board frame (like the real game box) ── */
 .board {
   display: grid;
-  grid-template-columns: 118px repeat(9, 72px) 118px;
-  grid-template-rows: 118px repeat(9, 72px) 118px;
+  grid-template-columns: 96px repeat(9, 60px) 96px;
+  grid-template-rows: 96px repeat(9, 60px) 96px;
   border: 6px solid #2d2d2d;
   background: #d4eecc;
   box-shadow: 0 0 0 10px #1a3a0a, 0 20px 80px rgba(0,0,0,0.7);

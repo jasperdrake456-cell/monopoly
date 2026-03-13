@@ -1,15 +1,15 @@
 .action-panel {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
-  padding: 1rem;
+  gap: 0.6rem;
+  padding: 0.8rem;
   background: rgba(0,0,0,0.35);
   border-radius: 12px;
-  height: 100%;
+  flex-shrink: 0;   /* never push the log off screen */
 }
 
 .ap-header {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: #FFD700;
   text-transform: uppercase;
@@ -18,25 +18,25 @@
 
 .ap-status {
   color: rgba(255,255,255,0.6);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-style: italic;
 }
 
 .ap-turn-indicator {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  font-size: 0.9rem;
+  gap: 0.5rem;
+  font-size: 0.85rem;
 }
 
-.ap-token { font-size: 1.6rem; }
+.ap-token { font-size: 1.4rem; }
 
 .ap-position {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: rgba(255,255,255,0.8);
   background: rgba(255,255,255,0.08);
   border-radius: 6px;
-  padding: 0.4rem 0.7rem;
+  padding: 0.3rem 0.6rem;
 }
 
 .jail-indicator { color: #e74c3c; font-weight: 600; }
@@ -44,122 +44,78 @@
 .ap-actions {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .ap-row {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .ap-btn {
-  padding: 0.55rem 1rem;
+  padding: 0.45rem 0.8rem;
   border-radius: 8px;
   border: none;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
   transition: all 0.12s;
   flex: 1;
+  cursor: pointer;
 }
-
-.ap-btn:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+.ap-btn:hover:not(:disabled)  { filter: brightness(1.1); transform: translateY(-1px); }
 .ap-btn:active:not(:disabled) { transform: translateY(0); }
 .ap-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .ap-btn.primary   { background: #FFD700; color: #1a3a1a; }
 .ap-btn.secondary { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25); }
 .ap-btn.danger    { background: #e74c3c; color: #fff; }
-
-.ap-btn.large { padding: 0.75rem 1rem; font-size: 1rem; }
+.ap-btn.large     { padding: 0.65rem 0.8rem; font-size: 0.95rem; }
 
 /* Buy decision */
 .buy-decision {
   background: rgba(255,255,255,0.06);
   border-radius: 10px;
-  padding: 1rem;
+  padding: 0.8rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
-
-.buy-space-name { font-weight: 700; font-size: 1rem; }
-.buy-price, .buy-cash { font-size: 0.9rem; color: rgba(255,255,255,0.8); }
+.buy-space-name { font-weight: 700; font-size: 0.95rem; }
+.buy-price, .buy-cash { font-size: 0.85rem; color: rgba(255,255,255,0.8); }
 
 /* Card display */
 .ap-card {
   background: rgba(255,255,255,0.1);
   border-radius: 10px;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-}
-
-.card-deck-label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  padding: 3px 8px;
-  border-radius: 4px;
-  width: fit-content;
-}
-
-.card-deck-label.chance { background: #e67e22; color: #fff; }
-.card-deck-label.community { background: #3498db; color: #fff; }
-
-.card-text { font-size: 0.9rem; line-height: 1.5; }
-
-/* Auction */
-.auction-info {
-  background: rgba(255,255,255,0.08);
-  border-radius: 8px;
   padding: 0.8rem;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-}
-
-.auction-property { font-weight: 700; font-size: 1rem; }
-.auction-bid, .auction-bidder { font-size: 0.85rem; color: rgba(255,255,255,0.8); }
-
-.auction-actions {
-  display: flex;
   gap: 0.5rem;
-  align-items: center;
 }
-
-.bid-input {
-  flex: 1;
-  padding: 0.5rem;
-  border-radius: 7px;
-  border: 1px solid rgba(255,255,255,0.3);
-  background: rgba(255,255,255,0.12);
-  color: #fff;
-  font-size: 0.9rem;
+.card-deck-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  width: fit-content;
 }
-
-.bid-input::placeholder { color: rgba(255,255,255,0.4); }
-.bid-input:focus { outline: 2px solid #FFD700; }
+.card-deck-label.chance    { background: #e67e22; color: #fff; }
+.card-deck-label.community { background: #3498db; color: #fff; }
+.card-text { font-size: 0.85rem; line-height: 1.5; }
 
 /* Trade display */
 .trade-display {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
   align-items: flex-start;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   background: rgba(255,255,255,0.08);
   border-radius: 8px;
-  padding: 0.7rem;
+  padding: 0.6rem;
 }
-
-.trade-side {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.trade-arrow { font-size: 1.2rem; align-self: center; }
-.trade-prop { background: rgba(255,255,255,0.1); padding: 2px 5px; border-radius: 4px; }
-.trade-cash { color: #FFD700; font-weight: 600; }
+.trade-side  { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.trade-arrow { font-size: 1.1rem; align-self: center; }
+.trade-prop  { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; font-size: 0.72rem; }
+.trade-cash  { color: #FFD700; font-weight: 600; }

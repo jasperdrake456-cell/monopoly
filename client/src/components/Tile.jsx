@@ -7,7 +7,7 @@ export default function Tile({ space, propertyState, playersHere, isHighlighted,
   const colorBar = space.group ? GROUP_COLORS[space.group] : null;
 
   // Thickness of the color band (mimics real board)
-  const BAND = 20;
+  const BAND = 16;
 
   const tileClass = [
     'tile',
