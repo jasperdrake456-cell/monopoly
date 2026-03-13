@@ -1,0 +1,58 @@
+.dice-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.dice-pair {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.die-face {
+  width: 48px;
+  height: 48px;
+  background: #fff;
+  border-radius: 8px;
+  border: 2px solid #333;
+  position: relative;
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.3);
+  transition: transform 0.1s;
+}
+
+.die-face.rolling {
+  animation: shake 0.08s linear infinite;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translate(0,0) rotate(0deg); }
+  25% { transform: translate(1px,-1px) rotate(3deg); }
+  75% { transform: translate(-1px,1px) rotate(-3deg); }
+}
+
+.dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #222;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.dice-total {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.8);
+}
+
+.doubles-badge {
+  background: #FFD700;
+  color: #000;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+}

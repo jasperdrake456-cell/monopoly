@@ -1,0 +1,252 @@
+.board-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: 90px repeat(9, 60px) 90px;
+  grid-template-rows: 90px repeat(9, 60px) 90px;
+  border: 3px solid #000;
+  background: #c8e6c9;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  position: relative;
+}
+
+/* Tiles */
+.tile {
+  background: #fff;
+  border: 1px solid #333;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  position: relative;
+  font-size: 0.55rem;
+  text-align: center;
+  color: #000;
+  gap: 1px;
+  cursor: default;
+  transition: box-shadow 0.15s;
+}
+
+.tile:hover { z-index: 5; box-shadow: 0 0 0 2px #333 inset; }
+.tile--highlighted { box-shadow: 0 0 0 2px #FFD700 inset; background: #fffde7; z-index: 2; }
+
+/* Bottom row tiles: color bar at top */
+.tile--bottom { flex-direction: column; }
+
+/* Left column: color bar at right */
+.tile--left { flex-direction: row-reverse; writing-mode: vertical-rl; transform: rotate(180deg); }
+
+/* Top row: color bar at bottom */
+.tile--top { flex-direction: column-reverse; }
+
+/* Right column: color bar at left */
+.tile--right { flex-direction: row; writing-mode: vertical-lr; }
+
+.tile-name {
+  font-weight: 600;
+  line-height: 1.2;
+  font-size: 0.5rem;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.tile--left .tile-name,
+.tile--right .tile-name { writing-mode: vertical-rl; }
+.tile--left .tile-name { transform: rotate(180deg); }
+
+.tile-price { font-size: 0.5rem; color: #333; }
+.tile-icon { font-size: 1rem; }
+
+/* Buildings */
+.tile-buildings {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1px;
+}
+.building { font-size: 0.5rem; font-weight: 900; }
+.building.house { color: #27ae60; }
+.building.hotel { color: #e74c3c; }
+
+.mortgage-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  color: #fff;
+  font-size: 0.45rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.5px;
+}
+
+.tile-owner-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.3);
+  position: absolute;
+  top: 3px;
+  right: 3px;
+}
+
+/* Player tokens on tile */
+.tile-tokens {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  right: 2px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  justify-content: center;
+  z-index: 3;
+}
+
+.tile-token { font-size: 0.85rem; line-height: 1; }
+
+/* Corner tiles */
+.tile--corner {
+  writing-mode: horizontal-tb;
+  transform: none;
+}
+
+.corner-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  gap: 2px;
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.corner-go {
+  background: linear-gradient(135deg, #fff 50%, #ffe0e0 50%);
+  color: #c0392b;
+}
+
+.corner-arrow { font-size: 1.5rem; }
+.corner-title { font-size: 0.8rem; font-weight: 900; font-family: 'Permanent Marker', cursive; }
+.corner-sub { font-size: 0.4rem; color: #555; }
+
+.corner-jail {
+  background: linear-gradient(135deg, #ffe0b2 0%, #fff 100%);
+  display: flex;
+  flex-direction: row !important;
+  align-items: stretch;
+}
+
+.jail-visiting {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  font-size: 0.5rem;
+  padding: 4px;
+  writing-mode: vertical-lr;
+  transform: rotate(180deg);
+  color: #555;
+}
+
+.jail-box {
+  width: 55%;
+  background: #FF8C00;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.8rem;
+  color: #000;
+  border-left: 2px solid #000;
+}
+
+.corner-fp { background: #e8f5e9; }
+.corner-gtj { background: #ffebee; color: #c0392b; }
+.corner-icon { font-size: 1.4rem; }
+
+/* Board center */
+.board-center {
+  background: #c8e6c9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.board-center-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.5rem;
+}
+
+.board-logo {
+  font-family: 'Permanent Marker', cursive;
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  color: #1a6b2a;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+  letter-spacing: 2px;
+}
+
+.free-parking-pot {
+  background: rgba(255,215,0,0.3);
+  border: 1px solid #FFD700;
+  border-radius: 8px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.75rem;
+  text-align: center;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pot-amount { font-weight: 700; font-size: 1rem; color: #1a6b2a; }
+
+.board-players-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  max-width: 260px;
+}
+
+.board-player-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 8px;
+  border-left: 4px solid #ccc;
+  background: rgba(255,255,255,0.7);
+  border-radius: 0 4px 4px 0;
+  font-size: 0.7rem;
+  color: #222;
+}
+
+.board-player-row.active {
+  background: rgba(255,255,200,0.9);
+  font-weight: 700;
+}
+
+.board-player-row.bankrupt {
+  opacity: 0.5;
+  border-left-color: #999;
+}
+
+.bpr-cash { font-weight: 600; color: #1a6b2a; }
+
+.board-cell {
+  /* Tiles fill their grid cell */
+}

@@ -1,0 +1,151 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  height: 100%;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.my-info {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: rgba(0,0,0,0.3);
+  border-radius: 10px;
+  padding: 0.7rem 1rem;
+}
+
+.my-token { font-size: 2rem; }
+
+.my-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.my-name { font-weight: 700; font-size: 1rem; }
+
+.jail-tag, .goj-tag {
+  font-size: 0.7rem;
+  padding: 1px 5px;
+  border-radius: 4px;
+  display: inline-block;
+  width: fit-content;
+}
+.jail-tag { background: #e74c3c; color: #fff; }
+.goj-tag  { background: #f39c12; color: #fff; }
+
+.my-cash {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #FFD700;
+}
+
+/* Other players */
+.other-players {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.other-player {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-left: 4px solid #ccc;
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 0 6px 6px 0;
+  font-size: 0.8rem;
+}
+
+.other-player.bankrupt { opacity: 0.4; }
+
+.op-token { font-size: 1.1rem; }
+.op-name  { flex: 1; font-weight: 500; }
+.op-cash  { color: #FFD700; font-weight: 600; }
+.op-props { color: rgba(255,255,255,0.5); font-size: 0.7rem; }
+.bankrupt-tag { font-size: 0.9rem; }
+
+/* Properties */
+.my-properties h3 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 0.4rem;
+}
+
+.no-props { font-size: 0.8rem; color: rgba(255,255,255,0.4); }
+
+.prop-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 4px;
+}
+
+.prop-card {
+  display: flex;
+  background: rgba(255,255,255,0.1);
+  border-radius: 6px;
+  overflow: hidden;
+  align-items: stretch;
+}
+
+.prop-card.mortgaged { opacity: 0.6; }
+
+.prop-card-bar {
+  width: 6px;
+  flex-shrink: 0;
+}
+
+.prop-card-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 3px 6px;
+  flex-wrap: wrap;
+}
+
+.prop-card-name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  flex: 1;
+  min-width: 80px;
+}
+
+.prop-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.7);
+}
+
+.prop-houses { font-size: 0.75rem; }
+.mort-tag { background: #e74c3c; color: #fff; padding: 0 3px; border-radius: 2px; }
+
+.prop-card-actions {
+  display: flex;
+  gap: 3px;
+}
+
+.prop-btn {
+  font-size: 0.6rem;
+  padding: 2px 5px;
+  border-radius: 4px;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.prop-btn.build     { background: #27ae60; color: #fff; }
+.prop-btn.sell      { background: #e67e22; color: #fff; }
+.prop-btn.mortgage  { background: #e74c3c; color: #fff; }
+.prop-btn.unmortgage{ background: #3498db; color: #fff; }
+.prop-btn:hover     { filter: brightness(1.15); }
