@@ -2,29 +2,28 @@ import React from 'react';
 import { GROUP_COLORS, TOKENS, TOKEN_COLORS, getTileOrientation } from '../boardData';
 
 const TYPE_ICONS = {
-  railroad: '🚂',
-  utility: '⚡',
-  chance: '❓',
+  railroad:        '🚂',
+  utility:         '⚡',
+  chance:          '❓',
   community_chest: '🎁',
-  tax: '💰',
-  go: null,
-  go_to_jail: '👮',
-  jail: null,
-  free_parking: '🅿️',
+  tax:             '💰',
+  go_to_jail:      '👮',
+  free_parking:    '🅿️',
 };
 
-export default function Tile({ space, propertyState, playersHere, isHighlighted, size = 'normal' }) {
+export default function Tile({ space, propertyState, playersHere, isHighlighted, currentPlayerId }) {
   const orient = getTileOrientation(space.id);
   const isCorner = orient === 'corner';
   const colorBar = space.group ? GROUP_COLORS[space.group] : null;
 
-  // Which direction does the color bar face?
+  // Thick color bar as a border on the outer edge of the tile
   const barStyle = {};
   if (colorBar) {
-    if (orient === 'bottom') barStyle.borderTop = `8px solid ${colorBar}`;
-    else if (orient === 'top')    barStyle.borderBottom = `8px solid ${colorBar}`;
-    else if (orient === 'left')   barStyle.borderRight = `8px solid ${colorBar}`;
-    else if (orient === 'right')  barStyle.borderLeft = `8px solid ${colorBar}`;
+    const thickness = '14px';
+    if      (orient === 'bottom') barStyle.borderTop    = `${thickness} solid ${colorBar}`;
+    else if (orient === 'top')    barStyle.borderBottom = `${thickness} solid ${colorBar}`;
+    else if (orient === 'left')   barStyle.borderRight  = `${thickness} solid ${colorBar}`;
+    else if (orient === 'right')  barStyle.borderLeft   = `${thickness} solid ${colorBar}`;
   }
 
   const tileClass = [
@@ -32,15 +31,14 @@ export default function Tile({ space, propertyState, playersHere, isHighlighted,
     `tile--${orient}`,
     `tile--${space.type}`,
     isHighlighted ? 'tile--highlighted' : '',
-    propertyState?.mortgaged ? 'tile--mortgaged' : '',
   ].filter(Boolean).join(' ');
 
   const houseCount = propertyState?.houses || 0;
   const isHotel = houseCount === 5;
+  const ownerColor = propertyState?.ownerColor;
 
   return (
     <div className={tileClass} style={barStyle} title={space.name}>
-      {/* Corner tiles have special layouts */}
       {isCorner ? <CornerContent space={space} /> : (
         <>
           <div className="tile-name">{space.name}</div>
@@ -64,21 +62,13 @@ export default function Tile({ space, propertyState, playersHere, isHighlighted,
             </>
           )}
 
-          {/* Ownership indicator */}
-          {propertyState?.owner && (
-            <div
-              className="tile-owner-dot"
-              style={{ background: propertyState.ownerColor || '#fff' }}
-            />
-          )}
-
-          {/* Houses/hotel */}
+          {/* Houses / hotel */}
           {houseCount > 0 && (
             <div className="tile-buildings">
               {isHotel
-                ? <span className="building hotel">H</span>
+                ? <span className="building hotel">🏨</span>
                 : Array.from({ length: houseCount }).map((_, i) => (
-                    <span key={i} className="building house">■</span>
+                    <span key={i} className="building house">🏠</span>
                   ))
               }
             </div>
@@ -86,16 +76,26 @@ export default function Tile({ space, propertyState, playersHere, isHighlighted,
 
           {/* Mortgage overlay */}
           {propertyState?.mortgaged && <div className="mortgage-overlay">MORTGAGED</div>}
+
+          {/* Owner color strip at bottom */}
+          {ownerColor && !propertyState?.mortgaged && (
+            <div className="tile-owner-strip" style={{ background: ownerColor }} />
+          )}
         </>
       )}
 
-      {/* Player tokens */}
+      {/* Player token badges */}
       {playersHere.length > 0 && (
         <div className="tile-tokens">
           {playersHere.map(p => (
-            <span key={p.id} className="tile-token" style={{ color: TOKEN_COLORS[p.token] }} title={p.name}>
-              {TOKENS[p.token]}
-            </span>
+            <div
+              key={p.id}
+              className={`tile-token-badge ${p.id === currentPlayerId ? 'is-current' : ''}`}
+              style={{ background: TOKEN_COLORS[p.token] + '33', borderColor: TOKEN_COLORS[p.token] }}
+              title={p.name}
+            >
+              <span style={{ fontSize: '1rem' }}>{TOKENS[p.token]}</span>
+            </div>
           ))}
         </div>
       )}
@@ -113,9 +113,10 @@ function CornerContent({ space }) {
   );
   if (space.type === 'jail') return (
     <div className="corner-content corner-jail">
-      <div className="jail-visiting">Just<br/>Visiting</div>
+      <div className="jail-visiting">Just Visiting</div>
       <div className="jail-box">
-        <span>JAIL</span>
+        <span className="jail-bars">🔒</span>
+        <span className="jail-label">JAIL</span>
       </div>
     </div>
   );
@@ -128,9 +129,9 @@ function CornerContent({ space }) {
   );
   if (space.type === 'go_to_jail') return (
     <div className="corner-content corner-gtj">
-      <span>Go To</span>
+      <span className="corner-title" style={{ fontSize: '0.75rem' }}>Go To</span>
       <span className="corner-icon">👮</span>
-      <span>JAIL!</span>
+      <span className="corner-title">JAIL!</span>
     </div>
   );
   return null;

@@ -52,6 +52,9 @@ export default function Dashboard({ gameState, myId, roomCode, emit }) {
           {myPlayer.getOutOfJailCards > 0 && (
             <span className="goj-tag">🃏 ×{myPlayer.getOutOfJailCards}</span>
           )}
+          {myPlayer.missedRentCount > 0 && (
+            <span className="missed-tag">⚠️ {myPlayer.missedRentCount}/3 missed rent</span>
+          )}
         </div>
         <span className="my-cash">${myPlayer.cash.toLocaleString()}</span>
       </div>

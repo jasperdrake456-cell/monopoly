@@ -272,12 +272,24 @@ function landOnSpace(state, playerId) {
         const owner = getPlayer(state, ps.owner);
         const diceTotal = (state.lastDice || [0, 0]).reduce((a, b) => a + b, 0);
         const rent = calcRent(state, space, playerId, diceTotal);
-        const actual = Math.min(p.cash, rent);
-        p.cash -= actual;
-        owner.cash += actual;
-        addLog(state, `${p.name} paid $${actual} rent to ${owner.name} for ${space.name}`);
+        if (p.cash >= rent) {
+          // Full payment
+          p.cash -= rent;
+          owner.cash += rent;
+          addLog(state, `${p.name} paid $${rent} rent to ${owner.name} for ${space.name}`);
+        } else {
+          // Can't afford — partial payment, track missed rent
+          const partial = p.cash;
+          p.cash = 0;
+          owner.cash += partial;
+          p.missedRentCount = (p.missedRentCount || 0) + 1;
+          addLog(state, `${p.name} couldn't afford $${rent} rent — paid $${partial} (missed rent ${p.missedRentCount}/3)`);
+          if (p.missedRentCount >= 3) {
+            addLog(state, `${p.name} has missed rent 3 times and is bankrupt!`);
+            declareBankruptcy(state, playerId, ps.owner);
+          }
+        }
         state.turnPhase = 'end';
-        checkBankruptcy(state, playerId, ps.owner);
       }
       break;
     }
@@ -428,6 +440,7 @@ function initGame(players, freeParkingEnabled) {
       jailTurns: 0,
       getOutOfJailCards: 0,
       bankrupt: false,
+      missedRentCount: 0,
     })),
     propertyStates,
     currentPlayerIndex: 0,

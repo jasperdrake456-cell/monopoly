@@ -36,6 +36,7 @@
 }
 .jail-tag { background: #e74c3c; color: #fff; }
 .goj-tag  { background: #f39c12; color: #fff; }
+.missed-tag { background: #c0392b; color: #fff; }
 
 .my-cash {
   font-size: 1.3rem;
