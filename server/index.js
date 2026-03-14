@@ -42,6 +42,27 @@ app.post('/api/rotate-password', async (req, res) => {
   io.emit('force-logout');
   console.log(`[rotate] New password set: ${newPassword}`);
 
+  // Persist new password to Railway env var so it survives redeploys
+  try {
+    const railwayToken = process.env.RAILWAY_API_TOKEN;
+    const projectId    = process.env.RAILWAY_PROJECT_ID;
+    const environmentId = process.env.RAILWAY_ENVIRONMENT_ID;
+    const serviceId    = process.env.RAILWAY_SERVICE_ID;
+    if (railwayToken && projectId && environmentId && serviceId) {
+      await fetch('https://backboard.railway.app/graphql/v2', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${railwayToken}` },
+        body: JSON.stringify({
+          query: `mutation VariableUpsert($input: VariableUpsertInput!) { variableUpsert(input: $input) }`,
+          variables: { input: { projectId, environmentId, serviceId, name: 'GAME_PASSWORD', value: newPassword } },
+        }),
+      });
+      console.log(`[rotate] GAME_PASSWORD env var updated in Railway`);
+    }
+  } catch (e) {
+    console.error('[rotate] Railway env update failed:', e.message);
+  }
+
   try {
     await sendPasswordEmail(newPassword);
     res.json({ ok: true, password: newPassword });
