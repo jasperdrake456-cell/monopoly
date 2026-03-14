@@ -2,6 +2,22 @@ import React, { useState } from 'react';
 import { BOARD, GROUP_COLORS, TOKEN_COLORS, TOKENS } from '../boardData';
 import './Dashboard.css';
 
+function calcNetWorth(player, propertyStates) {
+  let worth = player.cash;
+  player.properties.forEach(id => {
+    const space = BOARD[id];
+    const ps = propertyStates[id];
+    if (!space) return;
+    if (ps?.mortgaged) {
+      worth += space.mortgageValue || 0;
+    } else {
+      worth += space.price || 0;
+      if (ps?.houses) worth += ps.houses * Math.floor((space.houseCost || 0) / 2);
+    }
+  });
+  return worth;
+}
+
 export default function Dashboard({ gameState, myId, roomCode, emit }) {
   const [showPropertyModal, setShowPropertyModal] = useState(null); // propertyId
   const myPlayer = gameState.players.find(p => p.id === myId);
@@ -25,6 +41,8 @@ export default function Dashboard({ gameState, myId, roomCode, emit }) {
   function handleSellHouse(propId) {
     emit('sellBuilding', { roomCode, propertyId: propId, count: 1 });
   }
+
+  const myNetWorth = calcNetWorth(myPlayer, gameState.propertyStates);
 
   const myProperties = myPlayer.properties.map(id => {
     const space = BOARD[id];
@@ -56,7 +74,10 @@ export default function Dashboard({ gameState, myId, roomCode, emit }) {
             <span className="missed-tag">⚠️ {myPlayer.missedRentCount}/3 missed rent</span>
           )}
         </div>
-        <span className="my-cash">${myPlayer.cash.toLocaleString()}</span>
+        <div className="my-cash-col">
+          <span className="my-cash">${myPlayer.cash.toLocaleString()}</span>
+          <span className="my-worth">Net: ${myNetWorth.toLocaleString()}</span>
+        </div>
       </div>
 
       {/* Other players summary */}

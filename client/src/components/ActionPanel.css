@@ -117,7 +117,7 @@
   letter-spacing: .8px; padding: 2px 8px; border-radius: 4px; width: fit-content;
 }
 .card-deck-label.chance     { background: #d35400; color: #fff; }
-.card-deck-label.community_chest { background: #2471a3; color: #fff; }
+.card-deck-label.community { background: #2471a3; color: #fff; }
 .card-text { font-size: .82rem; line-height: 1.55; }
 
 /* ── Trade display ─────────────────────────────────────────────────────── */
@@ -150,3 +150,19 @@
 @keyframes dieRoll { 0%,100%{transform:rotate(-8deg)} 50%{transform:rotate(8deg)} }
 .dice-label { font-size:.7rem; color:rgba(255,255,255,.6); margin-top:2px; text-align:center; }
 .dice-doubles { font-size:.7rem; color:#FFD700; font-weight:700; text-align:center; }
+
+/* ── Doubles banner ─────────────────────────────────────────────────────── */
+.ap-doubles-banner {
+  background: linear-gradient(90deg, #1a3a0a, #2d6a14);
+  border: 1px solid #FFD700;
+  border-radius: 7px;
+  padding: 6px 10px;
+  font-size: .78rem;
+  font-weight: 700;
+  color: #FFD700;
+  text-align: center;
+}
+.ap-doubles-warn {
+  color: #e74c3c;
+  font-size: .72rem;
+}

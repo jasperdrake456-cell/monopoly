@@ -208,6 +208,17 @@ io.on('connection', (socket) => {
     });
   });
 
+  socket.on('restartGame', ({ roomCode }) => {
+    const room = rm.getRoom(roomCode);
+    if (!room) { socket.emit('error', { message: 'Room not found' }); return; }
+    if (room.hostId !== socket.id) { socket.emit('error', { message: 'Only the host can restart' }); return; }
+    // Re-use the same player list but reset their state
+    const playerList = room.players.map(p => ({ id: p.id, name: p.name, token: p.token }));
+    room.gameState = gl.initGame(playerList, room.freeParkingEnabled);
+    room.status = 'playing';
+    broadcastState(room);
+  });
+
   socket.on('declareBankruptcy', ({ roomCode }) => {
     handleAction(socket, roomCode, (room) => {
       if (!room.gameState) return { error: 'No game' };

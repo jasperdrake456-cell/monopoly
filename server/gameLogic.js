@@ -171,11 +171,10 @@ function executeCard(state, playerId, card) {
 
     case 'pay': {
       const amt = card.amount;
-      p.cash -= amt;
-      if (state.freeParkingEnabled) {
-        state.freeParking += amt;
-      }
-      addLog(state, `${p.name} paid $${amt}`);
+      const paid = Math.min(p.cash, amt);
+      p.cash -= paid;
+      if (state.freeParkingEnabled) state.freeParking += paid;
+      addLog(state, `${p.name} paid $${paid}${paid < amt ? ` (couldn't cover full $${amt})` : ''}`);
       break;
     }
 
@@ -223,9 +222,10 @@ function executeCard(state, playerId, card) {
           else total += ps.houses * card.houseCost;
         }
       });
-      p.cash -= total;
-      if (state.freeParkingEnabled) state.freeParking += total;
-      addLog(state, `${p.name} paid $${total} for repairs`);
+      const repairPaid = Math.min(p.cash, total);
+      p.cash -= repairPaid;
+      if (state.freeParkingEnabled) state.freeParking += repairPaid;
+      addLog(state, `${p.name} paid $${repairPaid} for repairs`);
       break;
     }
 
@@ -296,9 +296,10 @@ function landOnSpace(state, playerId) {
 
     case 'tax': {
       const tax = space.amount;
-      p.cash -= Math.min(p.cash, tax);
-      if (state.freeParkingEnabled) state.freeParking += tax;
-      addLog(state, `${p.name} paid $${tax} in taxes`);
+      const taxPaid = Math.min(p.cash, tax);
+      p.cash -= taxPaid;
+      if (state.freeParkingEnabled) state.freeParking += taxPaid;
+      addLog(state, `${p.name} paid $${taxPaid} in taxes`);
       state.turnPhase = 'end';
       break;
     }
@@ -762,6 +763,10 @@ function doDeclareBankruptcy(state, playerId) {
   return {};
 }
 
+function doRestartGame(state, players, freeParkingEnabled) {
+  return initGame(players, freeParkingEnabled);
+}
+
 module.exports = {
   initGame,
   doRollDice,
@@ -779,4 +784,5 @@ module.exports = {
   doRespondTrade,
   doCancelTrade,
   doDeclareBankruptcy,
+  doRestartGame,
 };

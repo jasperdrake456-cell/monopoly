@@ -18,8 +18,9 @@ export default function Game({ roomState, myId, roomCode, emit }) {
   const winnerPlayer = winner ? gameState.players.find(p => p.id === winner) : null;
 
   const isMyTurn = gameState.players[gameState.currentPlayerIndex]?.id === myId;
+  const isHost = roomState.hostId === myId;
   const canTrade = myPlayer && !myPlayer.bankrupt &&
-    gameState.turnPhase !== 'auction' && !gameState.activeTrade &&
+    !gameState.activeTrade &&
     gameState.players.filter(p => !p.bankrupt && p.id !== myId).length > 0;
 
   return (
@@ -30,7 +31,22 @@ export default function Game({ roomState, myId, roomCode, emit }) {
           <div className="win-card">
             <div className="win-trophy">🏆</div>
             <h1>{winnerPlayer?.name} Wins!</h1>
-            <p>Congratulations!</p>
+            <div className="win-stats">
+              {gameState.players.map(p => (
+                <div key={p.id} className="win-stat-row" style={{ borderLeftColor: TOKEN_COLORS[p.token] }}>
+                  <span>{TOKENS[p.token]} {p.name}</span>
+                  <span style={{ color: '#FFD700' }}>${p.cash.toLocaleString()}</span>
+                  <span style={{ opacity: 0.6 }}>{p.properties.length} props</span>
+                  {p.bankrupt && <span>💀</span>}
+                </div>
+              ))}
+            </div>
+            {isHost && (
+              <button className="win-restart-btn" onClick={() => emit('restartGame', { roomCode })}>
+                🔄 Play Again
+              </button>
+            )}
+            {!isHost && <p style={{ opacity: 0.6, fontSize: '0.85rem' }}>Waiting for host to restart…</p>}
           </div>
         </div>
       )}

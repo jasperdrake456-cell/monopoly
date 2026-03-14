@@ -105,3 +105,10 @@
 .prop-btn.mortgage   { background:#c0392b; color:#fff; }
 .prop-btn.unmortgage { background:#2980b9; color:#fff; }
 .prop-btn:hover      { filter:brightness(1.15); }
+
+.my-cash-col {
+  display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0;
+}
+.my-worth {
+  font-size: .6rem; color: rgba(255,255,255,.45); white-space: nowrap;
+}
