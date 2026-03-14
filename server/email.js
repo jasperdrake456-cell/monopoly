@@ -1,18 +1,5 @@
 'use strict';
-const nodemailer = require('nodemailer');
-
-function createTransport() {
-  return nodemailer.createTransport({
-    host:   process.env.SMTP_HOST,
-    port:   parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_PORT === '465',
-    family: 4,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-}
+const { Resend } = require('resend');
 
 async function sendPasswordEmail(newPassword) {
   const to = process.env.EMAIL_TO;
@@ -20,18 +7,19 @@ async function sendPasswordEmail(newPassword) {
     console.warn('[email] EMAIL_TO not set — skipping email send');
     return;
   }
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.warn('[email] SMTP not configured — skipping email send');
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.warn('[email] RESEND_API_KEY not set — skipping email send');
     return;
   }
 
-  const transport = createTransport();
-  const from = process.env.EMAIL_FROM || `"Game Hub" <${process.env.SMTP_USER}>`;
+  const resend = new Resend(apiKey);
   const appUrl = process.env.APP_URL || '';
+  const from = process.env.EMAIL_FROM || 'Game Hub <onboarding@resend.dev>';
 
-  await transport.sendMail({
+  await resend.emails.send({
     from,
-    to,
+    to: to.split(',').map(e => e.trim()),
     subject: `🎮 Game Hub — Today's Password`,
     text: [
       `Today's Game Hub password is:`,
