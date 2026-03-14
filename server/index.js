@@ -39,6 +39,7 @@ app.post('/api/rotate-password', async (req, res) => {
 
   const newPassword = generatePassword();
   setPassword(newPassword);
+  io.emit('force-logout');
   console.log(`[rotate] New password set: ${newPassword}`);
 
   try {

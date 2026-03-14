@@ -134,3 +134,56 @@
   cursor: pointer;
 }
 .tetris-pause-btn:hover { background: rgba(255,255,255,0.14); }
+
+.tetris-canvas {
+  display: block;
+  width: min(300px, 55vw);
+  aspect-ratio: 1 / 2;
+}
+
+.tetris-controls {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.tetris-ctrl-row {
+  display: flex;
+  gap: 6px;
+}
+
+.tetris-ctrl-btn {
+  width: 58px;
+  height: 58px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.tetris-ctrl-btn:active { background: rgba(255,255,255,0.25); }
+.tetris-ctrl-wide { width: 58px; }
+
+@media (min-width: 600px) {
+  .tetris-controls { display: none; }
+  .tetris-canvas { width: 300px; aspect-ratio: unset; }
+}
+
+@media (max-width: 540px) {
+  .tetris-layout { flex-direction: column; align-items: center; }
+  .tetris-sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    min-width: unset;
+    width: 100%;
+    max-width: 320px;
+  }
+  .tetris-panel { flex: 1; min-width: 70px; text-align: center; }
+}

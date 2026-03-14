@@ -157,6 +157,16 @@ export default function Snake({ onBack }) {
     return () => { window.removeEventListener('touchstart', ts); window.removeEventListener('touchend', te); };
   }, []);
 
+  function dpad(dx, dy) {
+    const s = stateRef.current;
+    if (!s) return;
+    const { x, y } = s.dir;
+    if (dx === 1  && x !== -1) s.nextDir = { x: 1, y: 0 };
+    if (dx === -1 && x !== 1)  s.nextDir = { x: -1, y: 0 };
+    if (dy === 1  && y !== -1) s.nextDir = { x: 0, y: 1 };
+    if (dy === -1 && y !== 1)  s.nextDir = { x: 0, y: -1 };
+  }
+
   return (
     <div className="snake-page">
       <div className="snake-topbar">
@@ -173,9 +183,22 @@ export default function Snake({ onBack }) {
           <div className="snake-overlay">
             {display.over && <div className="snake-over-msg">Game Over — Score: {display.score}</div>}
             <button className="snake-start-btn" onClick={start}>{display.over ? 'Play Again' : 'Start Game'}</button>
-            <div className="snake-hint">Arrow keys or WASD to move</div>
+            <div className="snake-hint">Arrow keys, WASD, or swipe</div>
           </div>
         )}
+      </div>
+      <div className="snake-dpad">
+        <div className="snake-dpad-row">
+          <button className="snake-dpad-btn" onPointerDown={() => dpad(0,-1)}>▲</button>
+        </div>
+        <div className="snake-dpad-row">
+          <button className="snake-dpad-btn" onPointerDown={() => dpad(-1,0)}>◀</button>
+          <button className="snake-dpad-btn snake-dpad-center" disabled />
+          <button className="snake-dpad-btn" onPointerDown={() => dpad(1,0)}>▶</button>
+        </div>
+        <div className="snake-dpad-row">
+          <button className="snake-dpad-btn" onPointerDown={() => dpad(0,1)}>▼</button>
+        </div>
       </div>
     </div>
   );

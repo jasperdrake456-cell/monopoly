@@ -280,6 +280,13 @@ export default function Tetris({ onBack }) {
     return () => window.removeEventListener('keydown', handleKey);
   }, [display.over, display.paused, tryRotate]);
 
+  function doLeft()     { const s = stateRef.current; if (!s || display.over || display.paused) return; if (fits(s.board, s.piece, -1)) s.piece.x--; drawBoard(); }
+  function doRight()    { const s = stateRef.current; if (!s || display.over || display.paused) return; if (fits(s.board, s.piece,  1)) s.piece.x++; drawBoard(); }
+  function doSoftDrop() { const s = stateRef.current; if (!s || display.over || display.paused) return; if (fits(s.board, s.piece, 0, 1)) { s.piece.y++; s.score += 1; } drawBoard(); }
+  function doHardDrop() { const s = stateRef.current; if (!s || display.over || display.paused) return; const dy = ghostY(s.board, s.piece) - s.piece.y; s.piece.y += dy; s.score += dy * 2; s.lastDrop = -Infinity; drawBoard(); }
+  function doRotateCW() { const s = stateRef.current; if (!s || display.over || display.paused) return; tryRotate(s, 1); drawBoard(); }
+  function doRotateCCW(){ const s = stateRef.current; if (!s || display.over || display.paused) return; tryRotate(s, -1); drawBoard(); }
+
   return (
     <div className="tetris-page">
       <div className="tetris-topbar">
@@ -327,6 +334,18 @@ export default function Tetris({ onBack }) {
           {display.running && (
             <button className="tetris-pause-btn" onClick={pause}>{display.paused ? 'Resume' : 'Pause'}</button>
           )}
+        </div>
+      </div>
+      <div className="tetris-controls">
+        <div className="tetris-ctrl-row">
+          <button className="tetris-ctrl-btn" onPointerDown={doRotateCCW}>↺</button>
+          <button className="tetris-ctrl-btn tetris-ctrl-wide" onPointerDown={doHardDrop}>⬇</button>
+          <button className="tetris-ctrl-btn" onPointerDown={doRotateCW}>↻</button>
+        </div>
+        <div className="tetris-ctrl-row">
+          <button className="tetris-ctrl-btn" onPointerDown={doLeft}>◀</button>
+          <button className="tetris-ctrl-btn" onPointerDown={doSoftDrop}>▼</button>
+          <button className="tetris-ctrl-btn" onPointerDown={doRight}>▶</button>
         </div>
       </div>
     </div>

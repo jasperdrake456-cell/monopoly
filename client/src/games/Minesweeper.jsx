@@ -71,6 +71,14 @@ export default function Minesweeper({ onBack }) {
   const [minesLeft, setMinesLeft] = useState(0);
   const [time, setTime]     = useState(0);
   const timerRef = useRef(null);
+  const longPressRef = useRef(null);
+
+  function handleTouchStart(r, c) {
+    longPressRef.current = setTimeout(() => {
+      handleRightClick({ preventDefault: () => {} }, r, c);
+    }, 500);
+  }
+  function handleTouchEnd() { clearTimeout(longPressRef.current); }
 
   function newGame(d = diff) {
     const { rows, cols, mines } = DIFFICULTIES[d];
@@ -211,7 +219,10 @@ export default function Minesweeper({ onBack }) {
               <div key={`${r}-${c}`} className={cls}
                 onClick={() => handleClick(r, c)}
                 onContextMenu={e => handleRightClick(e, r, c)}
-                onDoubleClick={() => handleChordClick(r, c)}>
+                onDoubleClick={() => handleChordClick(r, c)}
+                onTouchStart={() => handleTouchStart(r, c)}
+                onTouchEnd={handleTouchEnd}
+                onTouchMove={handleTouchEnd}>
                 {cell.revealed && !cell.mine && cell.adjacent > 0 && (
                   <span style={{ color: NUM_COLORS[cell.adjacent], fontWeight: 800 }}>{cell.adjacent}</span>
                 )}

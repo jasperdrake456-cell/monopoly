@@ -73,6 +73,9 @@
 
 .snake-canvas {
   display: block;
+  width: min(440px, calc(100vw - 2rem));
+  aspect-ratio: 1 / 1;
+  touch-action: none;
 }
 
 .snake-overlay {
@@ -108,4 +111,37 @@
 .snake-hint {
   font-size: 0.78rem;
   color: #666;
+}
+
+.snake-dpad {
+  margin-top: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.snake-dpad-row {
+  display: flex;
+  gap: 4px;
+}
+
+.snake-dpad-btn {
+  width: 52px;
+  height: 52px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.snake-dpad-btn:active { background: rgba(255,255,255,0.25); }
+.snake-dpad-center { background: transparent; border-color: transparent; pointer-events: none; }
+
+@media (min-width: 600px) {
+  .snake-dpad { display: none; }
 }

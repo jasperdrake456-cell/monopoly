@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
 import './PasswordGate.css';
 
 const KEY = 'platform_auth';
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
 
 export default function PasswordGate({ children }) {
   const [authed, setAuthed]   = useState(() => sessionStorage.getItem(KEY) === 'ok');
@@ -9,6 +11,16 @@ export default function PasswordGate({ children }) {
   const [error, setError]     = useState(false);
   const [shake, setShake]     = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Force logout when server rotates the password
+  useEffect(() => {
+    const socket = io(SERVER_URL, { autoConnect: true });
+    socket.on('force-logout', () => {
+      sessionStorage.removeItem(KEY);
+      setAuthed(false);
+    });
+    return () => socket.disconnect();
+  }, []);
 
   if (authed) return children;
 
