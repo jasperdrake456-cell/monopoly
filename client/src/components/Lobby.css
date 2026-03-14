@@ -265,3 +265,13 @@
 .start-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .waiting-msg { color: rgba(255,255,255,0.6); font-style: italic; }
+
+/* ── Mobile tweaks ─────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .lobby-title { font-size: clamp(2rem, 12vw, 3.5rem); }
+  .token-btn { min-width: 50px; padding: 0.4rem 0.5rem; font-size: 0.7rem; }
+  .token-emoji { font-size: 1.3rem; }
+  .lobby-form-card { padding: 1.2rem; }
+  .home-btn { padding: 0.8rem 1.8rem; font-size: 1rem; }
+  .room-code-value { font-size: 1.4rem; }
+}

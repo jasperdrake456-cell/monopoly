@@ -4,6 +4,13 @@
   overflow: hidden; gap: 5px;
 }
 
+/* Mobile: dashboard stacks naturally, no fixed height/overflow constraints */
+@media (max-width: 767px) {
+  .dashboard { height: auto; max-height: none; overflow: visible; }
+  .my-properties { flex: none; max-height: 280px; }
+  .props-scroll { max-height: 220px; }
+}
+
 /* ── My info card ──────────────────────────────────────────────────────── */
 .my-info {
   display: flex; align-items: center; gap: .6rem;

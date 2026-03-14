@@ -12,6 +12,20 @@
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,.15) transparent;
 }
+
+/* On mobile: let the action panel expand fully */
+@media (max-width: 767px) {
+  .action-panel {
+    max-height: none;
+    overflow-y: visible;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+  /* Larger touch targets for buttons */
+  .ap-btn { padding: 12px 10px; font-size: 0.9rem; }
+  .ap-btn.large { padding: 14px 10px; font-size: 1rem; }
+}
 .action-panel::-webkit-scrollbar       { width: 4px; }
 .action-panel::-webkit-scrollbar-track { background: transparent; }
 .action-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 4px; }

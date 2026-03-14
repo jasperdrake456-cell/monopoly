@@ -113,13 +113,76 @@
   height: 100vh; font-size: 1.2rem; color: rgba(255,255,255,.7);
 }
 
-/* ── Responsive board zoom ─────────────────────────────────────────────── */
-@media (max-height: 800px) { .board { zoom: .94; } }
-@media (max-height: 740px) { .board { zoom: .86; } }
-@media (max-height: 680px) { .board { zoom: .78; } }
+/* ── Responsive board zoom (desktop only) ──────────────────────────────── */
+@media (min-width: 768px) and (max-height: 800px) { .board { zoom: .94; } }
+@media (min-width: 768px) and (max-height: 740px) { .board { zoom: .86; } }
+@media (min-width: 768px) and (max-height: 680px) { .board { zoom: .78; } }
 
 @media (max-width: 1280px) { .game-layout { grid-template-columns: 200px 1fr 255px; } }
 @media (max-width: 1100px) { .game-layout { grid-template-columns: 185px 1fr 240px; } }
+
+/* ── Mobile layout ─────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .game-layout {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 100svh;
+    max-height: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .game-main {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    order: 1;
+  }
+
+  .game-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(0,0,0,0.92);
+  }
+
+  /* Action panel goes immediately below the board */
+  .game-sidebar.right {
+    order: 2;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    border-left: none;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 12px;
+  }
+
+  /* Dashboard (my properties) goes last */
+  .game-sidebar.left {
+    order: 3;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    border-right: none;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 20px;
+  }
+
+  /* Compact log on mobile */
+  .log-wrap {
+    max-height: 120px;
+    overflow-y: auto;
+  }
+
+  /* Win card fits on screen */
+  .win-card {
+    margin: 1rem;
+    padding: 1.5rem;
+    max-width: calc(100vw - 2rem);
+  }
+  .win-card h1 { font-size: 1.6rem; }
+}
 
 .win-stats {
   display: flex; flex-direction: column; gap: 5px;

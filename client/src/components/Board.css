@@ -9,6 +9,27 @@
   padding: 6px;
 }
 
+/* ── Mobile: scale board to fit phone screen ───────────────────────────── */
+@media (max-width: 767px) {
+  .board-wrap {
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2px;
+    overflow: visible;
+    flex: none;
+  }
+  /* phones (< 540px): board is 788px, zoom to ~44% → ~347px visual */
+  .board { zoom: 44%; }
+}
+/* larger phones / small tablets (540–767px) */
+@media (min-width: 540px) and (max-width: 767px) {
+  .board { zoom: 64%; }  /* 788 × 0.64 ≈ 504px */
+}
+/* very small phones */
+@media (max-width: 355px) {
+  .board { zoom: 40%; }
+}
+
 /* ── The board grid ────────────────────────────────────────────────────── */
 .board {
   display: grid;
