@@ -12,8 +12,8 @@
 /* ── The board grid ────────────────────────────────────────────────────── */
 .board {
   display: grid;
-  grid-template-columns: 92px repeat(9, 58px) 92px;
-  grid-template-rows:    92px repeat(9, 58px) 92px;
+  grid-template-columns: 100px repeat(9, 64px) 100px;
+  grid-template-rows:    100px repeat(9, 64px) 100px;
   border: 6px solid #111;
   background: #cde8c4;
   box-shadow: 0 0 0 10px #13320a, 0 24px 80px rgba(0,0,0,.7);
@@ -48,17 +48,55 @@
 /* ── Orientation ───────────────────────────────────────────────────────── */
 .tile--bottom { flex-direction: column; }
 .tile--top    { flex-direction: column-reverse; }
-.tile--left   { flex-direction: row-reverse; writing-mode: vertical-rl; transform: rotate(180deg); }
-.tile--right  { flex-direction: row;         writing-mode: vertical-lr; }
+.tile--left   { flex-direction: column; overflow: hidden; }
+.tile--right  { flex-direction: column; overflow: hidden; }
+
+/* ── tile-inner wrapper: fills space on top/bottom tiles; rotated on side tiles ── */
+.tile-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  position: relative;
+}
+
+/* Side-tile inner content: absolutely positioned + rotated so text reads correctly */
+/* Left tiles: 100px wide × 64px tall. Color band = borderRight 16px → usable: 84×64 */
+/* Inner div pre-rotation: 64×84, center at (42,32), so left=10, top=-10 */
+.tile--left .tile-inner {
+  position: absolute;
+  width: 64px;
+  height: 84px;
+  left: 10px;
+  top: -10px;
+  flex: none;
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+/* Right tiles: Color band = borderLeft 16px → usable area starts at x=16, width=84 */
+/* Center at (58,32), left=26, top=-10 */
+.tile--right .tile-inner {
+  position: absolute;
+  width: 64px;
+  height: 84px;
+  left: 26px;
+  top: -10px;
+  flex: none;
+  transform: rotate(90deg);
+  transform-origin: center;
+}
 
 /* ── Property name ─────────────────────────────────────────────────────── */
 .tile-name {
   font-weight: 700;
-  font-size: 0.5rem;
+  font-size: 0.56rem;
   line-height: 1.15;
   word-break: break-word;
   hyphens: auto;
-  padding: 2px;
+  padding: 2px 2px 0;
   flex: 1;
   display: flex;
   align-items: center;
@@ -68,7 +106,7 @@
 
 /* ── Price ─────────────────────────────────────────────────────────────── */
 .tile-price {
-  font-size: 0.48rem;
+  font-size: 0.52rem;
   font-weight: 700;
   color: #333;
   padding-bottom: 2px;
@@ -77,15 +115,27 @@
 
 /* ── Icon (railroad, utility, chance, etc.) ────────────────────────────── */
 .tile-icon {
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   flex-shrink: 0;
   line-height: 1.1;
   margin: 1px 0;
 }
+.tile-icon--cc {
+  font-size: 0.65rem;
+  font-weight: 900;
+  background: #e8192c;
+  color: #fff;
+  border-radius: 50%;
+  width: 1.4em;
+  height: 1.4em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 /* ── Card label (CHANCE / COMMUNITY) ──────────────────────────────────── */
 .tile-card-label {
-  font-size: 0.4rem;
+  font-size: 0.44rem;
   font-weight: 900;
   letter-spacing: .3px;
   text-transform: uppercase;
@@ -188,7 +238,7 @@
   letter-spacing:.5px; text-transform:uppercase; white-space:nowrap;
 }
 .jail-box {
-  width:60px; height:60px;
+  width:66px; height:66px;
   background:#fff; border:3px solid #333; border-radius:4px;
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;
 }

@@ -6,7 +6,7 @@ export default function Tile({ space, propertyState, playersHere, isHighlighted,
   const isCorner = orient === 'corner';
   const colorBar = space.group ? GROUP_COLORS[space.group] : null;
 
-  // Color band as a border on the OUTER edge — works correctly with writing-mode on all 4 sides
+  // Color band as a border on the OUTER edge
   const barStyle = {};
   if (colorBar) {
     const t = '16px';
@@ -30,7 +30,7 @@ export default function Tile({ space, propertyState, playersHere, isHighlighted,
   return (
     <div className={tileClass} style={barStyle} title={space.name}>
       {isCorner ? <CornerContent space={space} /> : (
-        <>
+        <div className="tile-inner">
           <div className="tile-name">{space.name}</div>
 
           {space.type === 'property' && (
@@ -59,20 +59,20 @@ export default function Tile({ space, propertyState, playersHere, isHighlighted,
 
           {space.type === 'chance' && (
             <>
-              <div className="tile-icon">❓</div>
+              <div className="tile-icon">?</div>
               <div className="tile-card-label">CHANCE</div>
             </>
           )}
           {space.type === 'community_chest' && (
             <>
-              <div className="tile-icon">🎁</div>
+              <div className="tile-icon tile-icon--cc">CC</div>
               <div className="tile-card-label">COMMUNITY</div>
             </>
           )}
 
           {space.type === 'tax' && (
             <>
-              <div className="tile-icon">💰</div>
+              <div className="tile-icon">$</div>
               <div className="tile-price">Pay ${space.amount}</div>
             </>
           )}
@@ -80,9 +80,9 @@ export default function Tile({ space, propertyState, playersHere, isHighlighted,
           {houseCount > 0 && (
             <div className="tile-buildings">
               {isHotel
-                ? <span className="building hotel">🏨</span>
+                ? <span className="building hotel">H</span>
                 : Array.from({ length: houseCount }).map((_, i) => (
-                    <span key={i} className="building house">🏠</span>
+                    <span key={i} className="building house">■</span>
                   ))
               }
             </div>
@@ -93,7 +93,7 @@ export default function Tile({ space, propertyState, playersHere, isHighlighted,
           {ownerColor && !propertyState?.mortgaged && (
             <div className="tile-owner-strip" style={{ background: ownerColor }} />
           )}
-        </>
+        </div>
       )}
 
       {playersHere.length > 0 && (
@@ -126,7 +126,7 @@ function CornerContent({ space }) {
     <div className="corner-content corner-jail">
       <div className="jail-just-visiting">Just Visiting</div>
       <div className="jail-box">
-        <span className="jail-bars">⛓</span>
+        <span className="jail-bars">|||</span>
         <span className="jail-box-label">JAIL</span>
       </div>
     </div>
@@ -134,7 +134,7 @@ function CornerContent({ space }) {
   if (space.type === 'free_parking') return (
     <div className="corner-content corner-fp">
       <div className="fp-label">Free</div>
-      <div className="fp-icon">🅿️</div>
+      <div className="fp-icon">P</div>
       <div className="fp-label">Parking</div>
     </div>
   );

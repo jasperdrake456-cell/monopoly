@@ -165,9 +165,13 @@
 /* Waiting room */
 .lobby-room {
   justify-content: flex-start;
-  padding-top: 3rem;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
   max-width: 680px;
   margin: 0 auto;
+  min-height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .lobby-room-header {
