@@ -1,28 +1,41 @@
 import React, { useState } from 'react';
 import './PasswordGate.css';
 
-const CORRECT = 'MrMoney';
 const KEY = 'platform_auth';
 
 export default function PasswordGate({ children }) {
-  const [authed, setAuthed] = useState(() => sessionStorage.getItem(KEY) === 'ok');
-  const [input, setInput]   = useState('');
-  const [error, setError]   = useState(false);
-  const [shake, setShake]   = useState(false);
+  const [authed, setAuthed]   = useState(() => sessionStorage.getItem(KEY) === 'ok');
+  const [input, setInput]     = useState('');
+  const [error, setError]     = useState(false);
+  const [shake, setShake]     = useState(false);
+  const [loading, setLoading] = useState(false);
 
   if (authed) return children;
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    if (input === CORRECT) {
-      sessionStorage.setItem(KEY, 'ok');
-      setAuthed(true);
-    } else {
+    if (!input.trim() || loading) return;
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: input }),
+      });
+      if (res.ok) {
+        sessionStorage.setItem(KEY, 'ok');
+        setAuthed(true);
+      } else {
+        throw new Error('wrong');
+      }
+    } catch {
       setError(true);
       setShake(true);
       setInput('');
       setTimeout(() => setShake(false), 500);
       setTimeout(() => setError(false), 2000);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -41,9 +54,12 @@ export default function PasswordGate({ children }) {
             placeholder="Password"
             autoFocus
             autoComplete="off"
+            disabled={loading}
           />
           {error && <p className="pg-error">Incorrect password</p>}
-          <button className="pg-btn" type="submit">Enter</button>
+          <button className="pg-btn" type="submit" disabled={loading}>
+            {loading ? 'Checking…' : 'Enter'}
+          </button>
         </form>
       </div>
     </div>
