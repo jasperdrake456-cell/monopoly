@@ -11,6 +11,9 @@ import ChessPage from './pages/ChessPage';
 import Connect4Page from './pages/Connect4Page';
 import CheckersPage from './pages/CheckersPage';
 import BattleshipPage from './pages/BattleshipPage';
+import WordlePage from './pages/WordlePage';
+import SudokuPage from './pages/SudokuPage';
+import SpaceInvadersPage from './pages/SpaceInvadersPage';
 import './App.css';
 
 export default function App() {
@@ -27,6 +30,9 @@ export default function App() {
         <Route path="/connect4" element={<Connect4Page />} />
         <Route path="/checkers" element={<CheckersPage />} />
         <Route path="/battleship" element={<BattleshipPage />} />
+        <Route path="/wordle" element={<WordlePage />} />
+        <Route path="/sudoku" element={<SudokuPage />} />
+        <Route path="/space-invaders" element={<SpaceInvadersPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </PasswordGate>

@@ -1,0 +1,201 @@
+.wordle-page {
+  min-height: 100vh;
+  background: #121213;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  user-select: none;
+}
+
+.wordle-topbar {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  align-items: center;
+  padding: 1rem 1rem 0.5rem;
+  border-bottom: 1px solid #3a3a3c;
+  margin-bottom: 0.5rem;
+}
+
+.wordle-back {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 0;
+  min-width: 60px;
+}
+.wordle-back:hover { color: #fff; }
+
+.wordle-title {
+  flex: 1;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.wordle-topbar-right {
+  min-width: 60px;
+  text-align: right;
+}
+
+.wordle-date {
+  font-size: 0.75rem;
+  color: #818384;
+}
+
+.wordle-message {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  color: #000;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  z-index: 100;
+  pointer-events: none;
+  animation: fadeInOut 0.2s ease;
+}
+
+.wordle-board {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0.5rem;
+  flex: 1;
+  justify-content: center;
+}
+
+.wordle-row {
+  display: flex;
+  gap: 6px;
+}
+
+.wordle-shake {
+  animation: shake 0.5s ease;
+}
+
+.wordle-tile {
+  width: 62px;
+  height: 62px;
+  border: 2px solid #3a3a3c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  box-sizing: border-box;
+  transition: border-color 0.05s;
+}
+
+.wordle-tile--filled {
+  border-color: #565758;
+  animation: pop 0.1s ease;
+}
+
+.wordle-tile--reveal {
+  animation: flipReveal 0.5s ease forwards;
+}
+
+.wordle-tile--correct  { background: #538d4e; border-color: #538d4e; color: #fff; }
+.wordle-tile--present  { background: #b59f3b; border-color: #b59f3b; color: #fff; }
+.wordle-tile--absent   { background: #3a3a3c; border-color: #3a3a3c; color: #fff; }
+
+.wordle-result {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.wordle-result-won  { color: #538d4e; font-weight: 800; font-size: 1.1rem; }
+.wordle-result-lost { font-size: 0.95rem; }
+
+.wordle-replay-btn {
+  background: #538d4e;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.wordle-replay-btn:hover { background: #6aaf64; }
+
+.wordle-keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 0.5rem 1.5rem;
+  width: 100%;
+  max-width: 500px;
+}
+
+.wordle-kb-row {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.wordle-key {
+  height: 58px;
+  min-width: 43px;
+  border-radius: 4px;
+  border: none;
+  background: #818384;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  flex: 1;
+  max-width: 43px;
+}
+
+.wordle-key--wide { min-width: 65px; max-width: 65px; font-size: 0.75rem; }
+
+.wordle-key--correct { background: #538d4e; }
+.wordle-key--present { background: #b59f3b; }
+.wordle-key--absent  { background: #3a3a3c; }
+.wordle-key--unused  { background: #818384; }
+.wordle-key:active   { opacity: 0.7; }
+
+@keyframes pop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%     { transform: translateX(-6px); }
+  40%     { transform: translateX(6px); }
+  60%     { transform: translateX(-6px); }
+  80%     { transform: translateX(6px); }
+}
+
+@keyframes flipReveal {
+  0%   { transform: rotateX(0deg); }
+  50%  { transform: rotateX(-90deg); }
+  50.1%{ transform: rotateX(-90deg); }
+  100% { transform: rotateX(0deg); }
+}
+
+@media (max-width: 400px) {
+  .wordle-tile { width: 52px; height: 52px; font-size: 1.6rem; }
+  .wordle-key  { min-width: 32px; max-width: 32px; height: 50px; font-size: 0.75rem; }
+  .wordle-key--wide { min-width: 52px; max-width: 52px; }
+}

@@ -1,0 +1,126 @@
+.si-page {
+  min-height: 100vh;
+  background: #000;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'Courier New', monospace;
+}
+
+.si-topbar {
+  width: 100%;
+  max-width: 580px;
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #2ecc71;
+  margin-bottom: 0.5rem;
+}
+
+.si-back {
+  background: none; border: none; color: #aaa;
+  font-size: 0.9rem; font-weight: 700; cursor: pointer; min-width: 70px;
+  font-family: inherit;
+}
+.si-back:hover { color: #fff; }
+
+.si-title {
+  flex: 1; text-align: center;
+  font-size: 1.1rem; font-weight: 800; letter-spacing: 3px;
+  color: #2ecc71; text-transform: uppercase;
+}
+
+.si-best {
+  min-width: 70px; text-align: right;
+  font-size: 0.75rem; color: #ffd700; letter-spacing: 1px;
+}
+
+.si-canvas-wrap {
+  position: relative;
+  border: 1px solid rgba(46,204,113,0.3);
+}
+
+.si-canvas {
+  display: block;
+  width: min(560px, 100vw);
+  aspect-ratio: 560 / 640;
+}
+
+.si-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.si-overlay-title {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: #2ecc71;
+  text-transform: uppercase;
+  text-shadow: 0 0 20px currentColor;
+}
+
+.si-overlay-score {
+  font-size: 1rem;
+  color: #fff;
+  letter-spacing: 2px;
+}
+
+.si-overlay-hint {
+  font-size: 0.8rem;
+  color: #888;
+  letter-spacing: 1px;
+  text-align: center;
+  padding: 0 1rem;
+}
+
+.si-start-btn {
+  background: #2ecc71;
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  padding: 12px 32px;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  cursor: pointer;
+  font-family: inherit;
+  text-transform: uppercase;
+  margin-top: 0.5rem;
+}
+.si-start-btn:hover { background: #27ae60; }
+
+.si-touch-controls {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-bottom: 1.5rem;
+}
+
+.si-touch-btn {
+  width: 80px;
+  height: 70px;
+  background: rgba(46,204,113,0.15);
+  border: 2px solid rgba(46,204,113,0.4);
+  border-radius: 12px;
+  color: #2ecc71;
+  font-size: 1.4rem;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.si-touch-btn:active { background: rgba(46,204,113,0.35); }
+.si-fire-btn { width: 100px; border-color: rgba(255,215,0,0.5); color: #ffd700; }
+.si-fire-btn:active { background: rgba(255,215,0,0.2); }
+
+@media (min-width: 700px) {
+  .si-touch-controls { display: none; }
+}
