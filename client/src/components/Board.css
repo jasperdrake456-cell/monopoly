@@ -23,6 +23,12 @@
   position: relative;
 }
 
+/* ── Grid cell wrapper ──────────────────────────────────────────────────── */
+.board-cell {
+  width: 100%;
+  height: 100%;
+}
+
 /* ── Base tile ─────────────────────────────────────────────────────────── */
 .tile {
   background: #fdf9f0;
@@ -37,6 +43,9 @@
   text-align: center;
   color: #111;
   cursor: default;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
 }
 .tile:hover { z-index: 5; box-shadow: inset 0 0 0 2px #555; }
 .tile--highlighted {
