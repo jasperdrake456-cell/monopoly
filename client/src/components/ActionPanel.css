@@ -6,8 +6,8 @@
   border-radius: 12px;
   border: 1px solid rgba(255,255,255,0.1);
   flex-shrink: 0;
-  /* max height so it never pushes the log off screen */
-  max-height: calc(100vh - 220px);
+  /* cap height so dashboard is still visible below */
+  max-height: 55vh;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,.15) transparent;

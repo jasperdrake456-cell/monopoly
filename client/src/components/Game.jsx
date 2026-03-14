@@ -76,9 +76,15 @@ export default function Game({ roomState, myId, roomCode, emit }) {
         </div>
       )}
 
-      {/* Left sidebar — Action Panel */}
+      {/* Left sidebar — Action Panel + Dashboard */}
       <aside className="game-sidebar left">
         <ActionPanel
+          gameState={gameState}
+          myId={myId}
+          roomCode={roomCode}
+          emit={emit}
+        />
+        <Dashboard
           gameState={gameState}
           myId={myId}
           roomCode={roomCode}
@@ -102,16 +108,6 @@ export default function Game({ roomState, myId, roomCode, emit }) {
         </div>
         <Board gameState={gameState} myId={myId} />
       </main>
-
-      {/* Right sidebar — Dashboard (my info + properties) */}
-      <aside className="game-sidebar right">
-        <Dashboard
-          gameState={gameState}
-          myId={myId}
-          roomCode={roomCode}
-          emit={emit}
-        />
-      </aside>
     </div>
   );
 }
