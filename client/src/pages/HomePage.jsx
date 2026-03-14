@@ -1,0 +1,64 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import './HomePage.css';
+
+const SOLO_GAMES = [
+  { path: '/2048', name: '2048', desc: 'Slide tiles to reach 2048', icon: '🔢', players: '1 player' },
+  { path: '/snake', name: 'Snake', desc: 'Eat food, grow longer, survive', icon: '🐍', players: '1 player' },
+  { path: '/minesweeper', name: 'Minesweeper', desc: 'Clear the minefield without exploding', icon: '💣', players: '1 player' },
+  { path: '/tetris', name: 'Tetris', desc: 'Clear lines before blocks reach the top', icon: '🧱', players: '1 player' },
+];
+
+const MULTI_GAMES = [
+  { path: '/chess', name: 'Chess', desc: 'Classic strategy board game', icon: '♟️', players: '2 players' },
+  { path: '/connect4', name: 'Connect 4', desc: 'Drop discs to get 4 in a row', icon: '🟡', players: '2 players' },
+  { path: '/checkers', name: 'Checkers', desc: 'Jump and capture all enemy pieces', icon: '⬛', players: '2 players' },
+  { path: '/battleship', name: 'Battleship', desc: 'Sink the enemy fleet', icon: '🚢', players: '2 players' },
+  { path: '/monopoly', name: 'Monopoly', desc: 'Buy properties, build houses, bankrupt opponents', icon: '🎩', players: '2-6 players' },
+];
+
+export default function HomePage() {
+  return (
+    <div className="home">
+      <header className="home-header">
+        <div className="home-logo">🎮 Game Hub</div>
+      </header>
+
+      <main className="home-main">
+        <section className="home-section">
+          <h2 className="home-section-title">Solo Games</h2>
+          <div className="home-grid">
+            {SOLO_GAMES.map(g => (
+              <Link key={g.path} to={g.path} className="game-card">
+                <div className="game-card-icon">{g.icon}</div>
+                <div className="game-card-body">
+                  <div className="game-card-name">{g.name}</div>
+                  <div className="game-card-desc">{g.desc}</div>
+                  <div className="game-card-players">{g.players}</div>
+                </div>
+                <div className="game-card-play">Play</div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="home-section">
+          <h2 className="home-section-title">Multiplayer Games</h2>
+          <div className="home-grid">
+            {MULTI_GAMES.map(g => (
+              <Link key={g.path} to={g.path} className="game-card">
+                <div className="game-card-icon">{g.icon}</div>
+                <div className="game-card-body">
+                  <div className="game-card-name">{g.name}</div>
+                  <div className="game-card-desc">{g.desc}</div>
+                  <div className="game-card-players">{g.players}</div>
+                </div>
+                <div className="game-card-play game-card-play--multi">Play</div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}

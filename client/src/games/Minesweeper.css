@@ -1,0 +1,149 @@
+.ms-page {
+  min-height: 100vh;
+  background: #c0c0c0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  user-select: none;
+}
+
+.ms-topbar {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  max-width: 700px;
+  margin-bottom: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.ms-back {
+  background: none;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: #333;
+  padding: 4px 0;
+}
+.ms-back:hover { color: #000; }
+
+.ms-title {
+  flex: 1;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #111;
+}
+
+.ms-diff-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.ms-diff-btn {
+  background: #d0d0d0;
+  border: 2px solid #aaa;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ms-diff-btn.active, .ms-diff-btn:hover {
+  background: #aaa;
+  border-color: #888;
+}
+
+.ms-hud {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #bbb;
+  border: 3px outset #999;
+  padding: 6px 16px;
+  margin-bottom: 0.5rem;
+  border-radius: 4px;
+  font-size: 1.2rem;
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  color: #c00;
+}
+
+.ms-hud-item { min-width: 60px; }
+
+.ms-reset {
+  font-size: 1.4rem;
+  background: #c0c0c0;
+  border: 2px outset #999;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 2px 6px;
+  line-height: 1;
+}
+.ms-reset:active { border-style: inset; }
+
+.ms-banner {
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.ms-banner--won  { background: #4caf50; color: #fff; }
+.ms-banner--lost { background: #e53935; color: #fff; }
+
+.ms-replay-btn {
+  background: rgba(255,255,255,0.25);
+  border: 1px solid rgba(255,255,255,0.5);
+  color: #fff;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ms-replay-btn:hover { background: rgba(255,255,255,0.4); }
+
+.ms-board-wrap {
+  overflow: auto;
+  max-width: 100%;
+}
+
+.ms-board {
+  display: grid;
+  gap: 0;
+  border: 3px inset #999;
+}
+
+.ms-cell {
+  width: 28px;
+  height: 28px;
+  border: 2px outset #bbb;
+  background: #c0c0c0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.ms-cell:hover { background: #ccc; }
+.ms-cell:active { border-style: inset; }
+
+.ms-cell--revealed {
+  border: 1px solid #aaa;
+  background: #d0d0d0;
+  cursor: default;
+  font-size: 0.8rem;
+}
+.ms-cell--mine    { background: #d0d0d0; }
+.ms-cell--exploded { background: #ff4444 !important; }
+
+@media (max-width: 500px) {
+  .ms-cell { width: 22px; height: 22px; font-size: 0.7rem; }
+}

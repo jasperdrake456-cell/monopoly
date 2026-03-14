@@ -1,103 +1,34 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useSocket } from './hooks/useSocket';
-import Lobby from './components/Lobby';
-import Game from './components/Game';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import PasswordGate from './components/PasswordGate';
+import HomePage from './pages/HomePage';
+import MonopolyPage from './pages/MonopolyPage';
+import Game2048Page from './pages/Game2048Page';
+import SnakePage from './pages/SnakePage';
+import MinesweeperPage from './pages/MinesweeperPage';
+import TetrisPage from './pages/TetrisPage';
+import ChessPage from './pages/ChessPage';
+import Connect4Page from './pages/Connect4Page';
+import CheckersPage from './pages/CheckersPage';
+import BattleshipPage from './pages/BattleshipPage';
 import './App.css';
 
-const SESSION_KEY = 'monopoly_session';
-
 export default function App() {
-  const { emit, on, off, connected } = useSocket();
-  const [roomState, setRoomState] = useState(null);
-  const [myId, setMyId]           = useState(null);
-  const [sessionId, setSessionId] = useState(null);
-  const [errorMsg, setErrorMsg]   = useState('');
-  const [toast, setToast]         = useState('');
-
-  // Attempt reconnect from saved session
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
-    if (saved && connected) {
-      emit('reconnect', { roomCode: saved.roomCode, sessionId: saved.sessionId });
-    }
-  }, [connected]);
-
-  // Socket listeners
-  useEffect(() => {
-    const offRoomCreated = on('roomCreated', ({ roomCode, playerId, sessionId: sid }) => {
-      setMyId(playerId);
-      setSessionId(sid);
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ roomCode, sessionId: sid }));
-    });
-
-    const offRoomJoined = on('roomJoined', ({ playerId, sessionId: sid }) => {
-      setMyId(playerId);
-      setSessionId(sid);
-    });
-
-    const offReconnected = on('reconnected', ({ playerId }) => {
-      setMyId(playerId);
-      const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
-      if (saved) setSessionId(saved.sessionId);
-    });
-
-    const offGameState = on('gameState', (state) => {
-      setRoomState(state);
-      // Update stored roomCode
-      if (state.roomCode && sessionId) {
-        localStorage.setItem(SESSION_KEY, JSON.stringify({ roomCode: state.roomCode, sessionId }));
-      }
-    });
-
-    const offError = on('error', ({ message }) => {
-      setErrorMsg(message);
-      setTimeout(() => setErrorMsg(''), 4000);
-    });
-
-    return () => {
-      offRoomCreated();
-      offRoomJoined();
-      offReconnected();
-      offGameState();
-      offError();
-    };
-  }, [on, sessionId]);
-
-  const handleEmit = useCallback((event, data) => {
-    setErrorMsg('');
-    emit(event, data);
-  }, [emit]);
-
-  // Determine view
-  const inGame = roomState?.status === 'playing' || roomState?.status === 'ended';
-
   return (
-    <div className="app">
-      {/* Connection status */}
-      {!connected && (
-        <div className="conn-banner">Connecting to server…</div>
-      )}
-
-      {/* Error toast */}
-      {errorMsg && (
-        <div className="error-toast">{errorMsg}</div>
-      )}
-
-      {inGame ? (
-        <Game
-          roomState={roomState}
-          myId={myId}
-          roomCode={roomState.roomCode}
-          emit={handleEmit}
-        />
-      ) : (
-        <Lobby
-          roomState={roomState}
-          myId={myId}
-          emit={handleEmit}
-          sessionId={sessionId}
-        />
-      )}
-    </div>
+    <PasswordGate>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/monopoly" element={<MonopolyPage />} />
+        <Route path="/2048" element={<Game2048Page />} />
+        <Route path="/snake" element={<SnakePage />} />
+        <Route path="/minesweeper" element={<MinesweeperPage />} />
+        <Route path="/tetris" element={<TetrisPage />} />
+        <Route path="/chess" element={<ChessPage />} />
+        <Route path="/connect4" element={<Connect4Page />} />
+        <Route path="/checkers" element={<CheckersPage />} />
+        <Route path="/battleship" element={<BattleshipPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </PasswordGate>
   );
 }

@@ -1,0 +1,191 @@
+.chess-page {
+  min-height: 100vh;
+  background: #1a1a2e;
+  color: #eee;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.chess-loading { color: #888; padding: 2rem; }
+
+.chess-topbar {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  max-width: 520px;
+  margin-bottom: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.chess-back {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.chess-back:hover { color: #fff; }
+
+.chess-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.chess-players {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.chess-vs { color: #666; }
+
+.chess-status {
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.95rem;
+}
+.chess-status--win  { background: #4caf50; color: #fff; }
+.chess-status--lose { background: #e74c3c; color: #fff; }
+.chess-status--info { background: rgba(255,200,0,0.2); color: #ffd700; border: 1px solid rgba(255,200,0,0.3); }
+
+.chess-replay-btn {
+  background: rgba(255,255,255,0.25);
+  border: 1px solid rgba(255,255,255,0.4);
+  color: #fff;
+  border-radius: 5px;
+  padding: 3px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.chess-turn {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin-bottom: 0.6rem;
+}
+
+.chess-board-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.chess-ranks {
+  display: none; /* simplified — could add later */
+}
+.chess-files {
+  display: none;
+}
+
+.chess-board {
+  display: grid;
+  grid-template-columns: repeat(8, 58px);
+  grid-template-rows: repeat(8, 58px);
+  border: 3px solid #333;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+.chess-sq {
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+}
+.chess-sq--light { background: #f0d9b5; }
+.chess-sq--dark  { background: #b58863; }
+.chess-sq--selected { background: #7fc97f !important; }
+.chess-sq--last  { background: rgba(255, 215, 0, 0.4) !important; }
+.chess-sq--check { background: rgba(255, 0, 0, 0.5) !important; }
+
+.chess-legal-dot {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.18);
+  pointer-events: none;
+  z-index: 1;
+}
+.chess-legal-dot--capture {
+  width: 100%;
+  height: 100%;
+  background: none;
+  border-radius: 50%;
+  border: 4px solid rgba(0,0,0,0.18);
+}
+
+.chess-piece {
+  font-size: 2.3rem;
+  line-height: 1;
+  position: relative;
+  z-index: 2;
+  user-select: none;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.chess-piece--w { color: #fff; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.5)); }
+.chess-piece--b { color: #1a1a1a; filter: drop-shadow(0 1px 1px rgba(255,255,255,0.2)); }
+
+/* Promotion overlay */
+.chess-promo-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+.chess-promo-box {
+  background: #2a2a3e;
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.chess-promo-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ddd;
+}
+.chess-promo-choices {
+  display: flex;
+  gap: 0.5rem;
+}
+.chess-promo-btn {
+  font-size: 2.5rem;
+  background: #3a3a5e;
+  border: 2px solid #555;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 8px;
+  line-height: 1;
+  transition: background 0.15s;
+}
+.chess-promo-btn:hover { background: #4a4a7e; }
+
+@media (max-width: 500px) {
+  .chess-board { grid-template-columns: repeat(8, 42px); grid-template-rows: repeat(8, 42px); }
+  .chess-sq { width: 42px; height: 42px; }
+  .chess-piece { font-size: 1.7rem; }
+}
