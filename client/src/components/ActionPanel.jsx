@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import Dice from './Dice';
-import { BOARD, TOKENS, TOKEN_COLORS } from '../boardData';
+import { BOARD, GROUP_COLORS, TOKENS, TOKEN_COLORS } from '../boardData';
 import './ActionPanel.css';
+
+// Dice faces as text
+const DICE_FACE = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
 export default function ActionPanel({ gameState, myId, roomCode, emit }) {
   const { players, currentPlayerIndex, turnPhase, lastDice, activeTrade } = gameState;
@@ -12,32 +14,38 @@ export default function ActionPanel({ gameState, myId, roomCode, emit }) {
 
   if (!myPlayer || myPlayer.bankrupt) return (
     <div className="action-panel">
-      <div className="ap-status">You are bankrupt.</div>
+      <div className="ap-inner">
+        <div className="ap-status">💀 You are bankrupt.</div>
+      </div>
     </div>
   );
 
   function handleRoll() {
     setRolling(true);
     emit('rollDice', { roomCode });
-    setTimeout(() => setRolling(false), 800);
+    setTimeout(() => setRolling(false), 700);
   }
 
   const currentSpaceName = BOARD[myPlayer.position]?.name || '';
+  const currentSpace = BOARD[myPlayer.position];
+  const spaceColor = currentSpace?.group ? GROUP_COLORS[currentSpace.group] : null;
 
-  // ── Trade response ────────────────────────────────────────────────────────
+  // ── Trade response ──────────────────────────────────────────────────────
   if (activeTrade && activeTrade.toId === myId) {
     const from = players.find(p => p.id === activeTrade.fromId);
     return (
       <div className="action-panel">
-        <div className="ap-header">🤝 Trade Offer from {from?.name}</div>
-        <TradeOfferDisplay trade={activeTrade} players={players} />
-        <div className="ap-row">
-          <button className="ap-btn primary" onClick={() => emit('respondTrade', { roomCode, accepted: true })}>
-            Accept
-          </button>
-          <button className="ap-btn danger" onClick={() => emit('respondTrade', { roomCode, accepted: false })}>
-            Reject
-          </button>
+        <div className="ap-inner">
+          <div className="ap-header">🤝 Trade Offer from {from?.name}</div>
+          <TradeOfferDisplay trade={activeTrade} players={players} />
+          <div className="ap-row">
+            <button className="ap-btn primary" onClick={() => emit('respondTrade', { roomCode, accepted: true })}>
+              ✓ Accept
+            </button>
+            <button className="ap-btn danger" onClick={() => emit('respondTrade', { roomCode, accepted: false })}>
+              ✗ Reject
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -47,93 +55,124 @@ export default function ActionPanel({ gameState, myId, roomCode, emit }) {
     const to = players.find(p => p.id === activeTrade.toId);
     return (
       <div className="action-panel">
-        <div className="ap-header">🤝 Waiting for {to?.name} to respond...</div>
-        <button className="ap-btn secondary" onClick={() => emit('cancelTrade', { roomCode })}>
-          Cancel Trade
-        </button>
+        <div className="ap-inner">
+          <div className="ap-header">🤝 Waiting for {to?.name}…</div>
+          <button className="ap-btn secondary" onClick={() => emit('cancelTrade', { roomCode })}>
+            Cancel Trade
+          </button>
+        </div>
       </div>
     );
   }
 
-  // ── Not my turn ───────────────────────────────────────────────────────────
+  // ── Not my turn ─────────────────────────────────────────────────────────
   if (!isMyTurn) {
+    const isDoubles = lastDice && lastDice[0] === lastDice[1];
     return (
       <div className="action-panel">
-        <div className="ap-turn-indicator">
-          <span className="ap-token" style={{ color: TOKEN_COLORS[currentPlayer?.token] }}>
-            {TOKENS[currentPlayer?.token]}
-          </span>
-          <span>{currentPlayer?.name}'s turn</span>
+        <div className="ap-inner">
+          <div className="ap-turn-indicator">
+            <span className="ap-token" style={{ color: TOKEN_COLORS[currentPlayer?.token] }}>
+              {TOKENS[currentPlayer?.token]}
+            </span>
+            <span>{currentPlayer?.name}'s turn</span>
+          </div>
+          {lastDice && (
+            <>
+              <div className="dice-row">
+                <div className="die">{DICE_FACE[lastDice[0]]}</div>
+                <div className="die">{DICE_FACE[lastDice[1]]}</div>
+              </div>
+              <div className="dice-label">Total: {lastDice[0] + lastDice[1]}</div>
+              {isDoubles && <div className="dice-doubles">🎯 Doubles!</div>}
+            </>
+          )}
+          <div className="ap-status">Waiting…</div>
         </div>
-        {lastDice && (
-          <Dice dice={lastDice} rolling={false} />
-        )}
-        <div className="ap-status">Waiting...</div>
       </div>
     );
   }
 
-  // ── My turn ───────────────────────────────────────────────────────────────
+  // ── My turn ─────────────────────────────────────────────────────────────
+  const isDoubles = lastDice && lastDice[0] === lastDice[1];
   return (
     <div className="action-panel">
-      <div className="ap-header">Your Turn</div>
-      <div className="ap-position">
-        📍 {currentSpaceName}
-        {myPlayer.jailTurns > 0 && <span className="jail-indicator"> 🔒 In Jail (turn {myPlayer.jailTurns}/3)</span>}
-      </div>
+      <div className="ap-inner">
+        <div className="ap-header">⚡ Your Turn</div>
 
-      {lastDice && <Dice dice={lastDice} rolling={rolling} />}
-
-      {/* Roll phase */}
-      {turnPhase === 'roll' && (
-        <div className="ap-actions">
+        <div className="ap-position">
+          {spaceColor && <span className="ap-pos-dot" style={{ background: spaceColor }} />}
+          📍 {currentSpaceName}
           {myPlayer.jailTurns > 0 && (
-            <>
-              <button className="ap-btn secondary" onClick={() => emit('payJailFine', { roomCode })} disabled={myPlayer.cash < 50}>
-                Pay $50 Fine
-              </button>
-              {myPlayer.getOutOfJailCards > 0 && (
-                <button className="ap-btn secondary" onClick={() => emit('useJailCard', { roomCode })}>
-                  Use Jail Card 🃏
-                </button>
-              )}
-            </>
+            <span className="jail-indicator">🔒 Jail ({myPlayer.jailTurns}/3)</span>
           )}
-          <button className="ap-btn primary large" onClick={handleRoll}>
-            🎲 Roll Dice
-          </button>
         </div>
-      )}
 
-      {/* Buy decision */}
-      {turnPhase === 'buy_decision' && (
-        <BuyDecision gameState={gameState} myId={myId} roomCode={roomCode} emit={emit} />
-      )}
+        {lastDice && (
+          <>
+            <div className="dice-row">
+              <div className={`die ${rolling ? 'rolling' : ''}`}>{DICE_FACE[lastDice[0]]}</div>
+              <div className={`die ${rolling ? 'rolling' : ''}`}>{DICE_FACE[lastDice[1]]}</div>
+            </div>
+            <div className="dice-label">Total: {lastDice[0] + lastDice[1]}</div>
+            {isDoubles && <div className="dice-doubles">🎯 Doubles — roll again!</div>}
+          </>
+        )}
 
-      {/* Card action */}
-      {turnPhase === 'card_action' && gameState.activeCard && (
-        <div className="ap-card">
-          <div className={`card-deck-label ${gameState.activeCard.deck}`}>
-            {gameState.activeCard.deck === 'chance' ? '❓ Chance' : '🎁 Community Chest'}
+        {/* Roll phase */}
+        {turnPhase === 'roll' && (
+          <div className="ap-actions">
+            {myPlayer.jailTurns > 0 && (
+              <>
+                <button className="ap-btn secondary"
+                  onClick={() => emit('payJailFine', { roomCode })}
+                  disabled={myPlayer.cash < 50}>
+                  💸 Pay $50 Fine
+                </button>
+                {myPlayer.getOutOfJailCards > 0 && (
+                  <button className="ap-btn secondary" onClick={() => emit('useJailCard', { roomCode })}>
+                    🃏 Use Jail Card
+                  </button>
+                )}
+              </>
+            )}
+            <button className="ap-btn primary large" onClick={handleRoll} disabled={rolling}>
+              🎲 {rolling ? 'Rolling…' : 'Roll Dice'}
+            </button>
           </div>
-          <div className="card-text">{gameState.activeCard.cardData?.text}</div>
-          <button className="ap-btn primary" onClick={() => emit('resolveCard', { roomCode })}>
-            OK
-          </button>
-        </div>
-      )}
+        )}
 
-      {/* End turn */}
-      {turnPhase === 'end' && (
-        <div className="ap-actions">
-          <button className="ap-btn primary" onClick={() => emit('endTurn', { roomCode })}>
-            End Turn ➡️
-          </button>
-          <button className="ap-btn danger" onClick={() => emit('declareBankruptcy', { roomCode })}>
-            Declare Bankruptcy
-          </button>
-        </div>
-      )}
+        {/* Buy decision */}
+        {turnPhase === 'buy_decision' && (
+          <BuyDecision gameState={gameState} myId={myId} roomCode={roomCode} emit={emit} />
+        )}
+
+        {/* Card action */}
+        {turnPhase === 'card_action' && gameState.activeCard && (
+          <div className="ap-card">
+            <div className={`card-deck-label ${gameState.activeCard.deck}`}>
+              {gameState.activeCard.deck === 'chance' ? '❓ Chance' : '🎁 Community Chest'}
+            </div>
+            <div className="card-text">{gameState.activeCard.cardData?.text}</div>
+            <button className="ap-btn primary" onClick={() => emit('resolveCard', { roomCode })}>
+              OK
+            </button>
+          </div>
+        )}
+
+        {/* End turn */}
+        {turnPhase === 'end' && (
+          <div className="ap-actions">
+            <button className="ap-btn primary large" onClick={() => emit('endTurn', { roomCode })}>
+              End Turn ➡️
+            </button>
+            <button className="ap-btn danger"
+              onClick={() => { if (window.confirm('Declare bankruptcy? This cannot be undone.')) emit('declareBankruptcy', { roomCode }); }}>
+              Declare Bankruptcy
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -141,18 +180,24 @@ export default function ActionPanel({ gameState, myId, roomCode, emit }) {
 function BuyDecision({ gameState, myId, roomCode, emit }) {
   const player = gameState.players.find(p => p.id === myId);
   const space = BOARD[player.position];
+  const color = space.group ? GROUP_COLORS[space.group] : null;
+  const canAfford = player.cash >= space.price;
 
   return (
     <div className="buy-decision">
+      {color && <div className="buy-color-bar" style={{ background: color }} />}
       <div className="buy-space-name">{space.name}</div>
       <div className="buy-price">Price: <strong>${space.price}</strong></div>
-      <div className="buy-cash">You have: <strong>${player.cash}</strong></div>
+      <div className="buy-cash">Your cash: <strong style={{ color: canAfford ? '#FFD700' : '#e74c3c' }}>${player.cash.toLocaleString()}</strong></div>
+      {space.rent && (
+        <div className="buy-rent-table">
+          <div>Rent: <strong>${space.rent[0]}</strong></div>
+          {space.rent[1] && <div>With monopoly: <strong>${space.rent[1]}</strong></div>}
+          {space.rent[2] && <div>1 house: <strong>${space.rent[2]}</strong> · 2: <strong>${space.rent[3]}</strong></div>}
+        </div>
+      )}
       <div className="ap-row">
-        <button
-          className="ap-btn primary"
-          onClick={() => emit('buyProperty', { roomCode })}
-          disabled={player.cash < space.price}
-        >
+        <button className="ap-btn primary" onClick={() => emit('buyProperty', { roomCode })} disabled={!canAfford}>
           Buy ${space.price}
         </button>
         <button className="ap-btn secondary" onClick={() => emit('passProperty', { roomCode })}>
@@ -165,8 +210,7 @@ function BuyDecision({ gameState, myId, roomCode, emit }) {
 
 function TradeOfferDisplay({ trade, players }) {
   const from = players.find(p => p.id === trade.fromId);
-  const to = players.find(p => p.id === trade.toId);
-
+  const to   = players.find(p => p.id === trade.toId);
   return (
     <div className="trade-display">
       <div className="trade-side">
