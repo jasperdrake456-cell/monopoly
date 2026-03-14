@@ -80,20 +80,6 @@ export default function Dashboard({ gameState, myId, roomCode, emit }) {
         </div>
       </div>
 
-      {/* Other players summary */}
-      <div className="other-players">
-        {allPlayers.filter(p => p.id !== myId).map(p => (
-          <div key={p.id} className={`other-player ${p.bankrupt ? 'bankrupt' : ''}`}
-               style={{ borderLeftColor: TOKEN_COLORS[p.token] }}>
-            <span className="op-token" style={{ color: TOKEN_COLORS[p.token] }}>{TOKENS[p.token]}</span>
-            <span className="op-name">{p.name}</span>
-            <span className="op-cash">${p.cash.toLocaleString()}</span>
-            <span className="op-props">{p.properties.length} props</span>
-            {p.bankrupt && <span className="bankrupt-tag">💀</span>}
-          </div>
-        ))}
-      </div>
-
       {/* My Properties — scrollable section */}
       <div className="my-properties">
         <h3>My Properties</h3>

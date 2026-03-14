@@ -10,6 +10,7 @@ import './Game.css';
 export default function Game({ roomState, myId, roomCode, emit }) {
   const { gameState, players: lobbyPlayers } = roomState;
   const [showTradeModal, setShowTradeModal] = useState(false);
+  const [showLog, setShowLog] = useState(false);
 
   if (!gameState) return <div className="game-loading">Loading game…</div>;
 
@@ -62,9 +63,22 @@ export default function Game({ roomState, myId, roomCode, emit }) {
         />
       )}
 
-      {/* Left sidebar — Dashboard */}
+      {/* Log overlay */}
+      {showLog && (
+        <div className="log-overlay" onClick={() => setShowLog(false)}>
+          <div className="log-overlay-panel" onClick={e => e.stopPropagation()}>
+            <div className="log-overlay-header">
+              <span>📜 Game Log</span>
+              <button className="log-close-btn" onClick={() => setShowLog(false)}>✕</button>
+            </div>
+            <EventLog log={gameState.log} />
+          </div>
+        </div>
+      )}
+
+      {/* Left sidebar — Action Panel */}
       <aside className="game-sidebar left">
-        <Dashboard
+        <ActionPanel
           gameState={gameState}
           myId={myId}
           roomCode={roomCode}
@@ -81,6 +95,7 @@ export default function Game({ roomState, myId, roomCode, emit }) {
               🤝 Trade
             </button>
           )}
+          <button className="log-btn" onClick={() => setShowLog(true)}>📜 Log</button>
           <span className={`turn-badge ${isMyTurn ? 'my-turn' : ''}`}>
             {isMyTurn ? '⚡ Your Turn' : `${gameState.players[gameState.currentPlayerIndex]?.name}'s Turn`}
           </span>
@@ -88,17 +103,14 @@ export default function Game({ roomState, myId, roomCode, emit }) {
         <Board gameState={gameState} myId={myId} />
       </main>
 
-      {/* Right sidebar — Action Panel + Log */}
+      {/* Right sidebar — Dashboard (my info + properties) */}
       <aside className="game-sidebar right">
-        <ActionPanel
+        <Dashboard
           gameState={gameState}
           myId={myId}
           roomCode={roomCode}
           emit={emit}
         />
-        <div className="log-wrap">
-          <EventLog log={gameState.log} />
-        </div>
       </aside>
     </div>
   );
