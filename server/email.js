@@ -17,7 +17,7 @@ async function sendPasswordEmail(newPassword) {
   const appUrl = process.env.APP_URL || '';
   const from = process.env.EMAIL_FROM || 'Game Hub <onboarding@resend.dev>';
 
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from,
     to: to.split(',').map(e => e.trim()),
     subject: `🎮 Game Hub — Today's Password`,
@@ -43,6 +43,7 @@ async function sendPasswordEmail(newPassword) {
     `,
   });
 
+  if (error) throw new Error(error.message);
   console.log(`[email] Password email sent to ${to}`);
 }
 
