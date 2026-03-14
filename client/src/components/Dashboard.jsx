@@ -76,7 +76,7 @@ export default function Dashboard({ gameState, myId, roomCode, emit }) {
         </div>
         <div className="my-cash-col">
           <span className="my-cash">${myPlayer.cash.toLocaleString()}</span>
-          <span className="my-worth">Net: ${myNetWorth.toLocaleString()}</span>
+          <span className="my-worth">Worth: ${myNetWorth.toLocaleString()}</span>
         </div>
       </div>
 
@@ -107,8 +107,10 @@ export default function Dashboard({ gameState, myId, roomCode, emit }) {
   );
 }
 
+const TYPE_COLORS = { railroad: '#2c3e50', utility: '#546e7a' };
+
 function PropertyCard({ space, ps, onMortgage, onBuild, onSell, gameState, myId }) {
-  const color = space.group ? GROUP_COLORS[space.group] : '#999';
+  const color = space.group ? GROUP_COLORS[space.group] : (TYPE_COLORS[space.type] || '#999');
   const houseCost = space.houseCost || 0;
   const myPlayer = gameState.players.find(p => p.id === myId);
   const houseCount = ps?.houses || 0;
@@ -151,10 +153,14 @@ function PropertyCard({ space, ps, onMortgage, onBuild, onSell, gameState, myId 
             <button className="prop-btn sell" onClick={onSell} title={`Sell ($${Math.floor(houseCost/2)})`}>-🏠</button>
           )}
           {canMortgage && (
-            <button className="prop-btn mortgage" onClick={onMortgage} title={`Mortgage ($${space.mortgageValue})`}>M</button>
+            <button className="prop-btn mortgage" onClick={onMortgage}
+              title={`Mortgage for $${space.mortgageValue}`}
+              aria-label={`Mortgage ${space.name} for $${space.mortgageValue}`}>Mtg</button>
           )}
           {canUnmortgage && (
-            <button className="prop-btn unmortgage" onClick={onMortgage} title={`Unmortgage ($${Math.floor((space.mortgageValue||0)*1.1)})`}>UM</button>
+            <button className="prop-btn unmortgage" onClick={onMortgage}
+              title={`Unmortgage for $${Math.floor((space.mortgageValue||0)*1.1)}`}
+              aria-label={`Unmortgage ${space.name} for $${Math.floor((space.mortgageValue||0)*1.1)}`}>UM</button>
           )}
         </div>
       </div>

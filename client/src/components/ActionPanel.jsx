@@ -76,6 +76,8 @@ export default function ActionPanel({ gameState, myId, roomCode, emit }) {
 
   // ── Not my turn ─────────────────────────────────────────────────────────
   if (!isMyTurn) {
+    const curSpace = BOARD[currentPlayer?.position];
+    const curSpaceColor = curSpace?.group ? GROUP_COLORS[curSpace.group] : null;
     return (
       <div className="action-panel">
         <div className="ap-inner">
@@ -84,6 +86,27 @@ export default function ActionPanel({ gameState, myId, roomCode, emit }) {
               {TOKENS[currentPlayer?.token]}
             </span>
             <span>{currentPlayer?.name}'s turn</span>
+          </div>
+          {/* Opponent info */}
+          <div className="ap-opponent-info">
+            <div className="ap-opp-row">
+              <span className="ap-opp-label">Cash</span>
+              <span className="ap-opp-val" style={{ color: '#FFD700' }}>${currentPlayer?.cash?.toLocaleString() ?? '—'}</span>
+            </div>
+            <div className="ap-opp-row">
+              <span className="ap-opp-label">Properties</span>
+              <span className="ap-opp-val">{currentPlayer?.properties?.length ?? 0}</span>
+            </div>
+            <div className="ap-opp-row">
+              <span className="ap-opp-label">On</span>
+              <span className="ap-opp-val" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                {curSpaceColor && <span style={{ width: 8, height: 8, borderRadius: '50%', background: curSpaceColor, display: 'inline-block', flexShrink: 0 }} />}
+                {curSpace?.name ?? '—'}
+              </span>
+            </div>
+            {currentPlayer?.jailTurns > 0 && (
+              <div className="ap-opp-row"><span className="ap-opp-val" style={{ color: '#e74c3c' }}>🔒 In Jail (turn {currentPlayer.jailTurns}/3)</span></div>
+            )}
           </div>
           {lastDice && (
             <>
@@ -183,10 +206,10 @@ export default function ActionPanel({ gameState, myId, roomCode, emit }) {
           <div className="ap-actions">
             <button className="ap-btn primary large" disabled={acting}
               onClick={() => act('endTurn', { roomCode })}>
-              {doublesCount > 0 ? '🎲 Roll Again (Doubles!)' : 'End Turn ➡️'}
+              {doublesCount > 0 ? 'Continue → Roll Again 🎲' : 'End Turn ➡️'}
             </button>
-            <button className="ap-btn danger" disabled={acting}
-              onClick={() => { if (window.confirm('Declare bankruptcy? This ends your game.')) act('declareBankruptcy', { roomCode }); }}>
+            <button className="ap-btn danger-subtle" disabled={acting}
+              onClick={() => { if (window.confirm('Declare bankruptcy? This permanently ends your game.')) act('declareBankruptcy', { roomCode }); }}>
               Declare Bankruptcy
             </button>
           </div>

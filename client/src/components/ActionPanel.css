@@ -97,10 +97,12 @@
 .ap-btn:active:not(:disabled) { transform: translateY(0); }
 .ap-btn:disabled { opacity: .4; cursor: not-allowed; }
 
-.ap-btn.primary   { background: #FFD700; color: #1a3a1a; }
-.ap-btn.secondary { background: rgba(255,255,255,.13); color: #fff; border: 1px solid rgba(255,255,255,.22); }
-.ap-btn.danger    { background: #c0392b; color: #fff; }
-.ap-btn.large     { padding: 10px 10px; font-size: .9rem; }
+.ap-btn.primary      { background: #FFD700; color: #1a3a1a; }
+.ap-btn.secondary    { background: rgba(255,255,255,.13); color: #fff; border: 1px solid rgba(255,255,255,.22); }
+.ap-btn.danger       { background: #c0392b; color: #fff; }
+.ap-btn.danger-subtle{ background: transparent; border: 1px solid rgba(192,57,43,.45); color: rgba(220,100,90,.85); font-size: .72rem; padding: 5px 8px; }
+.ap-btn.danger-subtle:hover:not(:disabled) { background: rgba(192,57,43,.15); filter: none; transform: none; }
+.ap-btn.large        { padding: 10px 10px; font-size: .9rem; }
 
 /* ── Buy decision card ─────────────────────────────────────────────────── */
 .buy-decision {
@@ -130,8 +132,8 @@
   font-size: .65rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: .8px; padding: 2px 8px; border-radius: 4px; width: fit-content;
 }
-.card-deck-label.chance     { background: #d35400; color: #fff; }
-.card-deck-label.community { background: #2471a3; color: #fff; }
+.card-deck-label.chance          { background: #d35400; color: #fff; }
+.card-deck-label.community_chest { background: #2471a3; color: #fff; }
 .card-text { font-size: .82rem; line-height: 1.55; }
 
 /* ── Trade display ─────────────────────────────────────────────────────── */
@@ -164,6 +166,25 @@
 @keyframes dieRoll { 0%,100%{transform:rotate(-8deg)} 50%{transform:rotate(8deg)} }
 .dice-label { font-size:.7rem; color:rgba(255,255,255,.6); margin-top:2px; text-align:center; }
 .dice-doubles { font-size:.7rem; color:#FFD700; font-weight:700; text-align:center; }
+
+/* ── Opponent info (waiting state) ─────────────────────────────────────── */
+.ap-opponent-info {
+  background: rgba(255,255,255,.06);
+  border-radius: 8px;
+  padding: 6px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ap-opp-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: .73rem;
+  gap: 6px;
+}
+.ap-opp-label { color: rgba(255,255,255,.45); flex-shrink: 0; }
+.ap-opp-val   { color: rgba(255,255,255,.88); font-weight: 600; text-align: right; font-size: .72rem; }
 
 /* ── Doubles banner ─────────────────────────────────────────────────────── */
 .ap-doubles-banner {

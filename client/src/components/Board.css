@@ -124,8 +124,9 @@
   font-weight: 700;
   font-size: 0.56rem;
   line-height: 1.15;
-  word-break: break-word;
-  hyphens: auto;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: none;
   padding: 2px 2px 0;
   flex: 1;
   display: flex;
@@ -264,7 +265,7 @@
   position: absolute; top: 50%; left: 4px;
   transform: translateY(-50%) rotate(270deg);
   transform-origin: center;
-  font-size:.4rem; font-weight:700; color:#666;
+  font-size:.52rem; font-weight:700; color:#555;
   letter-spacing:.5px; text-transform:uppercase; white-space:nowrap;
 }
 .jail-box {

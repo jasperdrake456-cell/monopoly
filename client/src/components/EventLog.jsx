@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import './EventLog.css';
 
-export default function EventLog({ log }) {
+export default function EventLog({ log, hideHeader }) {
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -10,7 +10,7 @@ export default function EventLog({ log }) {
 
   return (
     <div className="event-log">
-      <div className="log-header">📜 Game Log</div>
+      {!hideHeader && <div className="log-header">📜 Game Log</div>}
       <div className="log-entries">
         {log.map((entry, i) => (
           <div key={i} className="log-entry">

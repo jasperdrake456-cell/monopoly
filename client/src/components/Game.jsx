@@ -71,7 +71,7 @@ export default function Game({ roomState, myId, roomCode, emit }) {
               <span>📜 Game Log</span>
               <button className="log-close-btn" onClick={() => setShowLog(false)}>✕</button>
             </div>
-            <EventLog log={gameState.log} />
+            <EventLog log={gameState.log} hideHeader />
           </div>
         </div>
       )}
