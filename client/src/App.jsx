@@ -15,6 +15,11 @@ import WordlePage from './pages/WordlePage';
 import SudokuPage from './pages/SudokuPage';
 import SpaceInvadersPage from './pages/SpaceInvadersPage';
 import TriviaPage from './pages/TriviaPage';
+import FlappyBirdPage from './pages/FlappyBirdPage';
+import MemoryMatchPage from './pages/MemoryMatchPage';
+import PongPage from './pages/PongPage';
+import TicTacToePage from './pages/TicTacToePage';
+import TypingSpeedPage from './pages/TypingSpeedPage';
 import './App.css';
 
 export default function App() {
@@ -35,6 +40,11 @@ export default function App() {
         <Route path="/sudoku" element={<SudokuPage />} />
         <Route path="/space-invaders" element={<SpaceInvadersPage />} />
         <Route path="/trivia" element={<TriviaPage />} />
+        <Route path="/flappy-bird" element={<FlappyBirdPage />} />
+        <Route path="/memory-match" element={<MemoryMatchPage />} />
+        <Route path="/pong" element={<PongPage />} />
+        <Route path="/tic-tac-toe" element={<TicTacToePage />} />
+        <Route path="/typing-speed" element={<TypingSpeedPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </PasswordGate>

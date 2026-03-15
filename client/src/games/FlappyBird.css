@@ -1,0 +1,34 @@
+.flappy-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: #0d1117;
+  user-select: none;
+}
+
+.flappy-canvas {
+  border: 2px solid #30363d;
+  border-radius: 8px;
+  cursor: pointer;
+  display: block;
+}
+
+.flappy-ui {
+  margin-top: 16px;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.flappy-score {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #e6edf3;
+}
+
+.flappy-best {
+  font-size: 1rem;
+  color: #8b949e;
+}

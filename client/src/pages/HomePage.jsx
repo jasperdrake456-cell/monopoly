@@ -10,6 +10,9 @@ const SOLO_GAMES = [
   { path: '/wordle', name: 'Wordle', desc: 'Guess the 5-letter word in 6 tries', icon: '🟩', players: '1 player' },
   { path: '/sudoku', name: 'Sudoku', desc: 'Fill the grid — 4 difficulty levels, notes & hints', icon: '🔲', players: '1 player' },
   { path: '/space-invaders', name: 'Space Invaders', desc: 'Defend Earth from waves of alien attackers', icon: '👾', players: '1 player' },
+  { path: '/flappy-bird', name: 'Flappy Bird', desc: 'Tap to flap through the pipes', icon: '🐦', players: '1 player' },
+  { path: '/memory-match', name: 'Memory Match', desc: 'Flip cards and find all matching pairs', icon: '🃏', players: '1 player' },
+  { path: '/typing-speed', name: 'Typing Speed', desc: 'Race to type the passage — track your WPM', icon: '⌨️', players: '1 player' },
 ];
 
 const MULTI_GAMES = [
@@ -18,6 +21,8 @@ const MULTI_GAMES = [
   { path: '/checkers', name: 'Checkers', desc: 'Jump and capture all enemy pieces', icon: '⬛', players: '2 players' },
   { path: '/battleship', name: 'Battleship', desc: 'Sink the enemy fleet', icon: '🚢', players: '2 players' },
   { path: '/monopoly', name: 'Monopoly', desc: 'Buy properties, build houses, bankrupt opponents', icon: '🎩', players: '2-6 players' },
+  { path: '/pong', name: 'Pong', desc: 'Classic paddle battle — first to 7 wins', icon: '🏓', players: '2 players' },
+  { path: '/tic-tac-toe', name: 'Tic-Tac-Toe', desc: 'Get 3 in a row to win', icon: '❌', players: '2 players' },
 ];
 
 export default function HomePage() {
