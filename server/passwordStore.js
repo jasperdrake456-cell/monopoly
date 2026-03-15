@@ -1,30 +1,12 @@
 'use strict';
 
-const fs   = require('fs');
-const path = require('path');
+const crypto = require('crypto');
 
-// Persist password to a file so it survives server restarts within the same deploy.
-// On Railway, /tmp is writable. Falls back to the project root for local dev.
-const PERSIST_FILE = process.env.PASSWORD_FILE || path.join('/tmp', 'game_password.json');
+// Password is derived deterministically from the current UTC date + PASSWORD_SECRET.
+// This means it's always consistent across any number of redeploys or server restarts
+// — no storage needed. Set PASSWORD_SECRET in Railway env vars once and forget it.
 
-function readPersistedPassword() {
-  try {
-    const data = JSON.parse(fs.readFileSync(PERSIST_FILE, 'utf8'));
-    if (data && data.password) return data.password;
-  } catch {}
-  return null;
-}
-
-function persistPassword(pw) {
-  try {
-    fs.writeFileSync(PERSIST_FILE, JSON.stringify({ password: pw }), 'utf8');
-  } catch (e) {
-    console.error('[passwordStore] Failed to write persist file:', e.message);
-  }
-}
-
-// Priority: persisted file → GAME_PASSWORD env var → default
-let currentPassword = readPersistedPassword() || process.env.GAME_PASSWORD || 'MrMoney';
+const SECRET = process.env.PASSWORD_SECRET || 'gamehub-default-secret';
 
 const ADJECTIVES = [
   'Swift','Bold','Bright','Cool','Dark','Fast','Gold','Hot','Jade','Keen',
@@ -37,20 +19,26 @@ const NOUNS = [
   'Crane','Drake','Falcon','Gecko','Heron','Jaguar','Koala','Manta','Otter','Panda',
 ];
 
-function generatePassword() {
-  const adj  = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
-  const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
-  const num  = String(Math.floor(Math.random() * 90) + 10); // 10–99
+function computePassword(dateKey) {
+  const buf = crypto.createHmac('sha256', SECRET).update(dateKey).digest();
+  const adj  = ADJECTIVES[buf[0] % ADJECTIVES.length];
+  const noun = NOUNS[buf[1] % NOUNS.length];
+  const num  = 10 + (buf[2] % 90);
   return adj + noun + num;
 }
 
-function getPassword() {
-  return currentPassword;
+function getDateKey() {
+  const d = new Date();
+  return `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
 }
 
-function setPassword(pw) {
-  currentPassword = pw;
-  persistPassword(pw);
+function getPassword() {
+  return computePassword(getDateKey());
 }
+
+// generatePassword() still works the same way — returns today's password.
+// setPassword() is a no-op since the password is derived, not stored.
+function generatePassword() { return getPassword(); }
+function setPassword() {}
 
 module.exports = { getPassword, setPassword, generatePassword };
