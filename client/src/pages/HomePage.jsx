@@ -25,24 +25,12 @@ export default function HomePage() {
     <div className="home">
       <header className="home-header">
         <div className="home-logo">🎮 Game Hub</div>
+        <Link to="/claude" className="home-claude-btn">
+          <span className="home-claude-icon">✦</span> Claude AI
+        </Link>
       </header>
 
       <main className="home-main">
-        <section className="home-section">
-          <h2 className="home-section-title">AI Assistant</h2>
-          <div className="home-grid">
-            <Link to="/claude" className="game-card game-card--claude">
-              <div className="game-card-icon">✦</div>
-              <div className="game-card-body">
-                <div className="game-card-name">Claude AI</div>
-                <div className="game-card-desc">Powered by Claude Opus — ask anything, get instant answers</div>
-                <div className="game-card-players">AI chat</div>
-              </div>
-              <div className="game-card-play game-card-play--claude">Chat</div>
-            </Link>
-          </div>
-        </section>
-
         <section className="home-section">
           <h2 className="home-section-title">Solo Games</h2>
           <div className="home-grid">
