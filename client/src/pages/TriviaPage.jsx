@@ -128,16 +128,16 @@ export default function TriviaPage() {
   const savedScore = alreadyDone ? parseInt(localStorage.getItem('trivia_score') || '0') : null;
 
   const [qIndex, setQIndex] = useState(0);
-  const [selected, setSelected] = useState(null); // index of chosen answer
-  const [score, setScore] = useState(0);
+  const [selected, setSelected] = useState(null);
   const [done, setDone] = useState(alreadyDone);
   const [finalScore, setFinalScore] = useState(savedScore);
+  const scoreRef = React.useRef(0);
 
   function handleAnswer(i) {
     if (selected !== null) return;
     setSelected(i);
     if (i === questions[qIndex].correct) {
-      setScore(s => s + 1);
+      scoreRef.current += 1;
     }
   }
 
@@ -146,10 +146,10 @@ export default function TriviaPage() {
       setQIndex(q => q + 1);
       setSelected(null);
     } else {
-      const newScore = score + (selected === questions[qIndex].correct ? 1 : 0);
+      const s = scoreRef.current;
       localStorage.setItem('trivia_date', today);
-      localStorage.setItem('trivia_score', String(newScore));
-      setFinalScore(newScore);
+      localStorage.setItem('trivia_score', String(s));
+      setFinalScore(s);
       setDone(true);
     }
   }
