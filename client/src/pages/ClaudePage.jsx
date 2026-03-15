@@ -102,7 +102,7 @@ export default function ClaudePage() {
         <button className="cl-back" onClick={() => navigate('/')}>← Back</button>
         <div className="cl-title">
           <span className="cl-title-icon">✦</span>
-          Claude AI
+          Gemini AI
         </div>
         <button
           className="cl-clear"
@@ -117,8 +117,8 @@ export default function ClaudePage() {
         {messages.length === 0 && (
           <div className="cl-empty">
             <div className="cl-empty-icon">✦</div>
-            <h2>Claude AI</h2>
-            <p>Powered by Claude Opus. Ask me anything.</p>
+            <h2>Gemini AI</h2>
+            <p>Powered by Gemini. Ask me anything.</p>
           </div>
         )}
 
@@ -149,7 +149,7 @@ export default function ClaudePage() {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Message Claude… (Enter to send, Shift+Enter for newline)"
+            placeholder="Message Gemini… (Enter to send, Shift+Enter for newline)"
             rows={1}
             disabled={streaming}
           />
@@ -162,7 +162,7 @@ export default function ClaudePage() {
             ↑
           </button>
         </div>
-        <p className="cl-hint">Claude can make mistakes. Verify important info.</p>
+        <p className="cl-hint">Gemini can make mistakes. Verify important info.</p>
       </div>
     </div>
   );

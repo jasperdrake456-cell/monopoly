@@ -4,7 +4,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const path = require('path');
-const Anthropic = require('@anthropic-ai/sdk').default;
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const { getPassword, setPassword, generatePassword } = require('./passwordStore');
 const { sendPasswordEmail } = require('./email');
@@ -73,11 +73,11 @@ app.post('/api/rotate-password', async (req, res) => {
   }
 });
 
-// ── Claude AI API ─────────────────────────────────────────────────────────────
+// ── Gemini AI API ─────────────────────────────────────────────────────────────
 
 app.post('/api/claude', async (req, res) => {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured' });
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY not configured' });
 
   const { messages } = req.body || {};
   if (!Array.isArray(messages) || messages.length === 0) {
@@ -90,18 +90,25 @@ app.post('/api/claude', async (req, res) => {
   res.flushHeaders();
 
   try {
-    const client = new Anthropic({ apiKey });
-    const stream = client.messages.stream({
-      model: 'claude-opus-4-6',
-      max_tokens: 4096,
-      system: 'You are a helpful AI assistant built into a game hub. Be friendly, concise, and helpful.',
-      messages,
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      systemInstruction: 'You are a helpful AI assistant built into a game hub. Be friendly, concise, and helpful.',
     });
 
-    for await (const event of stream) {
-      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-        res.write(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`);
-      }
+    // Convert history (all but last message) to Gemini format
+    const history = messages.slice(0, -1).map(msg => ({
+      role: msg.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: msg.content }],
+    }));
+    const lastMessage = messages[messages.length - 1];
+
+    const chat = model.startChat({ history });
+    const result = await chat.sendMessageStream(lastMessage.content);
+
+    for await (const chunk of result.stream) {
+      const text = chunk.text();
+      if (text) res.write(`data: ${JSON.stringify({ text })}\n\n`);
     }
     res.write('data: [DONE]\n\n');
   } catch (err) {
