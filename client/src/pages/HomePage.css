@@ -11,6 +11,26 @@
   padding: 1rem 2rem;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+}
+
+.home-trivia-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(124, 58, 237, 0.15);
+  border: 1px solid rgba(192, 132, 252, 0.3);
+  color: #c084fc;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.4rem 1rem;
+  border-radius: 8px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.home-trivia-btn:hover {
+  background: rgba(124, 58, 237, 0.28);
+  border-color: rgba(192, 132, 252, 0.6);
 }
 
 .home-logo {
