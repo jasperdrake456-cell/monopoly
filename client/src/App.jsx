@@ -14,6 +14,7 @@ import BattleshipPage from './pages/BattleshipPage';
 import WordlePage from './pages/WordlePage';
 import SudokuPage from './pages/SudokuPage';
 import SpaceInvadersPage from './pages/SpaceInvadersPage';
+import ClaudePage from './pages/ClaudePage';
 import './App.css';
 
 export default function App() {
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/wordle" element={<WordlePage />} />
         <Route path="/sudoku" element={<SudokuPage />} />
         <Route path="/space-invaders" element={<SpaceInvadersPage />} />
+        <Route path="/claude" element={<ClaudePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </PasswordGate>

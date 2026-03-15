@@ -1,0 +1,262 @@
+.cl-page {
+  min-height: 100vh;
+  background: #0a0a0a;
+  color: #e8e8e8;
+  display: flex;
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Header */
+.cl-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid #1e1e1e;
+  background: #0a0a0a;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.cl-back {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 70px;
+  text-align: left;
+}
+.cl-back:hover { color: #e8e8e8; }
+
+.cl-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e8e8e8;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cl-title-icon {
+  color: #c084fc;
+  font-size: 0.85rem;
+}
+
+.cl-clear {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 0.85rem;
+  cursor: pointer;
+  min-width: 70px;
+  text-align: right;
+}
+.cl-clear:hover { color: #e8e8e8; }
+
+/* Messages area */
+.cl-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Empty state */
+.cl-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4rem 1rem;
+  color: #555;
+  gap: 0.5rem;
+}
+.cl-empty-icon {
+  font-size: 2.5rem;
+  color: #c084fc;
+  margin-bottom: 0.5rem;
+}
+.cl-empty h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #888;
+  margin: 0;
+}
+.cl-empty p {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Message rows */
+.cl-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.cl-row--user {
+  flex-direction: row-reverse;
+}
+
+.cl-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #1a1a2e;
+  border: 1px solid #3a3a5c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: #c084fc;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Bubbles */
+.cl-bubble {
+  max-width: min(640px, 80%);
+  padding: 0.7rem 1rem;
+  border-radius: 16px;
+  line-height: 1.6;
+  font-size: 0.925rem;
+}
+
+.cl-bubble--user {
+  background: #2d1f5e;
+  border: 1px solid #4a3890;
+  border-bottom-right-radius: 4px;
+  color: #e8e8e8;
+}
+
+.cl-bubble--assistant {
+  background: #161616;
+  border: 1px solid #262626;
+  border-bottom-left-radius: 4px;
+  color: #e8e8e8;
+}
+
+.cl-bubble--error {
+  background: #2a1010;
+  border-color: #5a2020;
+  color: #f87171;
+}
+
+/* Text content */
+.cl-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Typing dots */
+.cl-typing {
+  display: flex;
+  gap: 4px;
+  padding: 2px 0;
+}
+.cl-typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #888;
+  animation: cl-dot 1.2s infinite;
+}
+.cl-typing span:nth-child(2) { animation-delay: 0.2s; }
+.cl-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes cl-dot {
+  0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
+  30% { opacity: 1; transform: scale(1); }
+}
+
+/* Input area */
+.cl-input-wrap {
+  padding: 0.75rem 1rem 0.5rem;
+  background: #0a0a0a;
+  border-top: 1px solid #1e1e1e;
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+  align-self: center;
+  width: 100%;
+}
+
+.cl-input-box {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  background: #141414;
+  border: 1px solid #2a2a2a;
+  border-radius: 14px;
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+  transition: border-color 0.15s;
+}
+.cl-input-box:focus-within {
+  border-color: #5a3fa0;
+}
+
+.cl-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: #e8e8e8;
+  font-size: 0.925rem;
+  font-family: inherit;
+  line-height: 1.5;
+  resize: none;
+  max-height: 160px;
+  overflow-y: auto;
+}
+.cl-input::placeholder { color: #555; }
+.cl-input:disabled { opacity: 0.5; }
+
+.cl-send {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #7c3aed;
+  border: none;
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.cl-send:hover:not(:disabled) { background: #6d28d9; }
+.cl-send:disabled { background: #2a2a2a; color: #555; cursor: default; }
+
+.cl-hint {
+  text-align: center;
+  font-size: 0.72rem;
+  color: #404040;
+  margin: 0.4rem 0 0;
+}
+
+/* Wide layout */
+@media (min-width: 700px) {
+  .cl-messages {
+    padding: 2rem 1.5rem 1.5rem;
+  }
+  .cl-input-wrap {
+    padding: 1rem 1.5rem 0.75rem;
+    max-width: 860px;
+  }
+  .cl-messages {
+    max-width: 860px;
+  }
+}

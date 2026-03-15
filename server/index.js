@@ -4,6 +4,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const path = require('path');
+const Anthropic = require('@anthropic-ai/sdk').default;
 
 const { getPassword, setPassword, generatePassword } = require('./passwordStore');
 const { sendPasswordEmail } = require('./email');
@@ -70,6 +71,43 @@ app.post('/api/rotate-password', async (req, res) => {
     console.error('[rotate] Email failed:', err.message);
     res.status(500).json({ ok: false, error: 'Email failed', password: newPassword });
   }
+});
+
+// ── Claude AI API ─────────────────────────────────────────────────────────────
+
+app.post('/api/claude', async (req, res) => {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured' });
+
+  const { messages } = req.body || {};
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return res.status(400).json({ error: 'messages array required' });
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  try {
+    const client = new Anthropic({ apiKey });
+    const stream = client.messages.stream({
+      model: 'claude-opus-4-6',
+      max_tokens: 4096,
+      system: 'You are a helpful AI assistant built into a game hub. Be friendly, concise, and helpful.',
+      messages,
+    });
+
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+        res.write(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`);
+      }
+    }
+    res.write('data: [DONE]\n\n');
+  } catch (err) {
+    res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+  }
+  res.end();
 });
 
 // ── Static client ─────────────────────────────────────────────────────────────
