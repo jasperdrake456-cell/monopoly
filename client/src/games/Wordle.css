@@ -68,9 +68,13 @@
 .wordle-tile--reveal {
   animation: tileFlip 500ms ease forwards;
 }
-.wordle-tile--correct  { background: #538d4e; border-color: #538d4e; color: #fff; }
-.wordle-tile--present  { background: #b59f3b; border-color: #b59f3b; color: #fff; }
-.wordle-tile--absent   { background: #3a3a3c; border-color: #3a3a3c; color: #fff; }
+.wordle-tile--correct  { --tile-bg: #538d4e; --tile-border: #538d4e; color: #fff; }
+.wordle-tile--present  { --tile-bg: #b59f3b; --tile-border: #b59f3b; color: #fff; }
+.wordle-tile--absent   { --tile-bg: #3a3a3c; --tile-border: #3a3a3c; color: #fff; }
+/* Non-animated already-revealed tiles still get the bg */
+.wordle-tile--correct:not(.wordle-tile--reveal)  { background: #538d4e; border-color: #538d4e; }
+.wordle-tile--present:not(.wordle-tile--reveal)  { background: #b59f3b; border-color: #b59f3b; }
+.wordle-tile--absent:not(.wordle-tile--reveal)   { background: #3a3a3c; border-color: #3a3a3c; }
 .wordle-tile--bounce   { animation: tileBounce 1s ease forwards; }
 
 /* ── Row animations ── */
@@ -160,10 +164,10 @@
   100% { transform: scale(1); }
 }
 @keyframes tileFlip {
-  0%   { transform: rotateX(0deg); }
-  45%  { transform: rotateX(-90deg); }
-  55%  { transform: rotateX(-90deg); }
-  100% { transform: rotateX(0deg); }
+  0%   { transform: rotateX(0deg);   background: #121213; border-color: #3a3a3c; }
+  45%  { transform: rotateX(-90deg); background: #121213; border-color: #3a3a3c; }
+  55%  { transform: rotateX(-90deg); background: var(--tile-bg, #3a3a3c); border-color: var(--tile-border, #3a3a3c); }
+  100% { transform: rotateX(0deg);   background: var(--tile-bg, #3a3a3c); border-color: var(--tile-border, #3a3a3c); }
 }
 @keyframes tileBounce {
   0%,20%  { transform: translateY(0); }

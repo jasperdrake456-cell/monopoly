@@ -352,7 +352,7 @@ export default function SpaceInvaders({ onBack }) {
 
     // Check: aliens reach bottom
     for (const a of aliveAliens) {
-      if (a.y + st.alienOffsetX > PLAYER_Y - 20) {
+      if (a.y > PLAYER_Y - 20) {
         st.lives = 0; st.gamePhase = 'gameover';
         setDisplay(d => ({ ...d, lives: 0, phase: 'gameover' }));
         break;
