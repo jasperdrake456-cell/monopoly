@@ -68,13 +68,10 @@
 .wordle-tile--reveal {
   animation: tileFlip 500ms ease forwards;
 }
-.wordle-tile--correct  { --tile-bg: #538d4e; --tile-border: #538d4e; color: #fff; }
-.wordle-tile--present  { --tile-bg: #b59f3b; --tile-border: #b59f3b; color: #fff; }
-.wordle-tile--absent   { --tile-bg: #3a3a3c; --tile-border: #3a3a3c; color: #fff; }
-/* Non-animated already-revealed tiles still get the bg */
-.wordle-tile--correct:not(.wordle-tile--reveal)  { background: #538d4e; border-color: #538d4e; }
-.wordle-tile--present:not(.wordle-tile--reveal)  { background: #b59f3b; border-color: #b59f3b; }
-.wordle-tile--absent:not(.wordle-tile--reveal)   { background: #3a3a3c; border-color: #3a3a3c; }
+/* Static backgrounds always set — animation overrides at 0-44%, then restores at 55-100% */
+.wordle-tile--correct  { --tile-bg: #538d4e; --tile-border: #538d4e; background: #538d4e; border-color: #538d4e; color: #fff; }
+.wordle-tile--present  { --tile-bg: #b59f3b; --tile-border: #b59f3b; background: #b59f3b; border-color: #b59f3b; color: #fff; }
+.wordle-tile--absent   { --tile-bg: #3a3a3c; --tile-border: #3a3a3c; background: #3a3a3c; border-color: #3a3a3c; color: #fff; }
 .wordle-tile--bounce   { animation: tileBounce 1s ease forwards; }
 
 /* ── Row animations ── */
