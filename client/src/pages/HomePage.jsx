@@ -25,9 +25,6 @@ export default function HomePage() {
     <div className="home">
       <header className="home-header">
         <div className="home-logo">🎮 Game Hub</div>
-        <Link to="/claude" className="home-claude-btn">
-          <span className="home-claude-icon">✦</span> Gemini AI
-        </Link>
       </header>
 
       <main className="home-main">

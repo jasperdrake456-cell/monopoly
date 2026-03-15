@@ -4,8 +4,6 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const path = require('path');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-
 const { getPassword, setPassword, generatePassword } = require('./passwordStore');
 const { sendPasswordEmail } = require('./email');
 
@@ -71,50 +69,6 @@ app.post('/api/rotate-password', async (req, res) => {
     console.error('[rotate] Email failed:', err.message);
     res.status(500).json({ ok: false, error: 'Email failed', password: newPassword });
   }
-});
-
-// ── Gemini AI API ─────────────────────────────────────────────────────────────
-
-app.post('/api/claude', async (req, res) => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY not configured' });
-
-  const { messages } = req.body || {};
-  if (!Array.isArray(messages) || messages.length === 0) {
-    return res.status(400).json({ error: 'messages array required' });
-  }
-
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders();
-
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      systemInstruction: 'You are a helpful AI assistant built into a game hub. Be friendly, concise, and helpful.',
-    });
-
-    // Convert history (all but last message) to Gemini format
-    const history = messages.slice(0, -1).map(msg => ({
-      role: msg.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: msg.content }],
-    }));
-    const lastMessage = messages[messages.length - 1];
-
-    const chat = model.startChat({ history });
-    const result = await chat.sendMessageStream(lastMessage.content);
-
-    for await (const chunk of result.stream) {
-      const text = chunk.text();
-      if (text) res.write(`data: ${JSON.stringify({ text })}\n\n`);
-    }
-    res.write('data: [DONE]\n\n');
-  } catch (err) {
-    res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
-  }
-  res.end();
 });
 
 // ── Static client ─────────────────────────────────────────────────────────────
