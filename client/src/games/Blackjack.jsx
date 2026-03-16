@@ -102,8 +102,6 @@ export default function Blackjack() {
   const [phase, setPhase]         = useState('betting'); // betting | playing | dealer | result
   const [dealer, setDealer]       = useState([]);
   const [player, setPlayer]       = useState([]);
-  const [splits, setSplits]       = useState([]); // array of extra hands from splits
-  const [splitIdx, setSplitIdx]   = useState(0);  // which split hand is active
   const [doubled, setDoubled]     = useState(false);
   const [result, setResult]       = useState(null); // { msg, net }
   const [dealAnim, setDealAnim]   = useState(false);
@@ -146,8 +144,6 @@ export default function Blackjack() {
     const dHand = [d1, d2];
     setPlayer(pHand);
     setDealer(dHand);
-    setSplits([]);
-    setSplitIdx(0);
     setDoubled(false);
     setResult(null);
     setDealAnim(true);
@@ -173,30 +169,17 @@ export default function Blackjack() {
     }
   }
 
-  function activeHand() {
-    if (splits.length > 0 && splitIdx < splits.length) return splits[splitIdx];
-    return player;
-  }
-
-  function setActiveHand(hand) {
-    if (splits.length > 0 && splitIdx < splits.length) {
-      setSplits(sp => { const n=[...sp]; n[splitIdx]=hand; return n; });
-    } else {
-      setPlayer(hand);
-    }
-  }
-
   function hit() {
     const card = getCard();
-    const newHand = [...activeHand(), card];
-    setActiveHand(newHand);
+    const newHand = [...player, card];
+    setPlayer(newHand);
     if (isBust(newHand)) {
-      advanceOrDealer(newHand, true);
+      runDealer(newHand, true);
     }
   }
 
   function stand() {
-    advanceOrDealer(activeHand(), false);
+    runDealer(player, false);
   }
 
   function doubleDown() {
@@ -205,47 +188,9 @@ export default function Blackjack() {
     syncBalance();
     setDoubled(true);
     const card = getCard();
-    const newHand = [...activeHand(), card];
-    setActiveHand(newHand);
-    advanceOrDealer(newHand, false);
-  }
-
-  function canSplit() {
-    const h = activeHand();
-    return h.length === 2 && cardValue(h[0].rank) === cardValue(h[1].rank) && getBalance() >= bet && splits.length === 0;
-  }
-
-  function splitHand() {
-    if (!canSplit()) return;
-    subtractBalance(bet);
-    syncBalance();
-    const [c1, c2] = player;
-    const h1 = [c1, getCard()];
-    const h2 = [c2, getCard()];
-    setPlayer(h1);
-    setSplits([h2]);
-    setSplitIdx(0);
-  }
-
-  function advanceOrDealer(finishedHand, busted) {
-    // If there are split hands to play
-    if (splits.length > 0) {
-      const nextIdx = splitIdx + (splits[splitIdx] !== undefined ? 0 : 0);
-      // We've been playing player hand first, then splits
-      if (splits[splitIdx] !== undefined && activeHand() === splits[splitIdx]) {
-        // Just finished a split hand
-        const ni = splitIdx + 1;
-        if (ni < splits.length) {
-          setSplitIdx(ni);
-          return;
-        }
-      } else {
-        // Finished the main player hand — move to first split
-        setSplitIdx(0);
-        return;
-      }
-    }
-    runDealer(finishedHand, busted);
+    const newHand = [...player, card];
+    setPlayer(newHand);
+    runDealer(newHand, false);
   }
 
   function runDealer(lastPlayerHand, busted) {
@@ -268,55 +213,42 @@ export default function Blackjack() {
   }
 
   function resolveResult(pHand, pBust, dHand) {
-    const allHands = splits.length > 0 ? [pHand, ...splits] : [pHand];
-    let totalNet = 0;
-    const msgs = [];
+    const thisBet = doubled ? bet * 2 : bet;
+    const pTotal  = handTotal(pHand);
+    const dTotal  = handTotal(dHand);
+    const dBust   = isBust(dHand);
+    let net = 0;
+    let msg = '';
 
-    const dTotal = handTotal(dHand);
-    const dBust  = isBust(dHand);
-
-    allHands.forEach((hand, idx) => {
-      const pTotal = handTotal(hand);
-      const thisBet = idx === 0 && doubled ? bet * 2 : bet;
-      const label = allHands.length > 1 ? ` (Hand ${idx+1})` : '';
-
-      if (pBust && idx === 0) {
-        // Bust — bet already gone
-        msgs.push(`💥 Bust${label}`);
-        totalNet -= thisBet;
-      } else if (isBust(hand)) {
-        msgs.push(`💥 Bust${label}`);
-        totalNet -= thisBet;
-      } else if (dBust || pTotal > dTotal) {
-        // Win pays 2:1 — return original bet + 2× profit
-        addBalance(thisBet * 3);
-        syncBalance();
-        msgs.push(`✅ Win${label}`);
-        totalNet += thisBet * 2;
-      } else if (pTotal === dTotal) {
-        // Push — return original bet
-        addBalance(thisBet);
-        syncBalance();
-        msgs.push(`🤝 Push${label}`);
-        totalNet += 0;
-      } else {
-        // Lose — bet already gone
-        msgs.push(`❌ Lose${label}`);
-        totalNet -= thisBet;
-      }
-    });
+    if (pBust) {
+      net = -thisBet;
+      msg = '💥 Bust!';
+    } else if (dBust || pTotal > dTotal) {
+      addBalance(thisBet * 3); // return bet + 2× profit
+      syncBalance();
+      net = thisBet * 2;
+      msg = '✅ You Win!';
+    } else if (pTotal === dTotal) {
+      addBalance(thisBet); // push — return bet
+      syncBalance();
+      net = 0;
+      msg = '🤝 Push';
+    } else {
+      net = -thisBet;
+      msg = '❌ Dealer Wins';
+    }
 
     syncBalance();
-    setResult({ msg: msgs.join(' · '), net: totalNet });
+    setResult({ msg, net });
     setPhase('result');
   }
 
-  const pTotal  = handTotal(player);
-  const dTotal  = handTotal(dealer);
-  const pSoft   = isSoft(player);
+  const pTotal   = handTotal(player);
+  const dTotal   = handTotal(dealer);
+  const pSoft    = isSoft(player);
   const balance_ = getBalance();
   const quickBets = [5, 10, 25, 50, 100, 250].filter(v => v <= balance_);
-  const canDouble  = phase === 'playing' && player.length === 2 && balance_ >= bet;
+  const canDouble = phase === 'playing' && player.length === 2 && balance_ >= bet;
   const inPlay = phase === 'playing';
 
   return (
@@ -336,18 +268,8 @@ export default function Blackjack() {
 
       {/* Player hand */}
       {phase !== 'betting' && (
-        <Hand
-          cards={player}
-          label={splits.length > 0 ? 'Your Hand' : 'You'}
-          total={pTotal}
-          soft={pSoft}
-        />
+        <Hand cards={player} label="You" total={pTotal} soft={pSoft} />
       )}
-
-      {/* Split hands */}
-      {splits.map((h, i) => (
-        <Hand key={i} cards={h} label={`Split ${i+1}`} total={handTotal(h)} />
-      ))}
 
       {/* Result */}
       {result && (
@@ -403,13 +325,10 @@ export default function Blackjack() {
           {canDouble && (
             <button className="bj-btn bj-btn--double" onClick={doubleDown}>Double</button>
           )}
-          {canSplit() && (
-            <button className="bj-btn bj-btn--split" onClick={splitHand}>Split</button>
-          )}
         </div>
       )}
 
-      <div className="bj-hint">Dealer hits soft 16 • Blackjack pays 3:2 • {NUM_DECKS}-deck shoe</div>
+      <div className="bj-hint">Dealer hits soft 17 • Blackjack pays 3:1 • {NUM_DECKS}-deck shoe</div>
     </div>
   );
 }

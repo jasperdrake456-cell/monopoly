@@ -1,0 +1,203 @@
+.plinko-table {
+  min-height: 100vh;
+  background: radial-gradient(ellipse at top, #0d0a1f 0%, #050510 100%);
+  color: #e0e0e0;
+  font-family: 'Roboto', system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px 40px;
+  gap: 14px;
+}
+
+.plinko-title {
+  font-size: 1.8rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(168,85,247,0.5);
+}
+
+.plinko-balance { font-size: 1rem; color: #8b949e; }
+
+.plinko-history {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  min-height: 26px;
+}
+.plinko-hist-pill {
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.plinko-hist-pill.win  { background: rgba(34,197,94,0.12); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+.plinko-hist-pill.lose { background: rgba(239,68,68,0.12);  color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+
+/* Board */
+.plinko-board {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px;
+  padding: 20px 12px 12px;
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.plinko-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+}
+
+.plinko-peg {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.35);
+  transition: all 0.1s;
+  border-radius: 50%;
+}
+
+.plinko-peg--ball {
+  color: transparent;
+  font-size: 1rem;
+  animation: ball-bounce 0.12s ease;
+}
+.plinko-peg--ball::after { content: '🔴'; font-size: 0.9rem; }
+
+@keyframes ball-bounce {
+  0%   { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+
+/* Buckets */
+.plinko-buckets {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.plinko-bucket {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 2px;
+  border-radius: 8px;
+  border: 1px solid;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 800;
+  transition: all 0.2s;
+}
+
+.plinko-bucket--hit {
+  transform: scale(1.08);
+  box-shadow: 0 0 12px currentColor;
+  animation: bucket-hit 0.4s ease;
+}
+@keyframes bucket-hit {
+  0%   { transform: scale(1.2); }
+  100% { transform: scale(1.08); }
+}
+
+/* Result */
+.plinko-result {
+  font-size: 1.2rem;
+  font-weight: 800;
+  padding: 10px 24px;
+  border-radius: 12px;
+}
+.plinko-result.win  { background: rgba(34,197,94,0.12); color: #22c55e; }
+.plinko-result.lose { background: rgba(239,68,68,0.12);  color: #ef4444; }
+
+/* Controls */
+.plinko-controls {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.plinko-risk-row { display: flex; gap: 8px; }
+.plinko-risk-btn {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #aaa;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: capitalize;
+}
+.plinko-risk-btn.active { background: rgba(168,85,247,0.2); border-color: rgba(168,85,247,0.5); color: #fff; }
+.plinko-risk-btn:hover:not(.active) { background: rgba(255,255,255,0.1); }
+
+.plinko-bet-row { display: flex; align-items: center; gap: 10px; }
+.plinko-bet-input {
+  flex: 1;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  color: #fff;
+  padding: 8px 10px;
+  font-size: 0.95rem;
+  outline: none;
+}
+.plinko-bet-input:focus { border-color: rgba(168,85,247,0.5); }
+
+.plinko-quick-bets { display: flex; gap: 6px; flex-wrap: wrap; }
+.plinko-qb {
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #ccc;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.plinko-qb:hover, .plinko-qb.active {
+  background: rgba(168,85,247,0.2);
+  border-color: rgba(168,85,247,0.4);
+  color: #fff;
+}
+
+.plinko-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: opacity 0.15s;
+}
+.plinko-btn:hover { opacity: 0.9; }
+
+.plinko-dropping { color: #8b949e; font-size: 0.9rem; }
+
+.plinko-broke { text-align: center; }
+.plinko-broke-title { font-size: 1.2rem; font-weight: 700; color: #ef4444; }
+.plinko-broke-sub { color: #8b949e; font-size: 0.85rem; margin: 4px 0; }
+.plinko-broke-countdown { font-size: 1.3rem; font-weight: 800; color: #FFD700; }
+
+.plinko-hint { font-size: 0.75rem; color: #555; }

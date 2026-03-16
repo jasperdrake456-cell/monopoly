@@ -29,6 +29,10 @@ import RideTheBusPage from './pages/RideTheBusPage';
 import BlackjackPage from './pages/BlackjackPage';
 import BaccaratPage from './pages/BaccaratPage';
 import MinesPage from './pages/MinesPage';
+import CrashPage from './pages/CrashPage';
+import PlinkoPage from './pages/PlinkoPage';
+import DicePage from './pages/DicePage';
+import RoulettePage from './pages/RoulettePage';
 import RequireAuth from './components/RequireAuth';
 import './App.css';
 
@@ -61,6 +65,10 @@ export default function App() {
         <Route path="/blackjack"     element={<RequireAuth><BlackjackPage /></RequireAuth>} />
         <Route path="/baccarat"      element={<RequireAuth><BaccaratPage /></RequireAuth>} />
         <Route path="/mines"         element={<RequireAuth><MinesPage /></RequireAuth>} />
+        <Route path="/crash"         element={<RequireAuth><CrashPage /></RequireAuth>} />
+        <Route path="/plinko"        element={<RequireAuth><PlinkoPage /></RequireAuth>} />
+        <Route path="/dice"          element={<RequireAuth><DicePage /></RequireAuth>} />
+        <Route path="/roulette"      element={<RequireAuth><RoulettePage /></RequireAuth>} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/transfer" element={<TransferPage />} />
         <Route path="/admin" element={<AdminPage />} />

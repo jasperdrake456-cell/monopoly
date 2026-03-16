@@ -18,10 +18,14 @@ const SOLO_GAMES = [
 ];
 
 const CASINO_GAMES = [
+  { path: '/crash',        name: 'Crash',        desc: 'Ride the multiplier and cash out before it crashes!', icon: '🚀', players: '1 player' },
+  { path: '/plinko',       name: 'Plinko',       desc: 'Drop the ball through pegs and land in a bucket', icon: '🎯', players: '1 player' },
+  { path: '/dice',         name: 'Dice',         desc: 'Roll over or under your target — set your own odds', icon: '🎲', players: '1 player' },
+  { path: '/roulette',     name: 'Roulette',     desc: 'Spin the wheel — bet on numbers, colors, or ranges', icon: '🎡', players: '1 player' },
+  { path: '/blackjack',    name: 'Blackjack',    desc: 'Beat the dealer to 21 — Hit, Stand, Double', icon: '♠', players: '1 player' },
+  { path: '/baccarat',     name: 'Baccarat',     desc: 'Bet Player, Banker or Tie. Natural 8 or 9 wins!', icon: '🎴', players: '1 player' },
+  { path: '/mines',        name: 'Mines',        desc: 'Reveal gems, dodge bombs — cash out before you explode!', icon: '💣', players: '1 player' },
   { path: '/ride-the-bus', name: 'Ride the Bus', desc: 'Guess Red/Black → Hi/Lo → In/Out → Suit. Win up to 20×!', icon: '🚌', players: '1 player' },
-  { path: '/blackjack', name: 'Blackjack', desc: 'Beat the dealer to 21 — Hit, Stand, Double, Split', icon: '♠', players: '1 player' },
-  { path: '/baccarat', name: 'Baccarat', desc: 'Bet Player, Banker or Tie. Natural 8 or 9 wins!', icon: '🎴', players: '1 player' },
-  { path: '/mines', name: 'Mines', desc: 'Reveal gems, dodge bombs — cash out before you explode!', icon: '💣', players: '1 player' },
 ];
 
 const MULTI_GAMES = [
