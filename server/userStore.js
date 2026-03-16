@@ -3,12 +3,18 @@ const fs     = require('fs');
 const path   = require('path');
 const crypto = require('crypto');
 
-// ── Storage file ──────────────────────────────────────────────────────────────
-const DATA_DIR  = path.join(__dirname, 'data');
-const USERS_FILE = path.join(DATA_DIR, 'users.json');
+// ── Storage files ─────────────────────────────────────────────────────────────
+// Use DATA_DIR env var (set to a Railway Volume mount path like /data) so that
+// account data survives redeploys. Falls back to server/data/ for local dev.
+const DATA_DIR      = process.env.DATA_DIR || path.join(__dirname, 'data');
+const USERS_FILE    = path.join(DATA_DIR, 'users.json');
+const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, '{}', 'utf8');
+if (!fs.existsSync(USERS_FILE))    fs.writeFileSync(USERS_FILE,    '{}', 'utf8');
+if (!fs.existsSync(SESSIONS_FILE)) fs.writeFileSync(SESSIONS_FILE, '{}', 'utf8');
+
+console.log(`[userStore] Data directory: ${DATA_DIR}`);
 
 function readUsers() {
   try { return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8')); }
@@ -17,6 +23,18 @@ function readUsers() {
 
 function writeUsers(users) {
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
+}
+
+function readSessionsFromDisk() {
+  try { return JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf8')); }
+  catch { return {}; }
+}
+
+function writeSessionsToDisk() {
+  const obj = {};
+  for (const [token, data] of sessions) obj[token] = data;
+  try { fs.writeFileSync(SESSIONS_FILE, JSON.stringify(obj), 'utf8'); }
+  catch { /* non-fatal */ }
 }
 
 // ── Password hashing ──────────────────────────────────────────────────────────
@@ -28,10 +46,20 @@ function makeSalt() {
   return crypto.randomBytes(16).toString('hex');
 }
 
-// ── Session store (in-memory) ─────────────────────────────────────────────────
+// ── Session store (persisted to sessions.json) ────────────────────────────────
 // token → { username, expires }
 const sessions = new Map();
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+// Load sessions saved from before the last restart
+(function loadSessions() {
+  const saved = readSessionsFromDisk();
+  const now   = Date.now();
+  for (const [token, data] of Object.entries(saved)) {
+    if (data.expires > now) sessions.set(token, data); // skip expired
+  }
+  console.log(`[sessions] Loaded ${sessions.size} active session(s) from disk`);
+})();
 
 function makeToken() {
   return crypto.randomBytes(32).toString('hex');
@@ -40,18 +68,24 @@ function makeToken() {
 function createSession(username) {
   const token = makeToken();
   sessions.set(token, { username, expires: Date.now() + SESSION_TTL_MS });
+  writeSessionsToDisk();
   return token;
 }
 
 function validateToken(token) {
   const session = sessions.get(token);
   if (!session) return null;
-  if (Date.now() > session.expires) { sessions.delete(token); return null; }
+  if (Date.now() > session.expires) {
+    sessions.delete(token);
+    writeSessionsToDisk();
+    return null;
+  }
   return session.username;
 }
 
 function destroySession(token) {
   sessions.delete(token);
+  writeSessionsToDisk();
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
