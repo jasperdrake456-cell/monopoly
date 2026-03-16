@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './Blackjack.css';
 
 // ── Deck ─────────────────────────────────────────────────────────────────────
@@ -107,6 +107,21 @@ export default function Blackjack() {
   const [doubled, setDoubled]     = useState(false);
   const [result, setResult]       = useState(null); // { msg, net }
   const [dealAnim, setDealAnim]   = useState(false);
+  const [countdown, setCountdown] = useState('');
+
+  // Live countdown to next daily reward
+  useEffect(() => {
+    function tick() {
+      const ms = msUntilNextDaily();
+      const h  = Math.floor(ms / 3600000);
+      const m  = Math.floor((ms % 3600000) / 60000);
+      const s  = Math.floor((ms % 60000) / 1000);
+      setCountdown(`${h}h ${m}m ${s}s`);
+    }
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
 
   function syncBalance() { setBalance(getBalance()); }
 
@@ -344,10 +359,9 @@ export default function Blackjack() {
         <div className="bj-betting">
           {balance_ < 1 ? (
             <div className="bj-broke">
-              <div>You're broke! 😬</div>
-              <button className="bj-btn bj-btn--primary" onClick={() => { addBalance(500); syncBalance(); }}>
-                💸 Reload $500
-              </button>
+              <div className="bj-broke-title">You're broke! 😬</div>
+              <div className="bj-broke-sub">Your daily $250 arrives in</div>
+              <div className="bj-broke-countdown">{countdown}</div>
             </div>
           ) : (
             <>

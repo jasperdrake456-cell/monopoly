@@ -185,10 +185,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  color: #ff6b6b;
-  font-weight: 600;
+  gap: 8px;
+  padding: 16px 0;
 }
+.bj-broke-title { font-size: 1.1rem; font-weight: 700; color: #ff6b6b; }
+.bj-broke-sub { font-size: 0.85rem; color: rgba(255,255,255,0.5); }
+.bj-broke-countdown { font-size: 1.5rem; font-weight: 800; color: #FFD700; letter-spacing: 1px; }
+
 
 /* ── Buttons ── */
 .bj-btn {

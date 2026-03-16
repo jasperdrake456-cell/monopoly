@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { getBalance, addBalance, subtractBalance } from '../utils/casinoBalance';
+import React, { useState, useRef, useEffect } from 'react';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './Baccarat.css';
 
 // ── Deck ─────────────────────────────────────────────────────────────────────
@@ -67,6 +67,21 @@ export default function Baccarat() {
   const [bankerHand, setBankerHand] = useState([]);
   const [result, setResult]   = useState(null); // { winner, msg, net }
   const [step, setStep]       = useState(0); // for card-by-card reveal
+  const [countdown, setCountdown] = useState('');
+
+  // Live countdown to next daily reward
+  useEffect(() => {
+    function tick() {
+      const ms = msUntilNextDaily();
+      const h  = Math.floor(ms / 3600000);
+      const m  = Math.floor((ms % 3600000) / 60000);
+      const s  = Math.floor((ms % 60000) / 1000);
+      setCountdown(`${h}h ${m}m ${s}s`);
+    }
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
 
   function syncBalance() { setBalance(getBalance()); }
 
@@ -226,10 +241,9 @@ export default function Baccarat() {
         <div className="bac-betting">
           {balance_ < 1 ? (
             <div className="bac-broke">
-              <div>You're broke! 😬</div>
-              <button className="bac-btn bac-btn--primary" onClick={() => { addBalance(500); syncBalance(); }}>
-                💸 Reload $500
-              </button>
+              <div className="bac-broke-title">You're broke! 😬</div>
+              <div className="bac-broke-sub">Your daily $250 arrives in</div>
+              <div className="bac-broke-countdown">{countdown}</div>
             </div>
           ) : (
             <>

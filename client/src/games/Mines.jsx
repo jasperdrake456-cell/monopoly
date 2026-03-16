@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { getBalance, addBalance, subtractBalance } from '../utils/casinoBalance';
+import React, { useState, useCallback, useEffect } from 'react';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './Mines.css';
 
 // ── Mines game (Rainbet-style) ────────────────────────────────────────────────
@@ -24,9 +24,14 @@ function calcMultiplier(mines, revealed) {
 
 function generateMines(count, avoidIndex) {
   const positions = new Set();
+  // Only guarantee a safe first click when there are at least 2 safe tiles.
+  // With 24 mines (only 1 safe tile), skipping avoidance would always make
+  // that tile the clicked one — an instant free win. Don't do that.
+  const shouldAvoid = avoidIndex != null && count <= GRID_SIZE - 2;
   while (positions.size < count) {
     const idx = Math.floor(Math.random() * GRID_SIZE);
-    if (idx !== avoidIndex) positions.add(idx);
+    if (shouldAvoid && idx === avoidIndex) continue;
+    positions.add(idx);
   }
   return positions;
 }
@@ -44,6 +49,21 @@ export default function Mines() {
   const [allMines, setAllMines] = useState(new Set()); // shown after game ends
   const [revealedCount, setRevealedCount] = useState(0);
   const [result, setResult]     = useState(null); // { win, payout, msg }
+  const [countdown, setCountdown] = useState('');
+
+  // Live countdown to next daily reward
+  useEffect(() => {
+    function tick() {
+      const ms = msUntilNextDaily();
+      const h  = Math.floor(ms / 3600000);
+      const m  = Math.floor((ms % 3600000) / 60000);
+      const s  = Math.floor((ms % 60000) / 1000);
+      setCountdown(`${h}h ${m}m ${s}s`);
+    }
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
 
   function syncBalance() { setBalance(getBalance()); }
 
@@ -188,8 +208,9 @@ export default function Mines() {
         <div className="mines-betting">
           {balance_ < 1 ? (
             <div className="mines-broke">
-              <div>You're broke! 😬</div>
-              <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>Come back tomorrow for your $250!</div>
+              <div className="mines-broke-title">You're broke! 😬</div>
+              <div className="mines-broke-sub">Your daily $250 arrives in</div>
+              <div className="mines-broke-countdown">{countdown}</div>
             </div>
           ) : (
             <>

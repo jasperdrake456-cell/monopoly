@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { getBalance, addBalance, subtractBalance } from '../utils/casinoBalance';
+import React, { useState, useRef, useEffect } from 'react';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './RideTheBus.css';
 
 // ── Deck constants ──────────────────────────────────────────────────────────
@@ -67,6 +67,21 @@ export default function RideTheBus() {
   const [pending, setPending] = useState(null);  // face-down card awaiting guess
   const [flipping, setFlipping] = useState(false);
   const [result, setResult]   = useState(null);  // { correct, msg, payout }
+  const [countdown, setCountdown] = useState('');
+
+  // Live countdown to next daily reward
+  useEffect(() => {
+    function tick() {
+      const ms = msUntilNextDaily();
+      const h  = Math.floor(ms / 3600000);
+      const m  = Math.floor((ms % 3600000) / 60000);
+      const s  = Math.floor((ms % 60000) / 1000);
+      setCountdown(`${h}h ${m}m ${s}s`);
+    }
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
 
   // ── Betting screen ────────────────────────────────────────────────────────
   function startGame() {
@@ -211,7 +226,8 @@ export default function RideTheBus() {
         {balance < 1 ? (
           <div className="rtb-broke">
             <div className="rtb-broke-msg">You're broke! 😬</div>
-            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>Come back tomorrow for your daily $250!</div>
+            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', marginBottom: 6 }}>Your daily $250 arrives in</div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#FFD700', letterSpacing: 1 }}>{countdown}</div>
           </div>
         ) : (
           <>
