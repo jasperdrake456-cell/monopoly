@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import './PasswordGate.css';
 
+const DISABLED = true; // temporary: password gate off
 const KEY = 'platform_auth';
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
 
 export default function PasswordGate({ children }) {
+  if (DISABLED) return children;
   const [authed, setAuthed]   = useState(() => sessionStorage.getItem(KEY) === 'ok');
   const [input, setInput]     = useState('');
   const [error, setError]     = useState(false);
