@@ -189,6 +189,20 @@ function register(ns) {
       });
     });
 
+    socket.on('chatMessage', ({ roomCode, text }) => {
+      const room = rm.getRoom(roomCode);
+      if (!room) return;
+      const player = room.players.find(p => p.id === socket.id);
+      if (!player) return;
+      const trimmed = String(text || '').trim().slice(0, 200);
+      if (!trimmed) return;
+      broadcast(ns, roomCode, 'chatMessage', {
+        name: player.name,
+        text: trimmed,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      });
+    });
+
     socket.on('disconnect', () => {
       const room = rm.getRoomBySocketId(socket.id);
       if (room) {

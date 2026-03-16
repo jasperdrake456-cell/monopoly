@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import HighScoreModal from '../components/HighScoreModal';
+import { isHighScore, addScore } from '../utils/leaderboard';
 import './Wordle.css';
 
 const ANSWERS = [
@@ -269,6 +271,8 @@ export default function Wordle({ onBack }) {
   const [hardMode, setHardMode] = useState(() => localStorage.getItem('wordle-hard') === 'true');
   const [showStats, setShowStats] = useState(false);
   const [stats, setStats] = useState(loadStats);
+  const [showHS, setShowHS] = useState(false);
+  const [pendingGuesses, setPendingGuesses] = useState(null);
   const msgTimer = useRef(null);
 
   function showMsg(msg, duration = 1500) {
@@ -345,6 +349,7 @@ export default function Wordle({ onBack }) {
         ns.maxStreak = Math.max(ns.maxStreak, ns.streak);
         ns.dist = { ...ns.dist, [newGuesses.length]: (ns.dist[newGuesses.length] || 0) + 1 };
         saveStats(ns); setStats(ns);
+        if (isHighScore('wordle', newGuesses.length, false)) { setPendingGuesses(newGuesses.length); setShowHS(true); }
         setTimeout(() => setShowStats(true), 2500);
       }, 1600);
     } else if (lost) {
@@ -498,6 +503,7 @@ export default function Wordle({ onBack }) {
           </div>
         </div>
       )}
+      {showHS && <HighScoreModal gameId="wordle" score={pendingGuesses} label="guesses" higherIsBetter={false} onSave={name => { addScore('wordle', pendingGuesses, name, false); setShowHS(false); }} onDismiss={() => setShowHS(false)} />}
     </div>
   );
 }

@@ -31,6 +31,7 @@ export default function HomePage() {
       <header className="home-header">
         <div className="home-logo">🎮 Game Hub</div>
         <Link to="/trivia" className="home-trivia-btn">🎯 Daily Trivia</Link>
+        <Link to="/leaderboard" className="home-trivia-btn">🏆 Leaderboard</Link>
       </header>
 
       <main className="home-main">

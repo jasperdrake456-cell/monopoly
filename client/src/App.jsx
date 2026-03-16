@@ -20,6 +20,7 @@ import MemoryMatchPage from './pages/MemoryMatchPage';
 import PongPage from './pages/PongPage';
 import TicTacToePage from './pages/TicTacToePage';
 import TypingSpeedPage from './pages/TypingSpeedPage';
+import LeaderboardPage from './pages/LeaderboardPage';
 import './App.css';
 
 export default function App() {
@@ -45,6 +46,7 @@ export default function App() {
         <Route path="/pong" element={<PongPage />} />
         <Route path="/tic-tac-toe" element={<TicTacToePage />} />
         <Route path="/typing-speed" element={<TypingSpeedPage />} />
+        <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </PasswordGate>

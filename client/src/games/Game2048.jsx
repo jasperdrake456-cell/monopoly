@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import HighScoreModal from '../components/HighScoreModal';
+import { isHighScore, addScore } from '../utils/leaderboard';
 import './Game2048.css';
 
 const TILE_COLORS = {
@@ -91,6 +93,8 @@ export default function Game2048({ onBack }) {
   const [won, setWon]     = useState(false);
   const [over, setOver]   = useState(false);
   const [keepPlaying, setKeepPlaying] = useState(false);
+  const [showHS, setShowHS] = useState(false);
+  const [pendingScore, setPendingScore] = useState(null);
 
   const move = useCallback((dir) => {
     if (over) return;
@@ -108,7 +112,10 @@ export default function Game2048({ onBack }) {
         return ns;
       });
       if (!keepPlaying && nb.some(row => row.includes(2048))) setWon(true);
-      if (!canMove(nb)) setOver(true);
+      if (!canMove(nb)) {
+        setOver(true);
+        setScore(s => { if (s > 0 && isHighScore('2048', s)) { setPendingScore(s); setShowHS(true); } return s; });
+      }
       return nb;
     });
   }, [over, keepPlaying]);
@@ -189,6 +196,7 @@ export default function Game2048({ onBack }) {
           </div>
         </div>
       )}
+      {showHS && <HighScoreModal gameId="2048" score={pendingScore} label="pts" onSave={name => { addScore('2048', pendingScore, name); setShowHS(false); }} onDismiss={() => setShowHS(false)} />}
     </div>
   );
 }

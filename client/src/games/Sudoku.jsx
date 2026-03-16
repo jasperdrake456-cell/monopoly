@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import HighScoreModal from '../components/HighScoreModal';
+import { isHighScore, addScore } from '../utils/leaderboard';
 import './Sudoku.css';
 
 // Puzzles: 81-char strings, 0 = empty
@@ -100,6 +102,8 @@ export default function Sudoku({ onBack }) {
   const [time, setTime] = useState(0);
   const [gameState, setGameState] = useState('playing');
   const [mistakes, setMistakes] = useState(0);
+  const [showHS, setShowHS] = useState(false);
+  const [pendingTime, setPendingTime] = useState(null);
   const [hints, setHints] = useState(3);
   const timerRef = useRef(null);
 
@@ -162,7 +166,11 @@ export default function Sudoku({ onBack }) {
       const done = newGrid.every((row, rr) =>
         row.every((cell, cc) => parseInt(solution[rr * 9 + cc]) === cell.value)
       );
-      if (done) setGameState('won');
+      if (done) {
+        setGameState('won');
+        const gameId = `sudoku_${diff}`;
+        if (isHighScore(gameId, time, false)) { setPendingTime(time); setShowHS(true); }
+      }
     }
   }
 
@@ -309,6 +317,7 @@ export default function Sudoku({ onBack }) {
           );
         })}
       </div>
+      {showHS && <HighScoreModal gameId={`sudoku_${diff}`} score={pendingTime} label="sec" higherIsBetter={false} onSave={name => { addScore(`sudoku_${diff}`, pendingTime, name, false); setShowHS(false); }} onDismiss={() => setShowHS(false)} />}
     </div>
   );
 }

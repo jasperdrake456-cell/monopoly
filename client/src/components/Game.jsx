@@ -4,13 +4,15 @@ import ActionPanel from './ActionPanel';
 import Dashboard from './Dashboard';
 import EventLog from './EventLog';
 import TradeModal from './TradeModal';
+import GameChat from './GameChat';
 import { TOKENS, TOKEN_COLORS } from '../boardData';
 import './Game.css';
 
-export default function Game({ roomState, myId, roomCode, emit }) {
+export default function Game({ roomState, myId, roomCode, emit, chatMessages = [] }) {
   const { gameState, players: lobbyPlayers } = roomState;
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [showLog, setShowLog] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
   if (!gameState) return <div className="game-loading">Loading game…</div>;
 
@@ -63,6 +65,15 @@ export default function Game({ roomState, myId, roomCode, emit }) {
         />
       )}
 
+      {/* Chat overlay */}
+      {showChat && (
+        <GameChat
+          messages={chatMessages}
+          onSend={(text) => emit('chatMessage', { roomCode, text })}
+          onClose={() => setShowChat(false)}
+        />
+      )}
+
       {/* Log overlay */}
       {showLog && (
         <div className="log-overlay" onClick={() => setShowLog(false)}>
@@ -102,6 +113,9 @@ export default function Game({ roomState, myId, roomCode, emit }) {
             </button>
           )}
           <button className="log-btn" onClick={() => setShowLog(true)}>📜 Log</button>
+          <button className="chat-btn" onClick={() => setShowChat(true)}>
+            💬 Chat{chatMessages.length > 0 ? ` (${chatMessages.length})` : ''}
+          </button>
           <span className={`turn-badge ${isMyTurn ? 'my-turn' : ''}`}>
             {isMyTurn ? '⚡ Your Turn' : `${gameState.players[gameState.currentPlayerIndex]?.name}'s Turn`}
           </span>

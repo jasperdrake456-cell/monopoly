@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import HighScoreModal from '../components/HighScoreModal';
+import { isHighScore, addScore } from '../utils/leaderboard';
 import './TypingSpeed.css';
 
 const PASSAGES = [
@@ -23,6 +25,8 @@ export default function TypingSpeed() {
   const [startTime, setStartTime] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const [done, setDone] = useState(false);
+  const [showHS, setShowHS] = useState(false);
+  const [pendingWpm, setPendingWpm] = useState(null);
   const inputRef = useRef(null);
   const timerRef = useRef(null);
 
@@ -47,8 +51,13 @@ export default function TypingSpeed() {
     setTyped(val);
     if (val === passage) {
       clearInterval(timerRef.current);
+      const finalElapsed = Date.now() - startTime;
       setDone(true);
-      setElapsed(Date.now() - startTime);
+      setElapsed(finalElapsed);
+      const finalWpm = Math.round((val.split(' ').length / (finalElapsed / 1000)) * 60);
+      if (finalWpm > 0 && isHighScore('typing_speed', finalWpm)) {
+        setPendingWpm(finalWpm); setShowHS(true);
+      }
     }
   }
 
@@ -119,6 +128,7 @@ export default function TypingSpeed() {
       <div className="typing-actions">
         <button className="typing-btn secondary" onClick={reset}>New Text</button>
       </div>
+      {showHS && <HighScoreModal gameId="typing_speed" score={pendingWpm} label="WPM" onSave={name => { addScore('typing_speed', pendingWpm, name); setShowHS(false); }} onDismiss={() => setShowHS(false)} />}
     </div>
   );
 }

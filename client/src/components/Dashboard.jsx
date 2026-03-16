@@ -80,6 +80,25 @@ export default function Dashboard({ gameState, myId, roomCode, emit }) {
         </div>
       </div>
 
+      {/* Other players */}
+      {allPlayers.filter(p => p.id !== myId).length > 0 && (
+        <div className="other-players">
+          {allPlayers.filter(p => p.id !== myId).map(p => (
+            <div key={p.id} className={`other-player ${p.bankrupt ? 'bankrupt' : ''}`}
+              style={{ borderLeftColor: TOKEN_COLORS[p.token] }}>
+              <span className="op-token">{TOKENS[p.token]}</span>
+              <span className="op-name">{p.name}</span>
+              {p.bankrupt && <span className="bankrupt-tag">💀</span>}
+              {!p.bankrupt && p.missedRentCount > 0 && (
+                <span className="missed-tag">⚠️ {p.missedRentCount}/3</span>
+              )}
+              {!p.bankrupt && <span className="op-cash">${p.cash.toLocaleString()}</span>}
+              <span className="op-props">{p.properties.length}🏠</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* My Properties — scrollable section */}
       <div className="my-properties">
         <h3>My Properties</h3>

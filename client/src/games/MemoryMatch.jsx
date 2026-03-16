@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import HighScoreModal from '../components/HighScoreModal';
+import { isHighScore, addScore } from '../utils/leaderboard';
 import './MemoryMatch.css';
 
 const EMOJIS = ['🎮','🎯','🎲','🎸','🚀','🦊','🍕','🌈','⚡','🎃','🐉','💎','🔥','🌸','🦄','🎭'];
@@ -25,6 +27,14 @@ export default function MemoryMatch() {
 
   const matched = cards.filter(c => c.matched).length;
   const won = matched === cards.length;
+  const [showHS, setShowHS] = useState(false);
+  const [pendingScore, setPendingScore] = useState(null);
+
+  useEffect(() => {
+    if (won && moves > 0 && isHighScore('memory_match', moves, false)) {
+      setPendingScore(moves); setShowHS(true);
+    }
+  }, [won]);
 
   useEffect(() => {
     if (started && !won) {
@@ -102,6 +112,7 @@ export default function MemoryMatch() {
           <button className="memory-btn" onClick={reset}>Play Again</button>
         </div>
       )}
+      {showHS && <HighScoreModal gameId="memory_match" score={pendingScore} label="moves" higherIsBetter={false} onSave={name => { addScore('memory_match', pendingScore, name, false); setShowHS(false); }} onDismiss={() => setShowHS(false)} />}
     </div>
   );
 }

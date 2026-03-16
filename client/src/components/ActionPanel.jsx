@@ -107,6 +107,9 @@ export default function ActionPanel({ gameState, myId, roomCode, emit }) {
             {currentPlayer?.jailTurns > 0 && (
               <div className="ap-opp-row"><span className="ap-opp-val" style={{ color: '#e74c3c' }}>🔒 In Jail (turn {currentPlayer.jailTurns}/3)</span></div>
             )}
+            {currentPlayer?.missedRentCount > 0 && (
+              <div className="ap-opp-row"><span className="ap-opp-val" style={{ color: '#e74c3c' }}>⚠️ Missed rent: {currentPlayer.missedRentCount}/3</span></div>
+            )}
           </div>
           {lastDice && (
             <>

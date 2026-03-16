@@ -1,4 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import HighScoreModal from '../components/HighScoreModal';
+import { isHighScore, addScore } from '../utils/leaderboard';
 import './Minesweeper.css';
 
 const DIFFICULTIES = {
@@ -72,6 +74,8 @@ export default function Minesweeper({ onBack }) {
   const [time, setTime]     = useState(0);
   const timerRef = useRef(null);
   const longPressRef = useRef(null);
+  const [showHS, setShowHS] = useState(false);
+  const [pendingTime, setPendingTime] = useState(null);
 
   function handleTouchStart(r, c) {
     longPressRef.current = setTimeout(() => {
@@ -131,8 +135,12 @@ export default function Minesweeper({ onBack }) {
     // Check win: all non-mine cells revealed
     const won = newGrid.every(row => row.every(cell => cell.mine || cell.revealed));
     setGrid(newGrid);
-    if (won) setStatus('won');
-  }, [grid, status, diff]);
+    if (won) {
+      setStatus('won');
+      const gameId = `minesweeper_${diff}`;
+      if (isHighScore(gameId, time, false)) { setPendingTime(time); setShowHS(true); }
+    }
+  }, [grid, status, diff, time]);
 
   const handleRightClick = useCallback((e, r, c) => {
     e.preventDefault();
@@ -175,9 +183,13 @@ export default function Minesweeper({ onBack }) {
     } else {
       const won = newGrid.every(row => row.every(cell => cell.mine || cell.revealed));
       setGrid(newGrid);
-      if (won) setStatus('won');
+      if (won) {
+        setStatus('won');
+        const gameId = `minesweeper_${diff}`;
+        if (isHighScore(gameId, time, false)) { setPendingTime(time); setShowHS(true); }
+      }
     }
-  }, [grid, diff]);
+  }, [grid, diff, time]);
 
   if (!grid) return null;
   const { rows, cols } = DIFFICULTIES[diff];
@@ -233,6 +245,7 @@ export default function Minesweeper({ onBack }) {
           }))}
         </div>
       </div>
+      {showHS && <HighScoreModal gameId={`minesweeper_${diff}`} score={pendingTime} label="sec" higherIsBetter={false} onSave={name => { addScore(`minesweeper_${diff}`, pendingTime, name, false); setShowHS(false); }} onDismiss={() => setShowHS(false)} />}
     </div>
   );
 }

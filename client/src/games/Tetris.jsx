@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import HighScoreModal from '../components/HighScoreModal';
+import { isHighScore, addScore } from '../utils/leaderboard';
 import './Tetris.css';
 
 const COLS = 10, ROWS = 20, CELL = 30;
@@ -97,6 +99,8 @@ export default function Tetris({ onBack }) {
     best: parseInt(localStorage.getItem(BEST_KEY) || '0'),
     running: false, over: false, paused: false,
   });
+  const [showHS, setShowHS] = useState(false);
+  const [pendingScore, setPendingScore] = useState(null);
 
   function initState() {
     return {
@@ -215,7 +219,10 @@ export default function Tetris({ onBack }) {
         });
         // Game over check
         if (!fits(s.board, s.piece)) {
-          setDisplay(d => ({ ...d, running: false, over: true }));
+          setDisplay(d => {
+            if (d.score > 0 && isHighScore('tetris', d.score)) { setPendingScore(d.score); setShowHS(true); }
+            return { ...d, running: false, over: true };
+          });
           return;
         }
       }
@@ -336,6 +343,7 @@ export default function Tetris({ onBack }) {
           )}
         </div>
       </div>
+      {showHS && <HighScoreModal gameId="tetris" score={pendingScore} label="pts" onSave={name => { addScore('tetris', pendingScore, name); setShowHS(false); }} onDismiss={() => setShowHS(false)} />}
       <div className="tetris-controls">
         <div className="tetris-ctrl-row">
           <button className="tetris-ctrl-btn" onPointerDown={doRotateCCW}>↺</button>

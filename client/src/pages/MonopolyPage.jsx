@@ -9,10 +9,11 @@ const SESSION_KEY = 'monopoly_session';
 export default function MonopolyPage() {
   const navigate = useNavigate();
   const { emit, on, connected } = useSocket('/monopoly');
-  const [roomState, setRoomState] = useState(null);
-  const [myId, setMyId]           = useState(null);
-  const [sessionId, setSessionId] = useState(null);
-  const [errorMsg, setErrorMsg]   = useState('');
+  const [roomState, setRoomState]     = useState(null);
+  const [myId, setMyId]               = useState(null);
+  const [sessionId, setSessionId]     = useState(null);
+  const [errorMsg, setErrorMsg]       = useState('');
+  const [chatMessages, setChatMessages] = useState([]);
 
   // Attempt reconnect from saved session
   useEffect(() => {
@@ -47,7 +48,10 @@ export default function MonopolyPage() {
       setErrorMsg(message);
       setTimeout(() => setErrorMsg(''), 4000);
     });
-    return () => { offRoomCreated(); offRoomJoined(); offReconnected(); offGameState(); offError(); };
+    const offChat = on('chatMessage', (msg) => {
+      setChatMessages(prev => [...prev, msg]);
+    });
+    return () => { offRoomCreated(); offRoomJoined(); offReconnected(); offGameState(); offError(); offChat(); };
   }, [on, sessionId]);
 
   const handleEmit = useCallback((event, data) => {
@@ -62,7 +66,13 @@ export default function MonopolyPage() {
       {!connected && <div className="conn-banner">Connecting to server…</div>}
       {errorMsg && <div className="error-toast">{errorMsg}</div>}
       {inGame ? (
-        <Game roomState={roomState} myId={myId} roomCode={roomState.roomCode} emit={handleEmit} />
+        <Game
+          roomState={roomState}
+          myId={myId}
+          roomCode={roomState.roomCode}
+          emit={handleEmit}
+          chatMessages={chatMessages}
+        />
       ) : (
         <Lobby
           roomState={roomState}

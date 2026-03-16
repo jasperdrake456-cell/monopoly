@@ -318,7 +318,7 @@ function landOnSpace(state, playerId) {
       if (state.freeParkingEnabled && state.freeParking > 0) {
         p.cash += state.freeParking;
         addLog(state, `${p.name} collected $${state.freeParking} from Free Parking!`);
-        state.freeParking = 0;
+        state.freeParking = 500;
       } else {
         addLog(state, `${p.name} landed on Free Parking`);
       }
@@ -437,7 +437,7 @@ function initGame(players, freeParkingEnabled) {
     communityDeck: decks.community,
     communityIdx: 0,
     activeCard: null,
-    freeParking: 0,
+    freeParking: 500,
     auction: null,
     activeTrade: null,
     pendingLand: false,
