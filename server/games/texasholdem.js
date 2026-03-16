@@ -4,7 +4,7 @@
 const SUITS  = ['♠','♥','♦','♣'];
 const RANKS  = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
 const RV     = {'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'J':11,'Q':12,'K':13,'A':14};
-const SB = 10, BB = 20, START_CHIPS = 1000, MAX_PLAYERS = 6;
+const SB = 10, BB = 20, DEFAULT_BUYIN = 1000, MAX_PLAYERS = 6;
 
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -110,7 +110,7 @@ function initHand(room) {
   const gPlayers = room.players.map(p => ({
     id:        p.id,
     name:      p.name,
-    chips:     chipMap[p.id] ?? START_CHIPS,
+    chips:     chipMap[p.id] ?? p.buyIn ?? DEFAULT_BUYIN,
     holeCards: [deck.pop(), deck.pop()],
     bet:       0,
     totalBet:  0,
@@ -372,10 +372,15 @@ function register(ns) {
         hostName:    r.players[0]?.name ?? '?',
         playerCount: r.players.length,
         maxPlayers:  MAX_PLAYERS,
+        buyIn:       r.buyIn ?? DEFAULT_BUYIN,
       }));
   }
 
   function pushRoomList() { ns.emit('roomList', getRoomList()); }
+
+  function emitCashOut(socketId, chips) {
+    ns.to(socketId).emit('cashOut', { chips });
+  }
 
   function buildState(room, forSocketId) {
     const gs = room.gameState;
@@ -393,7 +398,7 @@ function register(ns) {
       return {
         id:       p.id,
         name:     p.name,
-        chips:    gp?.chips  ?? START_CHIPS,
+        chips:    gp?.chips  ?? p.buyIn ?? DEFAULT_BUYIN,
         bet:      gp?.bet    ?? 0,
         totalBet: gp?.totalBet ?? 0,
         folded:   gp?.folded ?? false,
@@ -433,6 +438,15 @@ function register(ns) {
     const room = rooms.get(roomCode);
     if (!room) return;
 
+    // Cash out the leaving player's current chips (or buy-in refund if still in lobby)
+    if (room.gameState) {
+      const gp = room.gameState.players.find(p => p.id === socketId);
+      if (gp) emitCashOut(socketId, gp.chips);
+    } else {
+      const rp = room.players.find(p => p.id === socketId);
+      if (rp) emitCashOut(socketId, rp.buyIn ?? 0);
+    }
+
     room.players = room.players.filter(p => p.id !== socketId);
     if (room.players.length === 0) { rooms.delete(roomCode); pushRoomList(); return; }
     if (room.hostId === socketId) room.hostId = room.players[0].id;
@@ -468,17 +482,23 @@ function register(ns) {
   ns.on('connection', socket => {
     socket.emit('roomList', getRoomList());
 
-    socket.on('createRoom', ({ playerName }) => {
-      const name = (playerName || '').trim().slice(0, 16);
+    socket.on('createRoom', ({ playerName, buyIn }) => {
+      const name   = (playerName || '').trim().slice(0, 16);
+      const buyin  = Math.max(100, Math.min(10000, parseInt(buyIn) || DEFAULT_BUYIN));
       if (!name) { socket.emit('error', { message: 'Name required' }); return; }
 
       let code;
       do { code = genCode(); } while (rooms.has(code));
 
-      const room = { code, hostId: socket.id, players: [{ id: socket.id, name }], status: 'lobby', gameState: null, dealerIdx: -1 };
+      const room = {
+        code, hostId: socket.id,
+        players: [{ id: socket.id, name, buyIn: buyin }],
+        buyIn: buyin,
+        status: 'lobby', gameState: null, dealerIdx: -1,
+      };
       rooms.set(code, room);
       socket.join(`room:${code}`);
-      socket.emit('roomCreated', { roomCode: code, playerId: socket.id });
+      socket.emit('roomCreated', { roomCode: code, playerId: socket.id, buyIn: buyin });
       broadcastState(room);
       pushRoomList();
     });
@@ -496,9 +516,9 @@ function register(ns) {
         socket.emit('error', { message: 'Name taken in this room' }); return;
       }
 
-      room.players.push({ id: socket.id, name });
+      room.players.push({ id: socket.id, name, buyIn: room.buyIn });
       socket.join(`room:${roomCode}`);
-      socket.emit('roomJoined', { playerId: socket.id });
+      socket.emit('roomJoined', { playerId: socket.id, buyIn: room.buyIn });
       broadcastState(room);
       pushRoomList();
     });
@@ -528,14 +548,25 @@ function register(ns) {
       if (room.gameState?.handInProgress) return;
       // Any remaining player can trigger next hand (not just host)
 
-      // Remove busted players
+      // Remove busted players and cash them out (they get 0 back — lost their buy-in)
       if (room.gameState) {
+        const busted = room.gameState.players.filter(p => p.chips <= 0);
+        for (const p of busted) {
+          emitCashOut(p.id, 0);
+          ns.to(p.id).emit('bustedOut');
+        }
         const active = room.gameState.players.filter(p => p.chips > 0);
         room.players = room.players.filter(p => active.some(a => a.id === p.id));
       }
 
       if (room.players.length < 2) {
         room.status = 'ended';
+        // Cash out all remaining players (the winner gets all their chips)
+        if (room.gameState) {
+          for (const p of room.gameState.players) {
+            if (p.chips > 0) emitCashOut(p.id, p.chips);
+          }
+        }
         broadcastState(room);
         return;
       }

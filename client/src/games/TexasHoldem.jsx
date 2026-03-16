@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSocket } from '../hooks/useSocket';
+import { getBalance, addBalance, subtractBalance } from '../utils/casinoBalance';
 import './TexasHoldem.css';
 
 // ── Card component ─────────────────────────────────────────────────────────────
@@ -37,30 +38,32 @@ function getSeatLabel(playerIdx, dealerIdx, sbIdx, bbIdx, total) {
 
 const ROUND_LABELS = { preflop: 'Pre-Flop', flop: 'Flop', turn: 'Turn', river: 'River', showdown: 'Showdown' };
 
+const BUYIN_OPTIONS = [100, 250, 500, 1000, 2500];
+
 // ── Lobby (room browser) ───────────────────────────────────────────────────────
-function Lobby({ emit, roomList, errorMsg, myId }) {
-  const [name, setName]     = useState(() => localStorage.getItem('th_name') || '');
-  const [creating, setCr]   = useState(false);
-  const [joiningCode, setJC] = useState(null);
+function Lobby({ emit, roomList, errorMsg, casinoBalance }) {
+  const [name, setName]       = useState(() => localStorage.getItem('th_name') || '');
+  const [buyIn, setBuyIn]     = useState(1000);
+  const [joiningCode, setJC]  = useState(null);
 
   function saveName(v) { setName(v); localStorage.setItem('th_name', v); }
 
   function create() {
-    if (!name.trim()) return;
-    setCr(true);
-    emit('createRoom', { playerName: name.trim() });
+    if (!name.trim() || casinoBalance < buyIn) return;
+    emit('createRoom', { playerName: name.trim(), buyIn });
   }
 
-  function join(code) {
-    if (!name.trim()) return;
-    setJC(code);
-    emit('joinRoom', { roomCode: code, playerName: name.trim() });
+  function join(r) {
+    if (!name.trim() || casinoBalance < r.buyIn) return;
+    setJC(r.code);
+    emit('joinRoom', { roomCode: r.code, playerName: name.trim() });
   }
 
   return (
     <div className="th-lobby">
       <div className="th-lobby-title">♠ Texas Hold'em ♥</div>
-      <div className="th-lobby-sub">Multiplayer Poker — 2 to 6 players • 1,000 starting chips</div>
+      <div className="th-lobby-sub">Multiplayer Poker — 2 to 6 players</div>
+      <div className="th-lobby-balance">💰 Casino Balance: <strong>${casinoBalance.toLocaleString()}</strong></div>
 
       {errorMsg && <div className="th-error">{errorMsg}</div>}
 
@@ -73,8 +76,25 @@ function Lobby({ emit, roomList, errorMsg, myId }) {
           onChange={e => saveName(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && create()}
         />
-        <button className="th-btn th-btn--create" onClick={create} disabled={!name.trim()}>
-          + Create Room
+      </div>
+
+      {/* Buy-in selector (only for creating a room) */}
+      <div className="th-buyin-section">
+        <div className="th-buyin-label">Buy-in (create new room):</div>
+        <div className="th-buyin-options">
+          {BUYIN_OPTIONS.map(v => (
+            <button
+              key={v}
+              className={`th-buyin-btn ${buyIn === v ? 'selected' : ''} ${casinoBalance < v ? 'disabled' : ''}`}
+              onClick={() => setBuyIn(v)}
+              disabled={casinoBalance < v}
+            >
+              ${v.toLocaleString()}
+            </button>
+          ))}
+        </div>
+        <button className="th-btn th-btn--create" onClick={create} disabled={!name.trim() || casinoBalance < buyIn}>
+          + Create Room (${buyIn.toLocaleString()} buy-in)
         </button>
       </div>
 
@@ -89,13 +109,15 @@ function Lobby({ emit, roomList, errorMsg, myId }) {
                 <div className="th-room-info">
                   <span className="th-room-host">{r.hostName}'s room</span>
                   <span className="th-room-count">{r.playerCount} / {r.maxPlayers} players</span>
+                  <span className="th-room-buyin">Buy-in: ${r.buyIn?.toLocaleString()}</span>
                 </div>
                 <button
                   className="th-btn th-btn--join"
-                  onClick={() => join(r.code)}
-                  disabled={!name.trim() || joiningCode === r.code}
+                  onClick={() => join(r)}
+                  disabled={!name.trim() || joiningCode === r.code || casinoBalance < r.buyIn}
+                  title={casinoBalance < r.buyIn ? `Need $${r.buyIn?.toLocaleString()} to join` : ''}
                 >
-                  Join
+                  {casinoBalance < r.buyIn ? '🚫 Can\'t afford' : 'Join'}
                 </button>
               </div>
             ))}
@@ -296,26 +318,50 @@ function GameTable({ roomState, myId, emit }) {
 // ── Root component ─────────────────────────────────────────────────────────────
 export default function TexasHoldem() {
   const { emit, on, connected } = useSocket('/texasholdem');
-  const [myId, setMyId]         = useState(null);
+  const [myId, setMyId]           = useState(null);
   const [roomState, setRoomState] = useState(null);
-  const [roomList, setRoomList]  = useState([]);
-  const [errorMsg, setErrorMsg]  = useState('');
-  const roomCodeRef              = useRef(null);
+  const [roomList, setRoomList]   = useState([]);
+  const [errorMsg, setErrorMsg]   = useState('');
+  const [casinoBalance, setCasinoBalance] = useState(getBalance);
+  const roomCodeRef               = useRef(null);
+
+  function syncBalance() { setCasinoBalance(getBalance()); }
 
   useEffect(() => {
     const off = [
-      on('roomCreated', ({ roomCode, playerId }) => {
+      on('roomCreated', ({ roomCode, playerId, buyIn }) => {
         setMyId(playerId);
         roomCodeRef.current = roomCode;
+        // Deduct buy-in from casino balance now that we're confirmed in the room
+        subtractBalance(buyIn ?? 0);
+        syncBalance();
       }),
-      on('roomJoined', ({ playerId }) => {
+      on('roomJoined', ({ playerId, buyIn }) => {
         setMyId(playerId);
+        subtractBalance(buyIn ?? 0);
+        syncBalance();
       }),
       on('gameState', state => {
         setRoomState(state);
         roomCodeRef.current = state.roomCode;
       }),
       on('roomList', list => setRoomList(list)),
+      on('cashOut', ({ chips }) => {
+        // Server is cashing us out — add chips back to casino balance and return to lobby
+        if (chips > 0) {
+          addBalance(chips);
+          syncBalance();
+        }
+        setRoomState(null);
+        setMyId(null);
+        roomCodeRef.current = null;
+      }),
+      on('bustedOut', () => {
+        // Lost all chips — 0 returned, go back to lobby
+        setRoomState(null);
+        setMyId(null);
+        roomCodeRef.current = null;
+      }),
       on('error', ({ message }) => {
         setErrorMsg(message);
         setTimeout(() => setErrorMsg(''), 4000);
@@ -332,14 +378,18 @@ export default function TexasHoldem() {
   function leaveRoom() {
     if (roomCodeRef.current) {
       doEmit('leaveRoom', { roomCode: roomCodeRef.current });
+      // cashOut event from server will reset state and refund chips
+    } else {
+      setRoomState(null);
+      setMyId(null);
     }
-    setRoomState(null);
-    setMyId(null);
-    roomCodeRef.current = null;
   }
 
   const inRoom = !!roomState;
   const inGame = inRoom && (roomState.status === 'playing' || roomState.status === 'ended');
+
+  // Show chips in game header — and casino balance for context
+  const myChips = roomState?.players.find(p => p.id === myId)?.chips ?? 0;
 
   return (
     <div className="th-root">
@@ -347,7 +397,7 @@ export default function TexasHoldem() {
       {errorMsg && <div className="th-error-toast">{errorMsg}</div>}
 
       {!inRoom && (
-        <Lobby emit={doEmit} roomList={roomList} errorMsg={errorMsg} myId={myId} />
+        <Lobby emit={doEmit} roomList={roomList} errorMsg={errorMsg} casinoBalance={casinoBalance} />
       )}
 
       {inRoom && !inGame && (
@@ -360,7 +410,8 @@ export default function TexasHoldem() {
             <button className="th-leave-btn" onClick={leaveRoom}>← Leave</button>
             <span className="th-game-title">♠ Texas Hold'em ♥</span>
             <span className="th-my-chips">
-              ${roomState.players.find(p => p.id === myId)?.chips?.toLocaleString() ?? 0}
+              Table: <strong>${myChips.toLocaleString()}</strong>
+              <span className="th-casino-bal"> | Bank: ${casinoBalance.toLocaleString()}</span>
             </span>
           </div>
           <GameTable roomState={roomState} myId={myId} emit={doEmit} />

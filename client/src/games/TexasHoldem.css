@@ -46,6 +46,50 @@
   text-align: center;
 }
 
+.th-lobby-balance {
+  font-size: 1rem;
+  color: #2ecc71;
+}
+
+.th-buyin-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.th-buyin-label {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.6);
+}
+
+.th-buyin-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.th-buyin-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,215,0,0.4);
+  background: rgba(255,215,0,0.1);
+  color: #FFD700;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.th-buyin-btn:hover:not(.disabled) { background: rgba(255,215,0,0.25); }
+.th-buyin-btn.selected { background: rgba(255,215,0,0.3); border-color: #FFD700; box-shadow: 0 0 8px rgba(255,215,0,0.4); }
+.th-buyin-btn.disabled { opacity: 0.35; cursor: not-allowed; }
+
 .th-name-row {
   display: flex;
   gap: 10px;
@@ -107,6 +151,7 @@
 .th-room-info { display: flex; flex-direction: column; gap: 2px; }
 .th-room-host { font-weight: 600; font-size: 0.95rem; }
 .th-room-count { font-size: 0.78rem; color: rgba(255,255,255,0.5); }
+.th-room-buyin { font-size: 0.78rem; color: #FFD700; font-weight: 600; }
 
 /* ── Buttons ──────────────────────────────────────────────────────────────── */
 .th-btn {
@@ -191,6 +236,7 @@
 
 .th-game-title { font-size: 1rem; font-weight: 700; color: #FFD700; }
 .th-my-chips { font-size: 0.9rem; font-weight: 700; color: #2ecc71; }
+.th-casino-bal { font-size: 0.8rem; color: rgba(255,255,255,0.5); font-weight: 400; }
 
 /* ── Game layout ───────────────────────────────────────────────────────────── */
 .th-game {

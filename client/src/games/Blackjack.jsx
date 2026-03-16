@@ -3,8 +3,8 @@ import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../ut
 import './Blackjack.css';
 
 // ── Deck ─────────────────────────────────────────────────────────────────────
-const SUITS = ['♠', '♥', '♦', '♣'];
-const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const SUITS    = ['♠', '♥', '♦', '♣'];
+const RANKS    = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const RED_SUITS = new Set(['♥', '♦']);
 const NUM_DECKS = 6;
 
@@ -47,8 +47,7 @@ function isSoft(hand) {
   return aces > 0 && total <= 21;
 }
 
-function isBust(hand)  { return handTotal(hand) > 21; }
-// Natural blackjack: exactly 2 cards totaling 21 (not after split)
+function isBust(hand)      { return handTotal(hand) > 21; }
 function isBlackjack(hand) { return hand.length === 2 && handTotal(hand) === 21; }
 
 // ── Card component ────────────────────────────────────────────────────────────
@@ -76,11 +75,16 @@ function BjCard({ card, faceDown }) {
   );
 }
 
-function Hand({ cards, hideSecond, label, total, soft, active, handResult }) {
+function Hand({ cards, hideSecond, label, total, soft, active, handResult, betAmt, doubled }) {
   const activeClass = active === true ? 'bj-hand--active' : active === false ? 'bj-hand--inactive' : '';
   return (
     <div className={`bj-hand ${activeClass}`}>
       {label && <div className="bj-hand-label">{label}</div>}
+      {betAmt != null && (
+        <div className="bj-hand-bet">
+          💰 ${doubled ? betAmt * 2 : betAmt} {doubled ? <span className="bj-hand-bet-tag">DOUBLED</span> : ''}
+        </div>
+      )}
       <div className="bj-cards-row">
         {cards.map((c, i) => (
           <BjCard key={i} card={c} faceDown={hideSecond && i === 1} />
@@ -104,17 +108,21 @@ function Hand({ cards, hideSecond, label, total, soft, active, handResult }) {
 export default function Blackjack() {
   const shoeRef = useRef(createShoe());
 
-  const [balance, setBalance]     = useState(getBalance);
-  const [bet, setBet]             = useState(10);
-  const [phase, setPhase]         = useState('betting'); // betting | playing | dealer | result
-  const [dealer, setDealer]       = useState([]);
-  // hands: [{ cards: [], bet: number, doubled: boolean }]
-  const [hands, setHands]         = useState([]);
-  const [activeIdx, setActiveIdx] = useState(0);
-  const [splitAces, setSplitAces] = useState(false);
-  const [results, setResults]     = useState([]); // [{ msg, net }] per hand
-  const [totalNet, setTotalNet]   = useState(null);
-  const [countdown, setCountdown] = useState('');
+  const [balance, setBalance]       = useState(getBalance);
+  const [bet, setBet]               = useState(10);
+  // phase: 'betting' | 'insurance' | 'playing' | 'dealer' | 'result'
+  const [phase, setPhase]           = useState('betting');
+  const [dealer, setDealer]         = useState([]);
+  // hands: [{ cards, bet, doubled, surrendered }]
+  const [hands, setHands]           = useState([]);
+  const [activeIdx, setActiveIdx]   = useState(0);
+  const [splitAces, setSplitAces]   = useState(false);
+  const [results, setResults]       = useState([]);
+  const [totalNet, setTotalNet]     = useState(null);
+  // insurance
+  const [insuranceBet, setInsuranceBet] = useState(0);
+  const [insLost, setInsLost]       = useState(false); // flag for "insurance lost" toast
+  const [countdown, setCountdown]   = useState('');
 
   useEffect(() => {
     function tick() {
@@ -136,6 +144,7 @@ export default function Blackjack() {
     return shoeRef.current.pop();
   }
 
+  // ── Deal ──────────────────────────────────────────────────────────────────
   function deal() {
     if (bet < 1 || bet > getBalance()) return;
     subtractBalance(bet);
@@ -145,28 +154,29 @@ export default function Blackjack() {
     const pHand = [c1, c2];
     const dHand = [d1, d2];
 
-    const initialHands = [{ cards: pHand, bet, doubled: false }];
-    setHands(initialHands);
+    setHands([{ cards: pHand, bet, doubled: false, surrendered: false }]);
     setDealer(dHand);
     setActiveIdx(0);
     setSplitAces(false);
     setResults([]);
     setTotalNet(null);
+    setInsuranceBet(0);
+    setInsLost(false);
 
-    // Natural blackjack check (only on initial 2-card deal, not after split)
-    if (isBlackjack(pHand)) {
+    if (d1.rank === 'A') {
+      // Dealer shows Ace — offer insurance before peeking
+      setPhase('insurance');
+    } else if (isBlackjack(pHand)) {
       if (isBlackjack(dHand)) {
-        // Push — return original bet
         addBalance(bet);
         syncBalance();
         setResults([{ msg: '🤝 Push — Both Blackjack!', net: 0 }]);
         setTotalNet(0);
       } else {
-        // Blackjack pays 3:2 — profit = 1.5× bet (floor on odd bets)
         const profit = Math.floor(bet * 1.5);
-        addBalance(bet + profit); // return original bet + profit
+        addBalance(bet + profit);
         syncBalance();
-        setResults([{ msg: `🃏 Blackjack! 3:2 Payout!`, net: profit }]);
+        setResults([{ msg: '🃏 Blackjack! 3:2 Payout!', net: profit }]);
         setTotalNet(profit);
       }
       setPhase('result');
@@ -175,32 +185,55 @@ export default function Blackjack() {
     }
   }
 
-  function split() {
-    const h0 = hands[0];
-    if (hands.length !== 1 || h0.cards.length !== 2) return;
-    if (cardValue(h0.cards[0].rank) !== cardValue(h0.cards[1].rank)) return;
-    if (getBalance() < h0.bet) return;
+  // ── Insurance decision ────────────────────────────────────────────────────
+  function handleInsurance(insAmount) {
+    const pHand = hands[0].cards;
+    const dHand = dealer;
 
-    subtractBalance(h0.bet);
-    syncBalance();
+    if (insAmount > 0) {
+      subtractBalance(insAmount);
+      syncBalance();
+    }
 
-    const isAces = h0.cards[0].rank === 'A';
-    const hand1 = { cards: [h0.cards[0], getCard()], bet: h0.bet, doubled: false };
-    const hand2 = { cards: [h0.cards[1], getCard()], bet: h0.bet, doubled: false };
-    const newHands = [hand1, hand2];
+    const dealerBJ = isBlackjack(dHand);
+    const playerBJ = isBlackjack(pHand);
 
-    setHands(newHands);
-    setSplitAces(isAces);
+    if (dealerBJ) {
+      // Insurance pays 2:1
+      const insNet = insAmount > 0 ? insAmount * 2 : 0;
+      if (insAmount > 0) { addBalance(insAmount * 3); syncBalance(); } // return stake + profit
 
-    if (isAces) {
-      // Split aces: one card each, no further actions — run dealer immediately
-      runDealerWith(newHands, dealer);
+      if (playerBJ) {
+        // Both BJ → push on main hand, insurance profit only
+        addBalance(bet); syncBalance();
+        setResults([{ msg: `🤝 Push — Both Blackjack!${insAmount > 0 ? ` Insurance +$${insNet}` : ''}`, net: insNet }]);
+        setTotalNet(insNet);
+      } else {
+        // Dealer BJ wins — player loses main bet
+        setResults([{ msg: insAmount > 0 ? `❌ Dealer Blackjack — Insurance +$${insNet}` : '❌ Dealer Blackjack', net: insNet - bet }]);
+        setTotalNet(insNet - bet);
+        syncBalance();
+      }
+      setPhase('result');
     } else {
-      setActiveIdx(0);
+      // No dealer BJ — insurance lost, continue playing
+      if (insAmount > 0) setInsLost(true);
+
+      if (playerBJ) {
+        const profit = Math.floor(bet * 1.5);
+        addBalance(bet + profit); syncBalance();
+        setResults([{ msg: `🃏 Blackjack! 3:2 Payout!`, net: profit - insAmount }]);
+        setTotalNet(profit - insAmount);
+        setPhase('result');
+      } else {
+        setPhase('playing');
+      }
     }
   }
 
+  // ── Player actions ────────────────────────────────────────────────────────
   function hit() {
+    setInsLost(false);
     const card = getCard();
     const newHands = hands.map((h, i) =>
       i === activeIdx ? { ...h, cards: [...h.cards, card] } : h
@@ -212,6 +245,7 @@ export default function Blackjack() {
   }
 
   function stand() {
+    setInsLost(false);
     advanceHand(hands, activeIdx, dealer);
   }
 
@@ -220,12 +254,53 @@ export default function Blackjack() {
     if (getBalance() < h.bet) return;
     subtractBalance(h.bet);
     syncBalance();
+    setInsLost(false);
     const card = getCard();
     const newHands = hands.map((hand, i) =>
       i === activeIdx ? { ...hand, cards: [...hand.cards, card], doubled: true } : hand
     );
     setHands(newHands);
     advanceHand(newHands, activeIdx, dealer);
+  }
+
+  function surrender() {
+    const h = hands[activeIdx];
+    if (h.cards.length !== 2 || splitAces) return;
+    const newHands = hands.map((hand, i) =>
+      i === activeIdx ? { ...hand, surrendered: true } : hand
+    );
+    setHands(newHands);
+    setInsLost(false);
+    advanceHand(newHands, activeIdx, dealer);
+  }
+
+  function split() {
+    const h = hands[activeIdx];
+    if (h.cards.length !== 2) return;
+    if (cardValue(h.cards[0].rank) !== cardValue(h.cards[1].rank)) return;
+    if (hands.length >= 4) return; // max 4 hands via re-split
+    if (getBalance() < h.bet) return;
+
+    subtractBalance(h.bet);
+    syncBalance();
+    setInsLost(false);
+
+    const isAces = h.cards[0].rank === 'A';
+    const newHand1 = { cards: [h.cards[0], getCard()], bet: h.bet, doubled: false, surrendered: false };
+    const newHand2 = { cards: [h.cards[1], getCard()], bet: h.bet, doubled: false, surrendered: false };
+
+    // Replace activeIdx hand with two new hands
+    const newHands = [...hands];
+    newHands.splice(activeIdx, 1, newHand1, newHand2);
+    setHands(newHands);
+
+    if (isAces) {
+      // Split aces: one card each, no further actions
+      setSplitAces(true);
+      runDealerWith(newHands, dealer);
+    } else {
+      setActiveIdx(activeIdx); // stay on same index (first of the two new hands)
+    }
   }
 
   function advanceHand(currentHands, idx, dHand) {
@@ -236,14 +311,19 @@ export default function Blackjack() {
     }
   }
 
+  // ── Dealer plays ──────────────────────────────────────────────────────────
   function runDealerWith(currentHands, initialDealerHand) {
+    // If all player hands busted/surrendered, no need for dealer to draw
+    const allDone = currentHands.every(h => isBust(h.cards) || h.surrendered);
+    if (allDone) { resolveAll(currentHands, initialDealerHand); return; }
+
     setPhase('dealer');
     let dHand = [...initialDealerHand];
 
     const draw = () => {
       const total = handTotal(dHand);
       const soft  = isSoft(dHand);
-      // Dealer must hit on all 16 and below, and on soft 17
+      // Dealer must hit on 16 or below, and on soft 17
       if (total < 17 || (total === 17 && soft)) {
         dHand = [...dHand, getCard()];
         setDealer([...dHand]);
@@ -255,35 +335,40 @@ export default function Blackjack() {
     setTimeout(draw, 600);
   }
 
+  // ── Resolve all hands ─────────────────────────────────────────────────────
   function resolveAll(currentHands, dHand) {
     const dTotal = handTotal(dHand);
     const dBust  = isBust(dHand);
     let netTotal = 0;
 
     const handResults = currentHands.map(hand => {
-      // When doubled, the total risk is bet * 2 (original bet already deducted on deal, extra on double)
       const thisBet = hand.doubled ? hand.bet * 2 : hand.bet;
-      const pTotal  = handTotal(hand.cards);
-      const pBust   = isBust(hand.cards);
+
+      // Surrender: return half bet regardless of dealer
+      if (hand.surrendered) {
+        const halfBack = Math.floor(hand.bet / 2);
+        addBalance(halfBack);
+        const net = -(hand.bet - halfBack);
+        netTotal += net;
+        return { msg: '🏳️ Surrendered', net };
+      }
+
+      const pTotal = handTotal(hand.cards);
+      const pBust  = isBust(hand.cards);
       let net = 0, msg = '';
 
       if (pBust) {
-        // Doubled: extra bet already subtracted in doubleDown()
-        // Only the doubled portion was extra; original bet was deducted on deal
         net = -thisBet;
         msg = '💥 Bust';
       } else if (dBust || pTotal > dTotal) {
-        // Win pays 1:1 — return original bet + equal profit
-        addBalance(thisBet * 2);
+        addBalance(thisBet * 2); // return bet + equal profit (1:1)
         net = thisBet;
-        msg = '✅ Win';
+        msg = dBust ? '✅ Dealer Bust' : '✅ Win';
       } else if (pTotal === dTotal) {
-        // Push — return bet
-        addBalance(thisBet);
+        addBalance(thisBet); // return bet
         net = 0;
         msg = '🤝 Push';
       } else {
-        // Dealer wins
         net = -thisBet;
         msg = '❌ Dealer Wins';
       }
@@ -297,28 +382,36 @@ export default function Blackjack() {
     setPhase('result');
   }
 
-  const balance_  = getBalance();
-  const quickBets = [5, 10, 25, 50, 100, 250].filter(v => v <= balance_);
-  const inPlay    = phase === 'playing';
+  // ── Derived state ─────────────────────────────────────────────────────────
+  const balance_   = getBalance();
+  const quickBets  = [5, 10, 25, 50, 100, 250].filter(v => v <= balance_);
+  const inPlay     = phase === 'playing';
   const activeHand = hands[activeIdx];
-  const dTotal    = handTotal(dealer);
+  const dTotal     = handTotal(dealer);
+  const maxIns     = Math.floor(bet / 2);
 
-  const canDouble = inPlay && activeHand && activeHand.cards.length === 2 && !splitAces && balance_ >= activeHand.bet;
-  const canSplit  = inPlay && hands.length === 1 && activeHand && activeHand.cards.length === 2
+  const canDouble   = inPlay && activeHand && activeHand.cards.length === 2 && !splitAces && balance_ >= activeHand.bet;
+  const canSplit    = inPlay && hands.length < 4 && !splitAces && activeHand && activeHand.cards.length === 2
     && cardValue(activeHand.cards[0].rank) === cardValue(activeHand.cards[1].rank)
     && balance_ >= activeHand.bet;
+  const canSurrender = inPlay && activeHand && activeHand.cards.length === 2 && !splitAces;
 
   return (
     <div className="bj-table">
       <div className="bj-title">♠ Blackjack</div>
       <div className="bj-balance">💰 Balance: <strong>${balance_.toLocaleString()}</strong></div>
 
+      {/* Insurance lost toast */}
+      {insLost && (
+        <div className="bj-ins-toast">Insurance lost — no dealer Blackjack</div>
+      )}
+
       {/* Dealer hand */}
       <Hand
         cards={dealer}
-        hideSecond={phase === 'playing'}
+        hideSecond={phase === 'playing' || phase === 'insurance'}
         label="Dealer"
-        total={phase !== 'playing' ? dTotal : undefined}
+        total={phase !== 'playing' && phase !== 'insurance' ? dTotal : undefined}
       />
 
       {/* Player hands */}
@@ -326,9 +419,11 @@ export default function Blackjack() {
         hands.length === 1 ? (
           <Hand
             cards={hands[0].cards}
-            label={hands[0].doubled ? 'You (Doubled)' : 'You'}
+            label={hands[0].surrendered ? 'You (Surrendered)' : 'You'}
             total={handTotal(hands[0].cards)}
             soft={isSoft(hands[0].cards)}
+            betAmt={hands[0].bet}
+            doubled={hands[0].doubled}
           />
         ) : (
           <div className="bj-split-hands">
@@ -336,11 +431,13 @@ export default function Blackjack() {
               <Hand
                 key={i}
                 cards={hand.cards}
-                label={`Hand ${i + 1}${hand.doubled ? ' (Doubled)' : ''}`}
+                label={`Hand ${i + 1}${hand.surrendered ? ' (Surrendered)' : ''}`}
                 total={handTotal(hand.cards)}
                 soft={isSoft(hand.cards)}
                 active={inPlay ? i === activeIdx : undefined}
                 handResult={results[i]}
+                betAmt={hand.bet}
+                doubled={hand.doubled}
               />
             ))}
           </div>
@@ -354,7 +451,38 @@ export default function Blackjack() {
             {hands.length > 1 ? 'Total Result' : results[0]?.msg}
           </div>
           <div className="bj-result-net">
-            {totalNet > 0 ? `+$${totalNet}` : totalNet < 0 ? `-$${Math.abs(totalNet)}` : 'No change'}
+            {totalNet > 0 ? `+$${totalNet}` : totalNet < 0 ? `-$${Math.abs(totalNet)}` : 'Push — no change'}
+          </div>
+        </div>
+      )}
+
+      {/* Insurance UI */}
+      {phase === 'insurance' && (
+        <div className="bj-insurance">
+          <div className="bj-ins-title">🃏 Dealer shows an Ace</div>
+          <div className="bj-ins-sub">Insurance pays 2:1 if dealer has Blackjack</div>
+          <div className="bj-ins-bet-row">
+            <span>Insurance bet (max ${maxIns}):</span>
+            <input
+              className="bj-ins-input"
+              type="number"
+              min={0}
+              max={maxIns}
+              value={insuranceBet}
+              onChange={e => setInsuranceBet(Math.max(0, Math.min(maxIns, parseInt(e.target.value) || 0)))}
+            />
+          </div>
+          <div className="bj-ins-btns">
+            <button
+              className="bj-btn bj-btn--ins-take"
+              onClick={() => handleInsurance(insuranceBet)}
+              disabled={insuranceBet < 1 || balance_ < insuranceBet}
+            >
+              Take Insurance ${insuranceBet}
+            </button>
+            <button className="bj-btn bj-btn--ins-skip" onClick={() => handleInsurance(0)}>
+              No Insurance
+            </button>
           </div>
         </div>
       )}
@@ -406,11 +534,14 @@ export default function Blackjack() {
           {canSplit && (
             <button className="bj-btn bj-btn--split" onClick={split}>Split</button>
           )}
+          {canSurrender && (
+            <button className="bj-btn bj-btn--surrender" onClick={surrender}>Surrender</button>
+          )}
         </div>
       )}
 
       <div className="bj-hint">
-        Dealer hits soft 17 • Blackjack pays 3:2 • Win pays 1:1 • Double & Split available • {NUM_DECKS}-deck shoe
+        Dealer hits soft 17 • BJ pays 3:2 • Double on any 2 cards • Split up to 4 hands • Insurance • Surrender
       </div>
     </div>
   );
