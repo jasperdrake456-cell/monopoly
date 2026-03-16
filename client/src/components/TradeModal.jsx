@@ -10,8 +10,10 @@ export default function TradeModal({ gameState, myId, roomCode, emit, onClose })
   const [targetId, setTargetId] = useState(otherPlayers[0]?.id || '');
   const [offerProps, setOfferProps] = useState([]);
   const [offerCash, setOfferCash] = useState(0);
+  const [offerJailCard, setOfferJailCard] = useState(false);
   const [requestProps, setRequestProps] = useState([]);
   const [requestCash, setRequestCash] = useState(0);
+  const [requestJailCard, setRequestJailCard] = useState(false);
 
   const targetPlayer = players.find(p => p.id === targetId);
 
@@ -23,11 +25,15 @@ export default function TradeModal({ gameState, myId, roomCode, emit, onClose })
     emit('proposeTrade', {
       roomCode,
       toId: targetId,
-      offer: { properties: offerProps, cash: parseInt(offerCash) || 0 },
-      request: { properties: requestProps, cash: parseInt(requestCash) || 0 },
+      offer:   { properties: offerProps,   cash: parseInt(offerCash)   || 0, jailCards: offerJailCard   ? 1 : 0 },
+      request: { properties: requestProps, cash: parseInt(requestCash) || 0, jailCards: requestJailCard ? 1 : 0 },
     });
     onClose();
   }
+
+  const isEmpty =
+    offerProps.length === 0 && parseInt(offerCash) === 0 && !offerJailCard &&
+    requestProps.length === 0 && parseInt(requestCash) === 0 && !requestJailCard;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -39,7 +45,7 @@ export default function TradeModal({ gameState, myId, roomCode, emit, onClose })
 
         <div className="trade-target">
           <label>Trade with:
-            <select value={targetId} onChange={e => { setTargetId(e.target.value); setRequestProps([]); }}>
+            <select value={targetId} onChange={e => { setTargetId(e.target.value); setRequestProps([]); setRequestJailCard(false); }}>
               {otherPlayers.map(p => (
                 <option key={p.id} value={p.id}>
                   {TOKENS[p.token]} {p.name}
@@ -70,6 +76,16 @@ export default function TradeModal({ gameState, myId, roomCode, emit, onClose })
               })}
               {myPlayer.properties.length === 0 && <span className="no-props-msg">No properties</span>}
             </div>
+            {myPlayer.getOutOfJailCards > 0 && (
+              <label className="jail-card-label">
+                <input
+                  type="checkbox"
+                  checked={offerJailCard}
+                  onChange={e => setOfferJailCard(e.target.checked)}
+                />
+                🃏 Get Out of Jail Free card
+              </label>
+            )}
             <label className="cash-label">Cash to offer:
               <input
                 type="number"
@@ -104,6 +120,16 @@ export default function TradeModal({ gameState, myId, roomCode, emit, onClose })
               })}
               {(!targetPlayer || targetPlayer.properties.length === 0) && <span className="no-props-msg">No properties</span>}
             </div>
+            {targetPlayer?.getOutOfJailCards > 0 && (
+              <label className="jail-card-label">
+                <input
+                  type="checkbox"
+                  checked={requestJailCard}
+                  onChange={e => setRequestJailCard(e.target.checked)}
+                />
+                🃏 Get Out of Jail Free card
+              </label>
+            )}
             <label className="cash-label">Cash to request:
               <input
                 type="number"
@@ -122,7 +148,7 @@ export default function TradeModal({ gameState, myId, roomCode, emit, onClose })
           <button
             className="ap-btn primary"
             onClick={handleSubmit}
-            disabled={!targetId || (offerProps.length === 0 && parseInt(offerCash) === 0 && requestProps.length === 0 && parseInt(requestCash) === 0)}
+            disabled={!targetId || isEmpty}
           >
             Send Offer
           </button>

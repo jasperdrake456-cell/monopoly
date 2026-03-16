@@ -232,6 +232,20 @@
   0%,100% { transform:scale(1);   box-shadow:0 0 0 3px rgba(255,215,0,.7),0 2px 8px rgba(0,0,0,.4); }
   50%     { transform:scale(1.2); box-shadow:0 0 0 7px rgba(255,215,0,.2),0 4px 12px rgba(0,0,0,.4); }
 }
+/* Hop animation — each space the token bounces up and lands */
+@keyframes tokenHop {
+  0%   { transform: translateY(0)    scale(1);    }
+  35%  { transform: translateY(-11px) scale(1.18); }
+  65%  { transform: translateY(-4px)  scale(1.07); }
+  100% { transform: translateY(0)    scale(1);    }
+}
+.tile-token-badge.hopping {
+  animation: tokenHop 0.35s ease-out forwards;
+}
+/* When current player is hopping, hop overrides pulse */
+.tile-token-badge.is-current.hopping {
+  animation: tokenHop 0.35s ease-out forwards;
+}
 
 /* ── Corner tiles ──────────────────────────────────────────────────────── */
 .tile--corner {

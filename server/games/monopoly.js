@@ -63,6 +63,14 @@ function register(ns) {
       broadcastState(ns, result.room);
     });
 
+    socket.on('closeRoom', ({ roomCode }) => {
+      const room = rm.getRoom(roomCode);
+      if (!room) return;
+      if (room.hostId !== socket.id) return;
+      broadcast(ns, roomCode, 'roomClosed', {});
+      rm.deleteRoom(roomCode);
+    });
+
     socket.on('startGame', ({ roomCode }) => {
       handleAction(ns, socket, roomCode, (room) => {
         if (room.hostId !== socket.id) return { error: 'Only the host can start the game' };

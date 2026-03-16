@@ -1,31 +1,38 @@
-const MAX = 10;
+const API = '/api/leaderboard';
 
-export function getLeaderboard(gameId) {
-  try { return JSON.parse(localStorage.getItem(`lb_${gameId}`) || '[]'); }
-  catch { return []; }
+export async function getLeaderboard(gameId) {
+  try {
+    const res = await fetch(`${API}/${gameId}`);
+    return await res.json();
+  } catch { return []; }
 }
 
-// higherIsBetter: true for score-based, false for time/moves-based
-export function isHighScore(gameId, score, higherIsBetter = true) {
-  const lb = getLeaderboard(gameId);
-  if (lb.length < MAX) return true;
-  const worst = lb[lb.length - 1].score;
-  return higherIsBetter ? score > worst : score < worst;
+// Returns true if score qualifies for the top 10
+export async function isHighScore(gameId, score, higherIsBetter = true) {
+  try {
+    const res = await fetch(`${API}/${gameId}/check?score=${score}&higherIsBetter=${higherIsBetter}`);
+    const data = await res.json();
+    return !!data.isHighScore;
+  } catch { return false; }
 }
 
-export function addScore(gameId, score, name, higherIsBetter = true) {
-  const lb = getLeaderboard(gameId);
-  lb.push({ name, score, date: new Date().toLocaleDateString() });
-  lb.sort((a, b) => higherIsBetter ? b.score - a.score : a.score - b.score);
-  const trimmed = lb.slice(0, MAX);
-  localStorage.setItem(`lb_${gameId}`, JSON.stringify(trimmed));
-  return trimmed;
+// Submit a score; returns updated leaderboard array
+export async function addScore(gameId, score, name, higherIsBetter = true) {
+  try {
+    const res = await fetch(`${API}/${gameId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ score, name, higherIsBetter }),
+    });
+    return await res.json();
+  } catch { return []; }
 }
 
-export function getRank(gameId, score, higherIsBetter = true) {
-  const lb = getLeaderboard(gameId);
-  const sorted = [...lb, { score }].sort((a, b) =>
-    higherIsBetter ? b.score - a.score : a.score - b.score
-  );
-  return sorted.findIndex(e => e.score === score) + 1;
+// Returns 1-based rank of score
+export async function getRank(gameId, score, higherIsBetter = true) {
+  try {
+    const res = await fetch(`${API}/${gameId}/check?score=${score}&higherIsBetter=${higherIsBetter}`);
+    const data = await res.json();
+    return data.rank ?? 1;
+  } catch { return 1; }
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import HighScoreModal from '../components/HighScoreModal';
-import { isHighScore, addScore } from '../utils/leaderboard';
+import { isHighScore } from '../utils/leaderboard';
 import './Sudoku.css';
 
 // Puzzles: 81-char strings, 0 = empty
@@ -169,7 +169,7 @@ export default function Sudoku({ onBack }) {
       if (done) {
         setGameState('won');
         const gameId = `sudoku_${diff}`;
-        if (isHighScore(gameId, time, false)) { setPendingTime(time); setShowHS(true); }
+        isHighScore(gameId, time, false).then(yes => { if (yes) { setPendingTime(time); setShowHS(true); } });
       }
     }
   }
@@ -317,7 +317,7 @@ export default function Sudoku({ onBack }) {
           );
         })}
       </div>
-      {showHS && <HighScoreModal gameId={`sudoku_${diff}`} score={pendingTime} label="sec" higherIsBetter={false} onSave={name => { addScore(`sudoku_${diff}`, pendingTime, name, false); setShowHS(false); }} onDismiss={() => setShowHS(false)} />}
+      {showHS && <HighScoreModal gameId={`sudoku_${diff}`} score={pendingTime} label="sec" higherIsBetter={false} onSave={() => setShowHS(false)} onDismiss={() => setShowHS(false)} />}
     </div>
   );
 }

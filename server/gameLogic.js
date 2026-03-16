@@ -692,13 +692,17 @@ function doProposeTrade(state, fromId, toId, offer, request) {
     if (!from.properties.includes(propId)) return { error: 'You do not own offered property ' + propId };
   }
   if (offer.cash > from.cash) return { error: 'Not enough cash to offer' };
+  const offerCards = Math.max(0, parseInt(offer.jailCards) || 0);
+  if (offerCards > from.getOutOfJailCards) return { error: 'Not enough Get Out of Jail Free cards to offer' };
 
   // Validate request
   for (const propId of request.properties) {
     if (!to.properties.includes(propId)) return { error: 'Target does not own requested property ' + propId };
   }
+  const requestCards = Math.max(0, parseInt(request.jailCards) || 0);
+  if (requestCards > to.getOutOfJailCards) return { error: 'Target does not have enough Get Out of Jail Free cards' };
 
-  state.activeTrade = { fromId, toId, offer, request };
+  state.activeTrade = { fromId, toId, offer: { ...offer, jailCards: offerCards }, request: { ...request, jailCards: requestCards } };
   addLog(state, `${from.name} proposed a trade to ${to.name}`);
   return {};
 }
@@ -726,6 +730,10 @@ function doRespondTrade(state, playerId, accepted) {
   }
   if (trade.offer.cash > from.cash) { state.activeTrade = null; return { error: 'Trade invalid' }; }
   if (trade.request.cash > to.cash) { state.activeTrade = null; return { error: 'Trade invalid' }; }
+  const offerCards = trade.offer.jailCards || 0;
+  const requestCards = trade.request.jailCards || 0;
+  if (offerCards > from.getOutOfJailCards) { state.activeTrade = null; return { error: 'Trade invalid' }; }
+  if (requestCards > to.getOutOfJailCards) { state.activeTrade = null; return { error: 'Trade invalid' }; }
 
   // Execute trade
   trade.offer.properties.forEach(propId => {
@@ -742,6 +750,11 @@ function doRespondTrade(state, playerId, accepted) {
   from.cash += trade.request.cash;
   to.cash -= trade.request.cash;
   to.cash += trade.offer.cash;
+  // Transfer jail-free cards
+  from.getOutOfJailCards -= offerCards;
+  to.getOutOfJailCards   += offerCards;
+  to.getOutOfJailCards   -= requestCards;
+  from.getOutOfJailCards += requestCards;
 
   addLog(state, `${from.name} and ${to.name} completed a trade`);
   state.activeTrade = null;

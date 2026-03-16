@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import HighScoreModal from '../components/HighScoreModal';
-import { isHighScore, addScore } from '../utils/leaderboard';
+import { isHighScore } from '../utils/leaderboard';
 import './Game2048.css';
 
 const TILE_COLORS = {
@@ -114,7 +114,7 @@ export default function Game2048({ onBack }) {
       if (!keepPlaying && nb.some(row => row.includes(2048))) setWon(true);
       if (!canMove(nb)) {
         setOver(true);
-        setScore(s => { if (s > 0 && isHighScore('2048', s)) { setPendingScore(s); setShowHS(true); } return s; });
+        setScore(s => { if (s > 0) isHighScore('2048', s).then(yes => { if (yes) { setPendingScore(s); setShowHS(true); } }); return s; });
       }
       return nb;
     });
@@ -196,7 +196,7 @@ export default function Game2048({ onBack }) {
           </div>
         </div>
       )}
-      {showHS && <HighScoreModal gameId="2048" score={pendingScore} label="pts" onSave={name => { addScore('2048', pendingScore, name); setShowHS(false); }} onDismiss={() => setShowHS(false)} />}
+      {showHS && <HighScoreModal gameId="2048" score={pendingScore} label="pts" onSave={() => setShowHS(false)} onDismiss={() => setShowHS(false)} />}
     </div>
   );
 }

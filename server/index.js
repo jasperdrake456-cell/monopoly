@@ -6,6 +6,7 @@ const cors = require('cors');
 const path = require('path');
 const { getPassword, setPassword, generatePassword } = require('./passwordStore');
 const { sendPasswordEmail } = require('./email');
+const lb = require('./leaderboard');
 
 const app = express();
 const server = http.createServer(app);
@@ -69,6 +70,35 @@ app.post('/api/rotate-password', async (req, res) => {
     console.error('[rotate] Email failed:', err.message);
     res.status(500).json({ ok: false, error: 'Email failed', password: newPassword });
   }
+});
+
+// ── Leaderboard API ──────────────────────────────────────────────────────────
+
+app.get('/api/leaderboard/:gameId', (req, res) => {
+  res.json(lb.getLeaderboard(req.params.gameId));
+});
+
+// Check if score qualifies + get rank
+app.get('/api/leaderboard/:gameId/check', (req, res) => {
+  const score = parseFloat(req.query.score);
+  const higherIsBetter = req.query.higherIsBetter !== 'false';
+  if (isNaN(score)) return res.status(400).json({ error: 'Invalid score' });
+  res.json({
+    isHighScore: lb.isHighScore(req.params.gameId, score, higherIsBetter),
+    rank: lb.getRank(req.params.gameId, score, higherIsBetter),
+  });
+});
+
+// Submit a score
+app.post('/api/leaderboard/:gameId', (req, res) => {
+  const { score, name, higherIsBetter = true } = req.body || {};
+  if (typeof score !== 'number' || !name || typeof name !== 'string') {
+    return res.status(400).json({ error: 'Missing fields' });
+  }
+  const clean = name.trim().slice(0, 20);
+  if (!clean) return res.status(400).json({ error: 'Empty name' });
+  const result = lb.addScore(req.params.gameId, score, clean, higherIsBetter);
+  res.json(result);
 });
 
 // ── Static client ─────────────────────────────────────────────────────────────

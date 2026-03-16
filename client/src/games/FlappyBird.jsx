@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import HighScoreModal from '../components/HighScoreModal';
-import { isHighScore, addScore } from '../utils/leaderboard';
+import { isHighScore } from '../utils/leaderboard';
 import './FlappyBird.css';
 
 const W = 400, H = 550;
@@ -180,9 +180,7 @@ export default function FlappyBird() {
         if (s.birdY + BIRD_R > H - 30 || s.birdY - BIRD_R < 0) {
           s.phase = 'dead';
           setPhase('dead');
-          if (s.score > 0 && isHighScore('flappy_bird', s.score)) {
-            setPendingScore(s.score); setShowHS(true);
-          }
+          if (s.score > 0) isHighScore('flappy_bird', s.score).then(yes => { if (yes) { setPendingScore(s.score); setShowHS(true); } });
         }
 
         // Collision with pipes
@@ -193,9 +191,7 @@ export default function FlappyBird() {
           if (inX && (inTop || inBot)) {
             s.phase = 'dead';
             setPhase('dead');
-            if (s.score > 0 && isHighScore('flappy_bird', s.score)) {
-              setPendingScore(s.score); setShowHS(true);
-            }
+            if (s.score > 0) isHighScore('flappy_bird', s.score).then(yes => { if (yes) { setPendingScore(s.score); setShowHS(true); } });
           }
         }
       }
@@ -227,7 +223,7 @@ export default function FlappyBird() {
         <div className="flappy-score">Score: {score}</div>
         <div className="flappy-best">Best: {best}</div>
       </div>
-      {showHS && <HighScoreModal gameId="flappy_bird" score={pendingScore} label="pipes" onSave={name => { addScore('flappy_bird', pendingScore, name); setShowHS(false); }} onDismiss={() => setShowHS(false)} />}
+      {showHS && <HighScoreModal gameId="flappy_bird" score={pendingScore} label="pipes" onSave={() => setShowHS(false)} onDismiss={() => setShowHS(false)} />}
     </div>
   );
 }

@@ -51,7 +51,13 @@ export default function MonopolyPage() {
     const offChat = on('chatMessage', (msg) => {
       setChatMessages(prev => [...prev, msg]);
     });
-    return () => { offRoomCreated(); offRoomJoined(); offReconnected(); offGameState(); offError(); offChat(); };
+    const offRoomClosed = on('roomClosed', () => {
+      localStorage.removeItem(SESSION_KEY);
+      setRoomState(null);
+      setMyId(null);
+      setSessionId(null);
+    });
+    return () => { offRoomCreated(); offRoomJoined(); offReconnected(); offGameState(); offError(); offChat(); offRoomClosed(); };
   }, [on, sessionId]);
 
   const handleEmit = useCallback((event, data) => {

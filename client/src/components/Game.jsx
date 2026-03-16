@@ -45,9 +45,19 @@ export default function Game({ roomState, myId, roomCode, emit, chatMessages = [
               ))}
             </div>
             {isHost && (
-              <button className="win-restart-btn" onClick={() => emit('restartGame', { roomCode })}>
-                🔄 Play Again
-              </button>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <button className="win-restart-btn" onClick={() => emit('restartGame', { roomCode })}>
+                  🔄 Play Again
+                </button>
+                <button className="win-restart-btn" style={{ background: '#c62828' }}
+                  onClick={() => {
+                    if (window.confirm('Close the room and kick all players?')) {
+                      emit('closeRoom', { roomCode });
+                    }
+                  }}>
+                  ✕ Close Room
+                </button>
+              </div>
             )}
             {!isHost && <p style={{ opacity: 0.6, fontSize: '0.85rem' }}>Waiting for host to restart…</p>}
           </div>

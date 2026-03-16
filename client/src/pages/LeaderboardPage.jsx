@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getLeaderboard } from '../utils/leaderboard';
 import './LeaderboardPage.css';
@@ -39,7 +39,12 @@ function rankLabel(i) {
 }
 
 function LeaderboardCard({ game }) {
-  const entries = getLeaderboard(game.id);
+  const [entries, setEntries] = useState(null);
+
+  useEffect(() => {
+    getLeaderboard(game.id).then(setEntries);
+  }, [game.id]);
+
   return (
     <div className="lb-card">
       <div className="lb-card-header">
@@ -48,16 +53,18 @@ function LeaderboardCard({ game }) {
         <span className="lb-card-unit">{game.unit}</span>
       </div>
       <div className="lb-entries">
-        {entries.length === 0
-          ? <div className="lb-empty">No scores yet — be the first!</div>
-          : entries.map((e, i) => (
-              <div key={i} className="lb-entry">
-                <span className={`lb-rank ${rankClass(i)}`}>{rankLabel(i)}</span>
-                <span className="lb-name">{e.name}</span>
-                <span className="lb-score">{e.score}</span>
-                <span className="lb-date">{e.date}</span>
-              </div>
-            ))
+        {entries === null
+          ? <div className="lb-empty">Loading…</div>
+          : entries.length === 0
+            ? <div className="lb-empty">No scores yet — be the first!</div>
+            : entries.map((e, i) => (
+                <div key={i} className="lb-entry">
+                  <span className={`lb-rank ${rankClass(i)}`}>{rankLabel(i)}</span>
+                  <span className="lb-name">{e.name}</span>
+                  <span className="lb-score">{e.score}</span>
+                  <span className="lb-date">{e.date}</span>
+                </div>
+              ))
         }
       </div>
     </div>

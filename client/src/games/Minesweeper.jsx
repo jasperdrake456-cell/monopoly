@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import HighScoreModal from '../components/HighScoreModal';
-import { isHighScore, addScore } from '../utils/leaderboard';
+import { isHighScore } from '../utils/leaderboard';
 import './Minesweeper.css';
 
 const DIFFICULTIES = {
@@ -138,7 +138,7 @@ export default function Minesweeper({ onBack }) {
     if (won) {
       setStatus('won');
       const gameId = `minesweeper_${diff}`;
-      if (isHighScore(gameId, time, false)) { setPendingTime(time); setShowHS(true); }
+      isHighScore(gameId, time, false).then(yes => { if (yes) { setPendingTime(time); setShowHS(true); } });
     }
   }, [grid, status, diff, time]);
 
@@ -186,7 +186,7 @@ export default function Minesweeper({ onBack }) {
       if (won) {
         setStatus('won');
         const gameId = `minesweeper_${diff}`;
-        if (isHighScore(gameId, time, false)) { setPendingTime(time); setShowHS(true); }
+        isHighScore(gameId, time, false).then(yes => { if (yes) { setPendingTime(time); setShowHS(true); } });
       }
     }
   }, [grid, diff, time]);
@@ -245,7 +245,7 @@ export default function Minesweeper({ onBack }) {
           }))}
         </div>
       </div>
-      {showHS && <HighScoreModal gameId={`minesweeper_${diff}`} score={pendingTime} label="sec" higherIsBetter={false} onSave={name => { addScore(`minesweeper_${diff}`, pendingTime, name, false); setShowHS(false); }} onDismiss={() => setShowHS(false)} />}
+      {showHS && <HighScoreModal gameId={`minesweeper_${diff}`} score={pendingTime} label="sec" higherIsBetter={false} onSave={() => setShowHS(false)} onDismiss={() => setShowHS(false)} />}
     </div>
   );
 }

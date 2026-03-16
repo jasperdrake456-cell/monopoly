@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import HighScoreModal from '../components/HighScoreModal';
-import { isHighScore, addScore } from '../utils/leaderboard';
+import { isHighScore } from '../utils/leaderboard';
 import './TypingSpeed.css';
 
 const PASSAGES = [
@@ -55,9 +55,7 @@ export default function TypingSpeed() {
       setDone(true);
       setElapsed(finalElapsed);
       const finalWpm = Math.round((val.split(' ').length / (finalElapsed / 1000)) * 60);
-      if (finalWpm > 0 && isHighScore('typing_speed', finalWpm)) {
-        setPendingWpm(finalWpm); setShowHS(true);
-      }
+      if (finalWpm > 0) isHighScore('typing_speed', finalWpm).then(yes => { if (yes) { setPendingWpm(finalWpm); setShowHS(true); } });
     }
   }
 
@@ -128,7 +126,7 @@ export default function TypingSpeed() {
       <div className="typing-actions">
         <button className="typing-btn secondary" onClick={reset}>New Text</button>
       </div>
-      {showHS && <HighScoreModal gameId="typing_speed" score={pendingWpm} label="WPM" onSave={name => { addScore('typing_speed', pendingWpm, name); setShowHS(false); }} onDismiss={() => setShowHS(false)} />}
+      {showHS && <HighScoreModal gameId="typing_speed" score={pendingWpm} label="WPM" onSave={() => setShowHS(false)} onDismiss={() => setShowHS(false)} />}
     </div>
   );
 }

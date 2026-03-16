@@ -132,4 +132,8 @@ function selectToken(roomCode, socketId, token) {
   return { room };
 }
 
-module.exports = { createRoom, joinRoom, reconnect, leaveRoom, getRoom, getRoomBySocketId, selectToken };
+function deleteRoom(roomCode) {
+  rooms.delete(roomCode);
+}
+
+module.exports = { createRoom, joinRoom, reconnect, leaveRoom, getRoom, getRoomBySocketId, selectToken, deleteRoom };

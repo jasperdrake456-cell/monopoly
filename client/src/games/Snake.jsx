@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import HighScoreModal from '../components/HighScoreModal';
-import { isHighScore, addScore } from '../utils/leaderboard';
+import { isHighScore } from '../utils/leaderboard';
 import './Snake.css';
 
 const COLS = 20, ROWS = 20, CELL = 22;
@@ -90,7 +90,7 @@ export default function Snake({ onBack }) {
       const best = Math.max(s.score, parseInt(localStorage.getItem(BEST_KEY) || '0'));
       localStorage.setItem(BEST_KEY, String(best));
       setDisplay({ score: s.score, best, running: false, over: true });
-      if (s.score > 0 && isHighScore('snake', s.score)) { setPendingScore(s.score); setShowHS(true); }
+      if (s.score > 0) isHighScore('snake', s.score).then(yes => { if (yes) { setPendingScore(s.score); setShowHS(true); } });
       return;
     }
 
@@ -192,7 +192,7 @@ export default function Snake({ onBack }) {
           </div>
         )}
       </div>
-      {showHS && <HighScoreModal gameId="snake" score={pendingScore} label="pts" onSave={name => { addScore('snake', pendingScore, name); setShowHS(false); }} onDismiss={() => setShowHS(false)} />}
+      {showHS && <HighScoreModal gameId="snake" score={pendingScore} label="pts" onSave={() => setShowHS(false)} onDismiss={() => setShowHS(false)} />}
       <div className="snake-dpad">
         <div className="snake-dpad-row">
           <button className="snake-dpad-btn" onPointerDown={() => dpad(0,-1)}>▲</button>

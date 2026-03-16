@@ -275,3 +275,17 @@
   .home-btn { padding: 0.8rem 1.8rem; font-size: 1rem; }
   .room-code-value { font-size: 1.4rem; }
 }
+
+.host-actions { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+.close-room-btn {
+  background: transparent;
+  border: 1px solid rgba(220,50,50,0.5);
+  color: #ef9a9a;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.close-room-btn:hover { background: rgba(220,50,50,0.15); border-color: #ef9a9a; color: #fff; }

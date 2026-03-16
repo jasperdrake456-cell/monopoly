@@ -65,6 +65,7 @@ export const TOKENS = {
   robot:        '🤖',
   dragon:       '🐉',
   penguin:      '🐧',
+  johnacido:    '🕺',
 };
 
 export const TOKEN_COLORS = {
@@ -80,6 +81,7 @@ export const TOKEN_COLORS = {
   robot:       '#40E0D0',  // bright turquoise
   dragon:      '#FF4081',  // pink-red (distinct from car)
   penguin:     '#90A4AE',  // light blue-grey (was dark grey)
+  johnacido:   '#E040FB',  // vivid purple
 };
 
 // Returns {row, col} for 11x11 grid (0-indexed)

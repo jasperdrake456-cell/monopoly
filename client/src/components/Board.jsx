@@ -1,22 +1,86 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useRef, useState } from 'react';
 import Tile from './Tile';
 import { BOARD, TOKEN_COLORS, TOKENS, getGridPos } from '../boardData';
 import './Board.css';
+
+const HOP_MS = 380; // ms per space
 
 export default function Board({ gameState, myId }) {
   const { players, propertyStates, currentPlayerIndex, freeParking, freeParkingEnabled } = gameState;
   const currentPlayer = players[currentPlayerIndex];
 
+  // ── Animated positions ───────────────────────────────────────────────────
+  const prevPosRef   = useRef({});   // last known actual position per player
+  const timerRef     = useRef([]);   // all pending timers (cleared on unmount)
+  const [displayPos, setDisplayPos]   = useState({});   // where to render each player
+  const [hoppingIds, setHoppingIds]   = useState({});   // players currently mid-hop
+
+  // Clean up timers on unmount
+  useEffect(() => () => timerRef.current.forEach(clearTimeout), []);
+
+  useEffect(() => {
+    players.forEach(p => {
+      const prev = prevPosRef.current[p.id];
+
+      if (prev === undefined) {
+        // First time seeing this player — just place them, no animation
+        prevPosRef.current[p.id] = p.position;
+        setDisplayPos(dp => ({ ...dp, [p.id]: p.position }));
+        return;
+      }
+
+      if (prev === p.position) return; // no change
+
+      prevPosRef.current[p.id] = p.position;
+
+      if (p.bankrupt) {
+        setDisplayPos(dp => ({ ...dp, [p.id]: p.position }));
+        return;
+      }
+
+      // Build the list of spaces to step through
+      const steps = [];
+      let cur = prev;
+      while (cur !== p.position) {
+        cur = (cur + 1) % 40;
+        steps.push(cur);
+      }
+
+      // If it's a teleport (>12 spaces — jail card, advance card, Go to Jail)
+      // skip the walk animation and jump directly
+      if (steps.length > 12) {
+        setDisplayPos(dp => ({ ...dp, [p.id]: p.position }));
+        return;
+      }
+
+      // Animate step by step
+      steps.forEach((pos, i) => {
+        const t1 = setTimeout(() => {
+          setDisplayPos(dp => ({ ...dp, [p.id]: pos }));
+          setHoppingIds(h => ({ ...h, [p.id]: true }));
+          // Clear hop class shortly before next step lands
+          const t2 = setTimeout(() => {
+            setHoppingIds(h => { const nh = { ...h }; delete nh[p.id]; return nh; });
+          }, HOP_MS - 80);
+          timerRef.current.push(t2);
+        }, i * HOP_MS);
+        timerRef.current.push(t1);
+      });
+    });
+  }, [players]); // eslint-disable-line
+
+  // ── Build position map from animated positions ───────────────────────────
   const playersByPosition = useMemo(() => {
     const map = {};
     players.forEach(p => {
       if (!p.bankrupt) {
-        if (!map[p.position]) map[p.position] = [];
-        map[p.position].push(p);
+        const pos = displayPos[p.id] ?? p.position;
+        if (!map[pos]) map[pos] = [];
+        map[pos].push({ ...p, isHopping: !!hoppingIds[p.id] });
       }
     });
     return map;
-  }, [players]);
+  }, [players, displayPos, hoppingIds]);
 
   const enrichedStates = useMemo(() => {
     const result = {};

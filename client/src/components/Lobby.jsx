@@ -109,13 +109,25 @@ export default function Lobby({ roomState, myId, emit, sessionId }) {
         </div>
 
         {isHost && (
-          <button
-            className="start-btn"
-            onClick={handleStart}
-            disabled={roomState.players.length < 2}
-          >
-            {roomState.players.length < 2 ? 'Waiting for players...' : 'Start Game!'}
-          </button>
+          <div className="host-actions">
+            <button
+              className="start-btn"
+              onClick={handleStart}
+              disabled={roomState.players.length < 2}
+            >
+              {roomState.players.length < 2 ? 'Waiting for players...' : 'Start Game!'}
+            </button>
+            <button
+              className="close-room-btn"
+              onClick={() => {
+                if (window.confirm('Close the room and kick all players?')) {
+                  emit('closeRoom', { roomCode: roomState.roomCode });
+                }
+              }}
+            >
+              ✕ Close Room
+            </button>
+          </div>
         )}
         {!isHost && (
           <p className="waiting-msg">Waiting for the host to start the game...</p>

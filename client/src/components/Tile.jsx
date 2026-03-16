@@ -101,7 +101,11 @@ export default function Tile({ space, propertyState, playersHere, isHighlighted,
           {playersHere.map(p => (
             <div
               key={p.id}
-              className={`tile-token-badge ${p.id === currentPlayerId ? 'is-current' : ''}`}
+              className={[
+                'tile-token-badge',
+                p.id === currentPlayerId ? 'is-current' : '',
+                p.isHopping ? 'hopping' : '',
+              ].filter(Boolean).join(' ')}
               style={{ background: TOKEN_COLORS[p.token] + '22', borderColor: TOKEN_COLORS[p.token] }}
               title={p.name}
             >

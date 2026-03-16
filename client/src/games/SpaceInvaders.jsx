@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import HighScoreModal from '../components/HighScoreModal';
-import { isHighScore, addScore } from '../utils/leaderboard';
+import { isHighScore } from '../utils/leaderboard';
 import './SpaceInvaders.css';
 
 const W = 560, H = 640;
@@ -214,7 +214,7 @@ export default function SpaceInvaders({ onBack }) {
     if (st.gamePhase === 'dead') {
       st.deathTimer++;
       if (st.deathTimer > 60) {
-        if (st.lives <= 0) { st.gamePhase = 'gameover'; setDisplay(d => { if (d.score > 0 && isHighScore('space_invaders', d.score)) { setPendingScore(d.score); setShowHS(true); } return { ...d, phase: 'gameover' }; }); }
+        if (st.lives <= 0) { st.gamePhase = 'gameover'; setDisplay(d => { if (d.score > 0) isHighScore('space_invaders', d.score).then(yes => { if (yes) { setPendingScore(d.score); setShowHS(true); } }); return { ...d, phase: 'gameover' }; }); }
         else { st.gamePhase = 'playing'; st.deathTimer = 0; }
       }
       draw(); rafRef.current = requestAnimationFrame(loop); return;
@@ -359,7 +359,7 @@ export default function SpaceInvaders({ onBack }) {
       if (a.y > PLAYER_Y - 20) {
         st.lives = 0; st.gamePhase = 'gameover';
         setDisplay(d => {
-          if (d.score > 0 && isHighScore('space_invaders', d.score)) { setPendingScore(d.score); setShowHS(true); }
+          if (d.score > 0) isHighScore('space_invaders', d.score).then(yes => { if (yes) { setPendingScore(d.score); setShowHS(true); } });
           return { ...d, lives: 0, phase: 'gameover' };
         });
         break;
@@ -475,7 +475,7 @@ export default function SpaceInvaders({ onBack }) {
         )}
       </div>
 
-      {showHS && <HighScoreModal gameId="space_invaders" score={pendingScore} label="pts" onSave={name => { addScore('space_invaders', pendingScore, name); setShowHS(false); }} onDismiss={() => setShowHS(false)} />}
+      {showHS && <HighScoreModal gameId="space_invaders" score={pendingScore} label="pts" onSave={() => setShowHS(false)} onDismiss={() => setShowHS(false)} />}
       <div className="si-touch-controls">
         <button className="si-touch-btn"
           onPointerDown={() => touchLeft(true)}
