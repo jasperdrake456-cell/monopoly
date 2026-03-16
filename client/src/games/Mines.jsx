@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './Mines.css';
 
@@ -51,6 +51,11 @@ export default function Mines() {
   const [result, setResult]     = useState(null); // { win, payout, msg }
   const [countdown, setCountdown] = useState('');
 
+  // Refs to prevent race condition on rapid clicks — React state is async,
+  // so two clicks before re-render both see stale values. Refs update immediately.
+  const minesRef    = useRef(new Set()); // synchronous mine map
+  const playingRef  = useRef(false);     // blocks clicks after terminal state
+
   // Live countdown to next daily reward
   useEffect(() => {
     function tick() {
@@ -71,6 +76,8 @@ export default function Mines() {
     if (bet < 1 || bet > getBalance()) return;
     subtractBalance(bet);
     syncBalance();
+    minesRef.current = new Set(); // reset synchronous mine map
+    playingRef.current = true;
     setMines(new Set()); // mines placed on first click
     setRevealed(new Set());
     setExploded(null);
@@ -81,19 +88,22 @@ export default function Mines() {
   }
 
   function handleTileClick(idx) {
-    if (phase !== 'playing') return;
+    // Use ref instead of state — prevents race condition on rapid clicks
+    if (!playingRef.current) return;
     if (revealed.has(idx)) return;
 
-    let activeMines = mines;
+    let activeMines = minesRef.current;
 
-    // First click: place mines avoiding the clicked tile
-    if (mines.size === 0) {
+    // First click: place mines (synchronously stored in ref to block re-rolls)
+    if (activeMines.size === 0) {
       activeMines = generateMines(mineCount, idx);
-      setMines(activeMines);
+      minesRef.current = activeMines; // update ref immediately (synchronous)
+      setMines(activeMines);          // update state for rendering
     }
 
     if (activeMines.has(idx)) {
       // BOOM!
+      playingRef.current = false; // block any further clicks immediately
       setExploded(idx);
       setAllMines(activeMines);
       setResult({ win: false, payout: 0, msg: `💥 BOOM! Lost $${bet}` });
@@ -108,6 +118,7 @@ export default function Mines() {
       // Auto-win if all safe tiles revealed
       const safeCount = GRID_SIZE - mineCount;
       if (newCount >= safeCount) {
+        playingRef.current = false; // block any further clicks immediately
         const mult = calcMultiplier(mineCount, newCount);
         const payout = Math.floor(bet * mult);
         addBalance(payout);
@@ -120,12 +131,13 @@ export default function Mines() {
   }
 
   function cashOut() {
-    if (phase !== 'playing' || revealedCount === 0) return;
+    if (!playingRef.current || revealedCount === 0) return;
+    playingRef.current = false;
     const mult = calcMultiplier(mineCount, revealedCount);
     const payout = Math.floor(bet * mult);
     addBalance(payout);
     syncBalance();
-    setAllMines(mines);
+    setAllMines(minesRef.current);
     setResult({ win: true, payout, msg: `💎 Cashed out $${payout} (${mult}×)` });
     setPhase('result');
   }
