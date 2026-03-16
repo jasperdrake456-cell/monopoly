@@ -1,7 +1,10 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 import PasswordGate from './components/PasswordGate';
 import HomePage from './pages/HomePage';
+import AuthPage from './pages/AuthPage';
+import TransferPage from './pages/TransferPage';
 import MonopolyPage from './pages/MonopolyPage';
 import Game2048Page from './pages/Game2048Page';
 import SnakePage from './pages/SnakePage';
@@ -29,7 +32,8 @@ import './App.css';
 
 export default function App() {
   return (
-    <PasswordGate>
+    <AuthProvider>
+      <PasswordGate>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/monopoly" element={<MonopolyPage />} />
@@ -55,8 +59,11 @@ export default function App() {
         <Route path="/blackjack" element={<BlackjackPage />} />
         <Route path="/baccarat" element={<BaccaratPage />} />
         <Route path="/mines" element={<MinesPage />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/transfer" element={<TransferPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </PasswordGate>
+      </PasswordGate>
+    </AuthProvider>
   );
 }

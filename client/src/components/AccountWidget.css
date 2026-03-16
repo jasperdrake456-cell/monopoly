@@ -1,0 +1,155 @@
+/* ── Account Widget ────────────────────────────────────────────────────────── */
+
+.acw-signin-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 20px;
+  background: rgba(124,58,237,0.25);
+  border: 1px solid rgba(124,58,237,0.5);
+  color: #c084fc;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.acw-signin-btn:hover {
+  background: rgba(124,58,237,0.4);
+  border-color: #c084fc;
+  color: #fff;
+}
+
+/* Trigger button */
+.acw-wrap {
+  position: relative;
+}
+
+.acw-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.acw-trigger:hover {
+  background: rgba(255,255,255,0.14);
+  border-color: rgba(255,255,255,0.3);
+}
+
+.acw-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7c3aed, #c084fc);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.acw-name {
+  font-weight: 600;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.acw-bal {
+  color: #FFD700;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.acw-caret {
+  font-size: 0.6rem;
+  opacity: 0.6;
+  margin-left: 2px;
+}
+
+/* Dropdown */
+.acw-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 200px;
+  background: #1e1e2e;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  overflow: hidden;
+  z-index: 1000;
+  animation: acwFadeIn 0.15s ease;
+}
+
+@keyframes acwFadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.acw-header {
+  padding: 14px 16px;
+  background: rgba(124,58,237,0.1);
+}
+
+.acw-header-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #fff;
+}
+
+.acw-header-user {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.45);
+  margin-top: 2px;
+}
+
+.acw-header-bal {
+  margin-top: 6px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #FFD700;
+}
+
+.acw-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+}
+
+/* Items */
+.acw-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.85);
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: left;
+}
+.acw-item:hover {
+  background: rgba(255,255,255,0.07);
+}
+
+.acw-item--danger {
+  color: #fca5a5;
+}
+.acw-item--danger:hover {
+  background: rgba(239,68,68,0.1);
+}

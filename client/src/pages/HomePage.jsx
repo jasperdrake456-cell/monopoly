@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import AccountWidget from '../components/AccountWidget';
 import './HomePage.css';
 
 const SOLO_GAMES = [
@@ -37,8 +38,11 @@ export default function HomePage() {
     <div className="home">
       <header className="home-header">
         <div className="home-logo">🎮 Game Vault</div>
-        <Link to="/trivia" className="home-trivia-btn">🎯 Daily Trivia</Link>
-        <Link to="/leaderboard" className="home-trivia-btn">🏆 Leaderboard</Link>
+        <div className="home-header-right">
+          <Link to="/trivia" className="home-trivia-btn">🎯 Daily Trivia</Link>
+          <Link to="/leaderboard" className="home-trivia-btn">🏆 Leaderboard</Link>
+          <AccountWidget />
+        </div>
       </header>
 
       <main className="home-main">

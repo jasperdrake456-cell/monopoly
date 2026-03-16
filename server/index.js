@@ -7,6 +7,7 @@ const path = require('path');
 const { getPassword, setPassword, generatePassword } = require('./passwordStore');
 const { sendPasswordEmail } = require('./email');
 const lb = require('./leaderboard');
+const us = require('./userStore');
 
 const app = express();
 const server = http.createServer(app);
@@ -70,6 +71,49 @@ app.post('/api/rotate-password', async (req, res) => {
     console.error('[rotate] Email failed:', err.message);
     res.status(500).json({ ok: false, error: 'Email failed', password: newPassword });
   }
+});
+
+// ── Account API ───────────────────────────────────────────────────────────────
+
+function getToken(req) {
+  const auth = req.headers['authorization'] || '';
+  return auth.startsWith('Bearer ') ? auth.slice(7) : null;
+}
+
+app.post('/api/accounts/register', (req, res) => {
+  const { username, password } = req.body || {};
+  res.json(us.register(username, password));
+});
+
+app.post('/api/accounts/login', (req, res) => {
+  const { username, password } = req.body || {};
+  res.json(us.login(username, password));
+});
+
+app.post('/api/accounts/logout', (req, res) => {
+  res.json(us.logout(getToken(req)));
+});
+
+app.get('/api/accounts/me', (req, res) => {
+  res.json(us.getMe(getToken(req)));
+});
+
+app.post('/api/accounts/balance/sync', (req, res) => {
+  const { balance } = req.body || {};
+  res.json(us.syncBalance(getToken(req), balance));
+});
+
+app.post('/api/accounts/daily', (req, res) => {
+  res.json(us.claimDaily(getToken(req)));
+});
+
+app.post('/api/accounts/transfer', (req, res) => {
+  const { toUsername, amount } = req.body || {};
+  res.json(us.transfer(getToken(req), toUsername, amount));
+});
+
+app.get('/api/accounts/exists/:username', (req, res) => {
+  res.json({ exists: us.userExists(req.params.username) });
 });
 
 // ── Leaderboard API ──────────────────────────────────────────────────────────
