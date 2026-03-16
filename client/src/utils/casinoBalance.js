@@ -5,7 +5,7 @@
 const BALANCE_KEY    = 'casino_balance';
 const DAILY_KEY      = 'casino_last_daily';
 const DAILY_AMOUNT   = 250;
-const STARTING_AMOUNT = 25000; // New players start with $25,000
+const STARTING_AMOUNT = 2000; // New players start with $2,000
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
 

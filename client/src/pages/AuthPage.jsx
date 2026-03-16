@@ -108,7 +108,7 @@ export default function AuthPage() {
 
         {mode === 'register' && (
           <div className="auth-perks">
-            <div className="auth-perk">💰 Start with <strong>$25,000</strong> casino balance</div>
+            <div className="auth-perk">💰 Start with <strong>$2,000</strong> casino balance</div>
             <div className="auth-perk">🎁 <strong>$250 daily</strong> reward at 8am</div>
             <div className="auth-perk">💸 Transfer money to friends</div>
             <div className="auth-perk">📈 Progress saved across devices</div>

@@ -14,7 +14,7 @@ export default function RequireAuth({ children }) {
         <div className="ra-title">Sign In to Play</div>
         <div className="ra-sub">You need a Game Vault account to play this game.</div>
         <div className="ra-perks">
-          <div className="ra-perk">💰 Start with <strong>$25,000</strong> casino balance</div>
+          <div className="ra-perk">💰 Start with <strong>$2,000</strong> casino balance</div>
           <div className="ra-perk">🎁 <strong>$250 daily</strong> reward</div>
           <div className="ra-perk">🏆 Save scores to the leaderboard</div>
         </div>
