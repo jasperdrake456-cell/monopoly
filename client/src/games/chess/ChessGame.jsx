@@ -110,7 +110,6 @@ export default function ChessGame({ roomState, myId, emit, onBack }) {
   }
 
   const status = getStatus();
-  const iWon = (winner === 'w' && isHost) || (winner === 'b' && !isHost);
   const isEnded = isGameOver || roomState.status === 'ended';
 
   // Render board
