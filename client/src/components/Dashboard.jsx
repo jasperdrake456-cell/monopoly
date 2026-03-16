@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { BOARD, GROUP_COLORS, TOKEN_COLORS, TOKENS } from '../boardData';
 import './Dashboard.css';
 
-function calcNetWorth(player, propertyStates) {
+function calcNetWorth(player, propertyStates, boardData) {
   let worth = player.cash;
   player.properties.forEach(id => {
-    const space = BOARD[id];
+    const space = boardData[id];
     const ps = propertyStates[id];
     if (!space) return;
     if (ps?.mortgaged) {
@@ -18,7 +18,8 @@ function calcNetWorth(player, propertyStates) {
   return worth;
 }
 
-export default function Dashboard({ gameState, myId, roomCode, emit }) {
+export default function Dashboard({ gameState, myId, roomCode, emit, board: boardProp }) {
+  const ACTIVE_BOARD = boardProp || BOARD;
   const [showPropertyModal, setShowPropertyModal] = useState(null); // propertyId
   const myPlayer = gameState.players.find(p => p.id === myId);
   const allPlayers = gameState.players;
@@ -42,10 +43,10 @@ export default function Dashboard({ gameState, myId, roomCode, emit }) {
     emit('sellBuilding', { roomCode, propertyId: propId, count: 1 });
   }
 
-  const myNetWorth = calcNetWorth(myPlayer, gameState.propertyStates);
+  const myNetWorth = calcNetWorth(myPlayer, gameState.propertyStates, ACTIVE_BOARD);
 
   const myProperties = myPlayer.properties.map(id => {
-    const space = BOARD[id];
+    const space = ACTIVE_BOARD[id];
     const ps = gameState.propertyStates[id];
     return { space, ps };
   });

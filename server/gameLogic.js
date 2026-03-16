@@ -1,6 +1,12 @@
 'use strict';
 const { BOARD, COLOR_GROUPS, RAILROAD_IDS, UTILITY_IDS } = require('./data/board');
+const { WORLD_BOARD } = require('./data/worldBoard');
 const { COMMUNITY_CHEST, CHANCE, freshDecks } = require('./data/cards');
+
+// Returns the correct board array for the current game
+function getBoard(state) {
+  return state.boardType === 'world' ? WORLD_BOARD : BOARD;
+}
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -121,7 +127,7 @@ function executeCard(state, playerId, card) {
       } else {
         state.pendingLand = true;
       }
-      addLog(state, `${p.name} advanced to ${BOARD[card.position].name}`);
+      addLog(state, `${p.name} advanced to ${getBoard(state)[card.position].name}`);
       break;
     }
 
@@ -140,7 +146,7 @@ function executeCard(state, playerId, card) {
       }
       state.chanceDoubleRent = state.chanceDoubleRent || {};
       state.chanceDoubleRent[nearest] = true;
-      addLog(state, `${p.name} advanced to nearest Railroad: ${BOARD[nearest].name}`);
+      addLog(state, `${p.name} advanced to nearest Railroad: ${getBoard(state)[nearest].name}`);
       state.pendingLand = true;
       break;
     }
@@ -159,7 +165,7 @@ function executeCard(state, playerId, card) {
         addLog(state, `${p.name} passed Go and collected $200`);
       }
       state.chanceUtilityDice = true;
-      addLog(state, `${p.name} advanced to nearest Utility: ${BOARD[nearU].name}`);
+      addLog(state, `${p.name} advanced to nearest Utility: ${getBoard(state)[nearU].name}`);
       state.pendingLand = true;
       break;
     }
@@ -231,7 +237,7 @@ function executeCard(state, playerId, card) {
 
     case 'go_back': {
       p.position = (p.position - card.spaces + 40) % 40;
-      addLog(state, `${p.name} went back ${card.spaces} spaces to ${BOARD[p.position].name}`);
+      addLog(state, `${p.name} went back ${card.spaces} spaces to ${getBoard(state)[p.position].name}`);
       state.pendingLand = true;
       break;
     }
@@ -242,7 +248,7 @@ function executeCard(state, playerId, card) {
 
 function landOnSpace(state, playerId) {
   const p = getPlayer(state, playerId);
-  const space = BOARD[p.position];
+  const space = getBoard(state)[p.position];
   state.chanceDoubleRent = {};
   state.chanceUtilityDice = false;
 
@@ -403,12 +409,14 @@ function declareBankruptcy(state, playerId, creditorId) {
 
 // ─── Public actions ───────────────────────────────────────────────────────────
 
-function initGame(players, freeParkingEnabled) {
+function initGame(players, freeParkingEnabled, boardType) {
   const decks = freshDecks();
+  const bt = boardType === 'world' ? 'world' : 'classic';
+  const boardData = bt === 'world' ? WORLD_BOARD : BOARD;
 
   // Build property states
   const propertyStates = {};
-  BOARD.forEach(space => {
+  boardData.forEach(space => {
     if (['property', 'railroad', 'utility'].includes(space.type)) {
       propertyStates[space.id] = { owner: null, houses: 0, mortgaged: false };
     }
@@ -416,6 +424,7 @@ function initGame(players, freeParkingEnabled) {
 
   return {
     status: 'playing',
+    boardType: bt,
     freeParkingEnabled: !!freeParkingEnabled,
     players: players.map(p => ({
       ...p,
@@ -506,7 +515,7 @@ function doBuyProperty(state, playerId) {
   const cp = currentPlayer(state);
   if (cp.id !== playerId) return { error: 'Not your turn' };
 
-  const space = BOARD[cp.position];
+  const space = getBoard(state)[cp.position];
   if (cp.cash < space.price) return { error: 'Not enough money' };
 
   cp.cash -= space.price;
@@ -523,7 +532,7 @@ function doPassProperty(state, playerId) {
   if (cp.id !== playerId) return { error: 'Not your turn' };
 
   // No auction — just skip buying and end the turn
-  const space = BOARD[cp.position];
+  const space = getBoard(state)[cp.position];
   addLog(state, `${cp.name} declined to buy ${space.name}`);
   state.turnPhase = 'end';
   return {};
@@ -607,7 +616,7 @@ function doUseJailCard(state, playerId) {
 function doBuyBuilding(state, playerId, propertyId, count) {
   const p = getPlayer(state, playerId);
   if (!p.properties.includes(propertyId)) return { error: 'You do not own this property' };
-  const space = BOARD[propertyId];
+  const space = getBoard(state)[propertyId];
   if (!space || space.type !== 'property') return { error: 'Not a buildable property' };
   if (!hasMonopoly(state, playerId, space.group)) return { error: 'You need the full color group' };
 
@@ -633,7 +642,7 @@ function doBuyBuilding(state, playerId, propertyId, count) {
 function doSellBuilding(state, playerId, propertyId, count) {
   const p = getPlayer(state, playerId);
   if (!p.properties.includes(propertyId)) return { error: 'You do not own this property' };
-  const space = BOARD[propertyId];
+  const space = getBoard(state)[propertyId];
   if (!space || space.type !== 'property') return { error: 'Not a buildable property' };
 
   const ps = state.propertyStates[propertyId];
@@ -658,7 +667,7 @@ function doMortgage(state, playerId, propertyId) {
   if (ps.mortgaged) return { error: 'Already mortgaged' };
   if (ps.houses > 0) return { error: 'Sell buildings first' };
 
-  const space = BOARD[propertyId];
+  const space = getBoard(state)[propertyId];
   p.cash += space.mortgageValue;
   ps.mortgaged = true;
   addLog(state, `${p.name} mortgaged ${space.name} for $${space.mortgageValue}`);
@@ -671,7 +680,7 @@ function doUnmortgage(state, playerId, propertyId) {
   const ps = state.propertyStates[propertyId];
   if (!ps.mortgaged) return { error: 'Not mortgaged' };
 
-  const space = BOARD[propertyId];
+  const space = getBoard(state)[propertyId];
   const cost = Math.floor(space.mortgageValue * 1.1);
   if (p.cash < cost) return { error: 'Not enough money' };
 

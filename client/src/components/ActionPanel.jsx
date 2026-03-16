@@ -4,11 +4,12 @@ import './ActionPanel.css';
 
 const DICE_FACE = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
-export default function ActionPanel({ gameState, myId, roomCode, emit }) {
+export default function ActionPanel({ gameState, myId, roomCode, emit, board: boardProp }) {
   const { players, currentPlayerIndex, turnPhase, lastDice, activeTrade, doublesCount } = gameState;
   const currentPlayer = players[currentPlayerIndex];
   const myPlayer = players.find(p => p.id === myId);
   const isMyTurn = currentPlayer?.id === myId;
+  const ACTIVE_BOARD = boardProp || BOARD;
   const [rolling, setRolling] = useState(false);
   const [acting, setActing] = useState(false);
 
@@ -34,7 +35,7 @@ export default function ActionPanel({ gameState, myId, roomCode, emit }) {
     setTimeout(() => setRolling(false), 700);
   }
 
-  const currentSpace = BOARD[myPlayer.position];
+  const currentSpace = ACTIVE_BOARD[myPlayer.position];
   const spaceColor = currentSpace?.group ? GROUP_COLORS[currentSpace.group] : null;
   const isDoubles = lastDice && lastDice[0] === lastDice[1];
   const diceTotal = lastDice ? lastDice[0] + lastDice[1] : 0;
@@ -76,7 +77,7 @@ export default function ActionPanel({ gameState, myId, roomCode, emit }) {
 
   // ── Not my turn ─────────────────────────────────────────────────────────
   if (!isMyTurn) {
-    const curSpace = BOARD[currentPlayer?.position];
+    const curSpace = ACTIVE_BOARD[currentPlayer?.position];
     const curSpaceColor = curSpace?.group ? GROUP_COLORS[curSpace.group] : null;
     return (
       <div className="action-panel">
@@ -191,16 +192,10 @@ export default function ActionPanel({ gameState, myId, roomCode, emit }) {
           <BuyDecision gameState={gameState} myId={myId} roomCode={roomCode} emit={act} acting={acting} />
         )}
 
-        {/* Card action */}
-        {turnPhase === 'card_action' && gameState.activeCard && (
-          <div className="ap-card">
-            <div className={`card-deck-label ${gameState.activeCard.deck}`}>
-              {gameState.activeCard.deck === 'chance' ? '❓ Chance' : '🎁 Community Chest'}
-            </div>
-            <div className="card-text">{gameState.activeCard.cardData?.text}</div>
-            <button className="ap-btn primary" onClick={() => act('resolveCard', { roomCode })} disabled={acting}>
-              OK
-            </button>
+        {/* Card action — handled by CardReveal overlay in Game.jsx */}
+        {turnPhase === 'card_action' && (
+          <div className="ap-status" style={{ fontStyle: 'italic', opacity: 0.7 }}>
+            {gameState.activeCard?.deck === 'chance' ? '❓ Chance card drawn…' : '🎁 Community Chest card drawn…'}
           </div>
         )}
 
@@ -224,7 +219,7 @@ export default function ActionPanel({ gameState, myId, roomCode, emit }) {
 
 function BuyDecision({ gameState, myId, roomCode, emit: act, acting }) {
   const player = gameState.players.find(p => p.id === myId);
-  const space = BOARD[player.position];
+  const space = ACTIVE_BOARD[player.position];
   const color = space.group ? GROUP_COLORS[space.group] : null;
   const canAfford = player.cash >= space.price;
 
@@ -275,14 +270,14 @@ function TradeOfferDisplay({ trade, players }) {
     <div className="trade-display">
       <div className="trade-side">
         <strong>{from?.name} offers:</strong>
-        {trade.offer.properties.map(id => <span key={id} className="trade-prop">{BOARD[id]?.name}</span>)}
+        {trade.offer.properties.map(id => <span key={id} className="trade-prop">{ACTIVE_BOARD[id]?.name}</span>)}
         {trade.offer.cash > 0 && <span className="trade-cash">${trade.offer.cash}</span>}
         {trade.offer.properties.length === 0 && trade.offer.cash === 0 && <span style={{ opacity: 0.5 }}>Nothing</span>}
       </div>
       <div className="trade-arrow">⟷</div>
       <div className="trade-side">
         <strong>{to?.name} gives:</strong>
-        {trade.request.properties.map(id => <span key={id} className="trade-prop">{BOARD[id]?.name}</span>)}
+        {trade.request.properties.map(id => <span key={id} className="trade-prop">{ACTIVE_BOARD[id]?.name}</span>)}
         {trade.request.cash > 0 && <span className="trade-cash">${trade.request.cash}</span>}
         {trade.request.properties.length === 0 && trade.request.cash === 0 && <span style={{ opacity: 0.5 }}>Nothing</span>}
       </div>

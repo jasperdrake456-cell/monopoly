@@ -34,8 +34,8 @@ function handleAction(ns, socket, roomCode, fn) {
 function register(ns) {
   ns.on('connection', (socket) => {
 
-    socket.on('createRoom', ({ playerName, token, freeParkingEnabled }) => {
-      const { room, player, sessionId } = rm.createRoom(socket.id, playerName, token, freeParkingEnabled);
+    socket.on('createRoom', ({ playerName, token, freeParkingEnabled, boardType }) => {
+      const { room, player, sessionId } = rm.createRoom(socket.id, playerName, token, freeParkingEnabled, boardType);
       socket.join(roomChannel(room.code));
       socket.emit('roomCreated', { roomCode: room.code, playerId: socket.id, sessionId });
       broadcastState(ns, room);
@@ -77,7 +77,7 @@ function register(ns) {
         if (room.players.length < 2) return { error: 'Need at least 2 players' };
         if (room.status !== 'lobby') return { error: 'Game already started' };
         const gameStatePlayers = room.players.map(p => ({ id: p.id, name: p.name, token: p.token, sessionId: p.sessionId }));
-        room.gameState = gl.initGame(gameStatePlayers, room.freeParkingEnabled);
+        room.gameState = gl.initGame(gameStatePlayers, room.freeParkingEnabled, room.boardType);
         room.status = 'playing';
       });
     });
@@ -185,7 +185,7 @@ function register(ns) {
       if (!room) { socket.emit('error', { message: 'Room not found' }); return; }
       if (room.hostId !== socket.id) { socket.emit('error', { message: 'Only the host can restart' }); return; }
       const playerList = room.players.map(p => ({ id: p.id, name: p.name, token: p.token }));
-      room.gameState = gl.initGame(playerList, room.freeParkingEnabled);
+      room.gameState = gl.initGame(playerList, room.freeParkingEnabled, room.boardType);
       room.status = 'playing';
       broadcastState(ns, room);
     });

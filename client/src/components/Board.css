@@ -1,3 +1,90 @@
+/* ── Police car jail animation ─────────────────────────────────────────── */
+
+/* Full-board overlay sits inside .board (position:relative) */
+.jail-anim-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+  overflow: hidden;
+  /* Red/blue siren flash on the whole board */
+  animation: sirenFlash 0.4s linear infinite;
+}
+
+@keyframes sirenFlash {
+  0%,49% { box-shadow: inset 0 0 60px 20px rgba(220,30,30,0.18); }
+  50%,100% { box-shadow: inset 0 0 60px 20px rgba(30,80,220,0.18); }
+}
+
+/* The 🚔 car drives from Go-To-Jail corner (bottom-right) up to Jail (top-right) */
+.jail-car {
+  position: absolute;
+  right: 32px;
+  font-size: 3.8rem;
+  line-height: 1;
+  /* Flip horizontally so car faces left (toward center) */
+  transform: scaleX(-1) rotate(-90deg);
+  transform-origin: center;
+  filter: drop-shadow(0 0 8px rgba(255,50,50,0.9)) drop-shadow(0 0 16px rgba(50,100,255,0.8));
+  animation: policeCarDrive 2.6s cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+}
+
+@keyframes policeCarDrive {
+  0%   { top: 700px; opacity: 0; }
+  8%   { opacity: 1; }
+  72%  { top: 14px;  opacity: 1; }
+  82%  { top: 10px;  opacity: 1; }
+  90%  { top: 10px;  opacity: 1; }
+  100% { top: 10px;  opacity: 0; }
+}
+
+/* "BUSTED" banner slides in from the left */
+.jail-anim-banner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(10, 10, 20, 0.92);
+  border: 3px solid #e53935;
+  border-radius: 12px;
+  padding: 16px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  animation: bannerPop 3.2s ease forwards;
+  box-shadow: 0 0 0 4px rgba(229,57,53,0.3), 0 8px 32px rgba(0,0,0,0.8);
+}
+
+@keyframes bannerPop {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  15%  { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+  22%  { transform: translate(-50%, -50%) scale(1); }
+  80%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+}
+
+.jail-anim-busted {
+  font-size: 1.9rem;
+  font-weight: 900;
+  color: #ff5252;
+  letter-spacing: 4px;
+  text-shadow: 0 0 12px rgba(255,82,82,0.7);
+  font-family: 'Georgia', serif;
+}
+
+.jail-anim-player {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.jail-anim-sub {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.65);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
 /* ── Board wrapper: fills all available center height ──────────────────── */
 .board-wrap {
   flex: 1;

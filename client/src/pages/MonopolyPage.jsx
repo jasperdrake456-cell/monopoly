@@ -14,8 +14,11 @@ export default function MonopolyPage() {
   const [sessionId, setSessionId]     = useState(null);
   const [errorMsg, setErrorMsg]       = useState('');
   const [chatMessages, setChatMessages] = useState([]);
+  const [savedSession, setSavedSession] = useState(
+    () => JSON.parse(localStorage.getItem(SESSION_KEY) || 'null')
+  );
 
-  // Attempt reconnect from saved session
+  // Attempt auto-reconnect from saved session when socket connects
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
     if (saved && connected) {
@@ -47,12 +50,18 @@ export default function MonopolyPage() {
     const offError = on('error', ({ message }) => {
       setErrorMsg(message);
       setTimeout(() => setErrorMsg(''), 4000);
+      // If reconnect failed, clear stale session so the banner goes away
+      if (message.toLowerCase().includes('room not found') || message.toLowerCase().includes('session not found')) {
+        localStorage.removeItem(SESSION_KEY);
+        setSavedSession(null);
+      }
     });
     const offChat = on('chatMessage', (msg) => {
       setChatMessages(prev => [...prev, msg]);
     });
     const offRoomClosed = on('roomClosed', () => {
       localStorage.removeItem(SESSION_KEY);
+      setSavedSession(null);
       setRoomState(null);
       setMyId(null);
       setSessionId(null);
@@ -85,6 +94,8 @@ export default function MonopolyPage() {
           myId={myId}
           emit={handleEmit}
           sessionId={sessionId}
+          savedSession={savedSession}
+          onClearSession={() => { localStorage.removeItem(SESSION_KEY); setSavedSession(null); }}
           onBack={() => navigate('/')}
         />
       )}

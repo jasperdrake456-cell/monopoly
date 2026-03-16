@@ -3,23 +3,39 @@ import Tile from './Tile';
 import { BOARD, TOKEN_COLORS, TOKENS, getGridPos } from '../boardData';
 import './Board.css';
 
-const HOP_MS = 380; // ms per space
+const HOP_MS = 650; // ms per space — slow, deliberate hop
+const JAIL_ANIM_MS = 3200; // how long the police car animation shows
 
-export default function Board({ gameState, myId }) {
+export default function Board({ gameState, myId, board: boardProp }) {
   const { players, propertyStates, currentPlayerIndex, freeParking, freeParkingEnabled } = gameState;
+  // Use prop if provided (world board), fall back to imported BOARD
+  const boardData = boardProp || BOARD;
   const currentPlayer = players[currentPlayerIndex];
 
   // ── Animated positions ───────────────────────────────────────────────────
   const prevPosRef   = useRef({});   // last known actual position per player
+  const prevJailRef  = useRef({});   // last known jailTurns per player
   const timerRef     = useRef([]);   // all pending timers (cleared on unmount)
   const [displayPos, setDisplayPos]   = useState({});   // where to render each player
   const [hoppingIds, setHoppingIds]   = useState({});   // players currently mid-hop
+  const [jailAnim,   setJailAnim]     = useState(null); // { name, token, color } when police car plays
 
   // Clean up timers on unmount
   useEffect(() => () => timerRef.current.forEach(clearTimeout), []);
 
   useEffect(() => {
     players.forEach(p => {
+      // ── Jail detection ────────────────────────────────────────────────
+      const prevJail = prevJailRef.current[p.id] ?? 0;
+      if (p.jailTurns > 0 && prevJail === 0) {
+        // Player was just sent to jail — trigger police car animation
+        setJailAnim({ name: p.name, token: TOKENS[p.token], color: TOKEN_COLORS[p.token] });
+        const tj = setTimeout(() => setJailAnim(null), JAIL_ANIM_MS);
+        timerRef.current.push(tj);
+      }
+      prevJailRef.current[p.id] = p.jailTurns;
+
+      // ── Position animation ────────────────────────────────────────────
       const prev = prevPosRef.current[p.id];
 
       if (prev === undefined) {
@@ -94,7 +110,7 @@ export default function Board({ gameState, myId }) {
   return (
     <div className="board-wrap">
       <div className="board">
-        {BOARD.map(space => {
+        {boardData.map(space => {
           const { row, col } = getGridPos(space.id);
           const playersHere = playersByPosition[space.id] || [];
           const ps = enrichedStates[space.id] || null;
@@ -112,6 +128,21 @@ export default function Board({ gameState, myId }) {
             </div>
           );
         })}
+
+        {/* Police-car jail animation overlay */}
+        {jailAnim && (
+          <div className="jail-anim-overlay">
+            <div className="jail-car">🚔</div>
+            <div className="jail-anim-siren" />
+            <div className="jail-anim-banner">
+              <span className="jail-anim-busted">🔒 BUSTED!</span>
+              <span className="jail-anim-player" style={{ color: jailAnim.color }}>
+                {jailAnim.token} {jailAnim.name}
+              </span>
+              <span className="jail-anim-sub">is going to jail</span>
+            </div>
+          </div>
+        )}
 
         {/* Center */}
         <div className="board-center" style={{ gridRow: '2 / 11', gridColumn: '2 / 11' }}>

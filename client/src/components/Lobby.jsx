@@ -4,13 +4,23 @@ import './Lobby.css';
 
 const ALL_TOKENS = Object.keys(TOKENS);
 
-export default function Lobby({ roomState, myId, emit, sessionId }) {
+export default function Lobby({ roomState, myId, emit, sessionId, savedSession, onClearSession }) {
   const [playerName, setPlayerName] = useState('');
   const [token, setToken] = useState(ALL_TOKENS[0]);
   const [roomCode, setRoomCode] = useState('');
   const [freeParkingEnabled, setFreeParkingEnabled] = useState(false);
+  const [boardType, setBoardType] = useState('classic');
   const [mode, setMode] = useState('home'); // 'home' | 'create' | 'join'
   const [error, setError] = useState('');
+  const [rejoining, setRejoining] = useState(false);
+
+  function handleRejoin() {
+    if (!savedSession) return;
+    setRejoining(true);
+    emit('reconnect', { roomCode: savedSession.roomCode, sessionId: savedSession.sessionId });
+    // If no response in 4s, give up
+    setTimeout(() => setRejoining(false), 4000);
+  }
 
   const takenTokens = roomState?.players?.map(p => p.token) || [];
   const availableToken = ALL_TOKENS.find(t => !takenTokens.includes(t));
@@ -19,7 +29,7 @@ export default function Lobby({ roomState, myId, emit, sessionId }) {
   function handleCreate(e) {
     e.preventDefault();
     if (!playerName.trim()) { setError('Enter your name'); return; }
-    emit('createRoom', { playerName: playerName.trim(), token: selectedToken, freeParkingEnabled });
+    emit('createRoom', { playerName: playerName.trim(), token: selectedToken, freeParkingEnabled, boardType });
   }
 
   function handleJoin(e) {
@@ -97,6 +107,9 @@ export default function Lobby({ roomState, myId, emit, sessionId }) {
         </div>
 
         <div className="lobby-settings">
+          <div className="board-type-display">
+            {roomState.boardType === 'world' ? '🌍 World Map — Real World Cities' : '🏙️ Classic — Atlantic City'}
+          </div>
           <label className="toggle-label">
             <input
               type="checkbox"
@@ -142,6 +155,28 @@ export default function Lobby({ roomState, myId, emit, sessionId }) {
       <div className="lobby-home">
         <h1 className="lobby-title">MONOPOLY</h1>
         <p className="lobby-subtitle">Real-time multiplayer</p>
+
+        {/* Rejoin banner — shown when there's a saved game session */}
+        {savedSession && (
+          <div className="rejoin-banner">
+            <span className="rejoin-icon">🔄</span>
+            <div className="rejoin-info">
+              <span className="rejoin-label">Active game found</span>
+              <span className="rejoin-code">Room: <strong>{savedSession.roomCode}</strong></span>
+            </div>
+            <div className="rejoin-actions">
+              <button
+                className="rejoin-btn"
+                onClick={handleRejoin}
+                disabled={rejoining}
+              >
+                {rejoining ? 'Rejoining…' : 'Rejoin Game'}
+              </button>
+              <button className="rejoin-dismiss" onClick={onClearSession} title="Dismiss">✕</button>
+            </div>
+          </div>
+        )}
+
         <div className="home-buttons">
           <button className="home-btn create-btn" onClick={() => setMode('create')}>
             Create Room
@@ -204,14 +239,37 @@ export default function Lobby({ roomState, myId, emit, sessionId }) {
           </div>
 
           {mode === 'create' && (
-            <label className="toggle-label">
-              <input
-                type="checkbox"
-                checked={freeParkingEnabled}
-                onChange={e => setFreeParkingEnabled(e.target.checked)}
-              />
-              Free Parking jackpot (house rule)
-            </label>
+            <>
+              <div className="board-type-picker">
+                <label className="board-type-label">Board Variant</label>
+                <div className="board-type-options">
+                  <button
+                    type="button"
+                    className={`board-type-btn ${boardType === 'classic' ? 'selected' : ''}`}
+                    onClick={() => setBoardType('classic')}
+                  >
+                    🏙️ Classic
+                    <span className="board-type-sub">Atlantic City</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`board-type-btn ${boardType === 'world' ? 'selected' : ''}`}
+                    onClick={() => setBoardType('world')}
+                  >
+                    🌍 World Map
+                    <span className="board-type-sub">Real World Cities</span>
+                  </button>
+                </div>
+              </div>
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={freeParkingEnabled}
+                  onChange={e => setFreeParkingEnabled(e.target.checked)}
+                />
+                Free Parking jackpot (house rule)
+              </label>
+            </>
           )}
 
           {error && <p className="form-error">{error}</p>}

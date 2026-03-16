@@ -21,6 +21,7 @@ import PongPage from './pages/PongPage';
 import TicTacToePage from './pages/TicTacToePage';
 import TypingSpeedPage from './pages/TypingSpeedPage';
 import LeaderboardPage from './pages/LeaderboardPage';
+import RideTheBusPage from './pages/RideTheBusPage';
 import './App.css';
 
 export default function App() {
@@ -47,6 +48,7 @@ export default function App() {
         <Route path="/tic-tac-toe" element={<TicTacToePage />} />
         <Route path="/typing-speed" element={<TypingSpeedPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
+        <Route path="/ride-the-bus" element={<RideTheBusPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </PasswordGate>

@@ -5,7 +5,9 @@ import Dashboard from './Dashboard';
 import EventLog from './EventLog';
 import TradeModal from './TradeModal';
 import GameChat from './GameChat';
-import { TOKENS, TOKEN_COLORS } from '../boardData';
+import CardReveal from './CardReveal';
+import { BOARD, TOKENS, TOKEN_COLORS } from '../boardData';
+import { WORLD_BOARD } from '../worldBoardData';
 import './Game.css';
 
 export default function Game({ roomState, myId, roomCode, emit, chatMessages = [] }) {
@@ -15,6 +17,9 @@ export default function Game({ roomState, myId, roomCode, emit, chatMessages = [
   const [showChat, setShowChat] = useState(false);
 
   if (!gameState) return <div className="game-loading">Loading game…</div>;
+
+  // Select the correct board variant based on game state
+  const activeBoard = gameState.boardType === 'world' ? WORLD_BOARD : BOARD;
 
   const myPlayer = gameState.players.find(p => p.id === myId);
   const winner = gameState.winner;
@@ -26,8 +31,22 @@ export default function Game({ roomState, myId, roomCode, emit, chatMessages = [
     !gameState.activeTrade &&
     gameState.players.filter(p => !p.bankrupt && p.id !== myId).length > 0;
 
+  const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
   return (
     <div className="game-layout">
+      {/* Card reveal overlay — shown to ALL players when a card is active */}
+      {gameState.activeCard && (
+        <CardReveal
+          activeCard={gameState.activeCard}
+          isMyTurn={isMyTurn}
+          roomCode={roomCode}
+          emit={emit}
+          currentPlayerName={currentPlayer?.name}
+          currentPlayerToken={TOKENS[currentPlayer?.token]}
+        />
+      )}
+
       {/* Win screen */}
       {winner && (
         <div className="win-overlay">
@@ -104,19 +123,23 @@ export default function Game({ roomState, myId, roomCode, emit, chatMessages = [
           myId={myId}
           roomCode={roomCode}
           emit={emit}
+          board={activeBoard}
         />
         <Dashboard
           gameState={gameState}
           myId={myId}
           roomCode={roomCode}
           emit={emit}
+          board={activeBoard}
         />
       </aside>
 
       {/* Center — Board */}
       <main className="game-main">
         <div className="game-topbar">
-          <span className="game-room-code">Room: <strong>{roomCode}</strong></span>
+          <span className="game-room-code">Room: <strong>{roomCode}</strong>
+            {gameState.boardType === 'world' && <span className="board-badge">🌍 World</span>}
+          </span>
           {canTrade && (
             <button className="trade-btn" onClick={() => setShowTradeModal(true)}>
               🤝 Trade
@@ -130,7 +153,7 @@ export default function Game({ roomState, myId, roomCode, emit, chatMessages = [
             {isMyTurn ? '⚡ Your Turn' : `${gameState.players[gameState.currentPlayerIndex]?.name}'s Turn`}
           </span>
         </div>
-        <Board gameState={gameState} myId={myId} />
+        <Board gameState={gameState} myId={myId} board={activeBoard} />
       </main>
     </div>
   );

@@ -10,7 +10,7 @@ function genCode() {
   return code;
 }
 
-function createRoom(hostSocketId, playerName, token, freeParkingEnabled) {
+function createRoom(hostSocketId, playerName, token, freeParkingEnabled, boardType) {
   let code;
   do { code = genCode(); } while (rooms.has(code));
 
@@ -31,6 +31,7 @@ function createRoom(hostSocketId, playerName, token, freeParkingEnabled) {
     gameState: null,
     status: 'lobby',
     freeParkingEnabled: !!freeParkingEnabled,
+    boardType: boardType === 'world' ? 'world' : 'classic',
   };
 
   rooms.set(code, room);

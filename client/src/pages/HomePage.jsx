@@ -15,6 +15,10 @@ const SOLO_GAMES = [
   { path: '/typing-speed', name: 'Typing Speed', desc: 'Race to type the passage — track your WPM', icon: '⌨️', players: '1 player' },
 ];
 
+const CASINO_GAMES = [
+  { path: '/ride-the-bus', name: 'Ride the Bus', desc: 'Guess Red/Black → Hi/Lo → In/Out → Suit. Win up to 20×!', icon: '🚌', players: '1 player' },
+];
+
 const MULTI_GAMES = [
   { path: '/chess', name: 'Chess', desc: 'Classic strategy board game', icon: '♟️', players: '2 players' },
   { path: '/connect4', name: 'Connect 4', desc: 'Drop discs to get 4 in a row', icon: '🟡', players: '2 players' },
@@ -47,6 +51,23 @@ export default function HomePage() {
                   <div className="game-card-players">{g.players}</div>
                 </div>
                 <div className="game-card-play">Play</div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="home-section">
+          <h2 className="home-section-title">🎰 Casino</h2>
+          <div className="home-grid">
+            {CASINO_GAMES.map(g => (
+              <Link key={g.path} to={g.path} className="game-card game-card--casino">
+                <div className="game-card-icon">{g.icon}</div>
+                <div className="game-card-body">
+                  <div className="game-card-name">{g.name}</div>
+                  <div className="game-card-desc">{g.desc}</div>
+                  <div className="game-card-players">{g.players}</div>
+                </div>
+                <div className="game-card-play" style={{ background: 'linear-gradient(135deg,#FFD700,#ff9800)', color: '#1a1a1a' }}>Play</div>
               </Link>
             ))}
           </div>
