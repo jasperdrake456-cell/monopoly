@@ -1,0 +1,376 @@
+/* ===== SLOTS GAME ===== */
+
+.slots-wrapper {
+  min-height: 100vh;
+  background: #0f1117;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 16px 60px;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+/* Balance display */
+.slots-balance {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 28px;
+  letter-spacing: 0.04em;
+}
+
+.slots-balance-amount {
+  color: #f0c040;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+/* Broke state */
+.slots-broke {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 40px;
+  padding: 36px 48px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+}
+
+.slots-broke-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #ff5e5e;
+}
+
+.slots-broke-sub {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.95rem;
+}
+
+.slots-broke-countdown {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #f0c040;
+  letter-spacing: 0.06em;
+}
+
+/* Machine body */
+.slots-machine {
+  background: linear-gradient(160deg, #1c1c2e 0%, #14141f 100%);
+  border: 2px solid #b8860b;
+  border-radius: 20px;
+  padding: 28px 36px 24px;
+  box-shadow: 0 0 40px rgba(184, 134, 11, 0.25), inset 0 0 60px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  min-width: 340px;
+}
+
+.slots-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #f0c040;
+  text-shadow: 0 0 12px rgba(240, 192, 64, 0.5);
+}
+
+/* Reels container */
+.slots-reels-container {
+  display: flex;
+  gap: 12px;
+  position: relative;
+  align-items: center;
+  padding: 10px 0;
+}
+
+/* Payline: horizontal red bar through the center */
+.slots-payline {
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 3px;
+  background: rgba(255, 60, 60, 0.75);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 2;
+  box-shadow: 0 0 8px rgba(255, 60, 60, 0.5);
+}
+
+/* Individual reel */
+.slots-reel {
+  width: 88px;
+  height: 88px;
+  background: #f8f8ff;
+  border-radius: 10px;
+  border: 2px solid #b8860b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.4rem;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: border-color 0.2s;
+}
+
+.slots-reel--spinning {
+  animation: slotBlur 0.18s linear infinite;
+  border-color: #ffd700;
+}
+
+.slots-reel-symbol {
+  display: block;
+  line-height: 1;
+  user-select: none;
+}
+
+@keyframes slotBlur {
+  0%   { filter: blur(0px) brightness(1);   transform: scale(1); }
+  25%  { filter: blur(3px) brightness(1.2); transform: scaleY(1.08); }
+  50%  { filter: blur(5px) brightness(0.9); transform: scaleY(0.92); }
+  75%  { filter: blur(3px) brightness(1.1); transform: scaleY(1.05); }
+  100% { filter: blur(0px) brightness(1);   transform: scale(1); }
+}
+
+/* Result banner */
+.slots-result {
+  text-align: center;
+  padding: 10px 20px;
+  border-radius: 10px;
+  min-width: 220px;
+  animation: fadeInResult 0.3s ease;
+}
+
+@keyframes fadeInResult {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.slots-result--win {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.slots-result--lose {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.slots-result-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.slots-result--win .slots-result-label {
+  color: #4ade80;
+}
+
+.slots-result--lose .slots-result-label {
+  color: #f87171;
+}
+
+.slots-result-payout {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #f0c040;
+  margin-top: 4px;
+}
+
+/* Controls */
+.slots-controls {
+  margin-top: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.slots-bet-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.slots-bet-label {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.slots-bet-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+  -moz-appearance: textfield;
+}
+
+.slots-bet-input::-webkit-outer-spin-button,
+.slots-bet-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.slots-bet-input:focus {
+  border-color: #f0c040;
+}
+
+.slots-bet-input:disabled {
+  opacity: 0.5;
+}
+
+/* Shared button base */
+.slots-btn {
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: background 0.15s, opacity 0.15s, transform 0.1s;
+  font-family: inherit;
+}
+
+.slots-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.slots-btn:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+/* Max button */
+.slots-btn--max {
+  padding: 8px 16px;
+  background: rgba(240, 192, 64, 0.15);
+  color: #f0c040;
+  border: 1px solid rgba(240, 192, 64, 0.35);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.slots-btn--max:not(:disabled):hover {
+  background: rgba(240, 192, 64, 0.25);
+}
+
+/* Quick bet buttons */
+.slots-quickbets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  width: 100%;
+}
+
+.slots-btn--quick {
+  padding: 7px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.85rem;
+}
+
+.slots-btn--quick:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.slots-btn--quick-active {
+  background: rgba(240, 192, 64, 0.18) !important;
+  color: #f0c040 !important;
+  border-color: rgba(240, 192, 64, 0.45) !important;
+}
+
+/* Spin button */
+.slots-btn--spin {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #b8860b 0%, #d4a017 50%, #b8860b 100%);
+  color: #0f1117;
+  font-size: 1.1rem;
+  letter-spacing: 0.05em;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(184, 134, 11, 0.35);
+}
+
+.slots-btn--spin:not(:disabled):hover {
+  background: linear-gradient(135deg, #c9950f 0%, #e0b020 50%, #c9950f 100%);
+  box-shadow: 0 4px 24px rgba(184, 134, 11, 0.55);
+}
+
+/* Paytable */
+.slots-paytable {
+  margin-top: 36px;
+  width: 100%;
+  max-width: 380px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+
+.slots-paytable-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+}
+
+.slots-paytable-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.slots-paytable-table th {
+  color: rgba(255, 255, 255, 0.35);
+  font-weight: 600;
+  text-align: left;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.slots-paytable-table th:last-child {
+  text-align: right;
+}
+
+.slots-paytable-table td {
+  padding: 5px 0;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.slots-paytable-table tr:not(:last-child) td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.slots-paytable-mult {
+  text-align: right;
+  font-weight: 700;
+  color: #f0c040;
+}
+
+.slots-paytable-lose td {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.slots-paytable-lose .slots-paytable-mult {
+  color: #f87171;
+}

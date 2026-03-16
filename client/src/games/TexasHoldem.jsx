@@ -210,6 +210,7 @@ function GameTable({ roomState, myId, emit }) {
                 <div className="th-seat-name">{player.name}{player.allIn ? ' (ALL-IN)' : ''}</div>
                 <div className="th-seat-chips">${player.chips?.toLocaleString()}</div>
                 {player.bet > 0 && <div className="th-seat-bet">Bet: ${player.bet}</div>}
+                {player.handName && <div className="th-seat-handname">{player.handName}</div>}
               </div>
             );
           })}

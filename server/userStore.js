@@ -89,7 +89,7 @@ function destroySession(token) {
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const STARTING_BALANCE = 500;
+const STARTING_BALANCE = 2000;
 const DAILY_AMOUNT     = 250;
 const ADMIN_USERNAME   = 'jasper';
 const ADMIN_BALANCE    = 999_999_999; // effectively infinite
@@ -320,6 +320,18 @@ function adminSetBalance(adminToken, username, amount) {
 }
 
 /**
+ * Public: top N users by casino balance (excludes admin).
+ */
+function getTopBalances(limit = 20) {
+  const users = readUsers();
+  return Object.values(users)
+    .filter(u => u.username !== ADMIN_USERNAME)
+    .map(u => ({ username: u.username, displayName: u.displayName || u.username, balance: u.casinoBalance || 0 }))
+    .sort((a, b) => b.balance - a.balance)
+    .slice(0, limit);
+}
+
+/**
  * Check if a token belongs to the admin.
  */
 function isAdminToken(token) {
@@ -345,5 +357,5 @@ function logout(token) {
 
 module.exports = {
   register, login, getMe, syncBalance, claimDaily, transfer, logout, userExists,
-  deleteUser, adminGiveMoney, adminSetBalance, listUsers, isAdminToken,
+  deleteUser, adminGiveMoney, adminSetBalance, listUsers, isAdminToken, getTopBalances,
 };

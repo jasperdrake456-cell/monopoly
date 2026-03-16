@@ -117,6 +117,11 @@ app.get('/api/accounts/exists/:username', (req, res) => {
   res.json({ exists: us.userExists(req.params.username) });
 });
 
+// ── Casino Rich List (public) ─────────────────────────────────────────────────
+app.get('/api/casino-leaderboard', (req, res) => {
+  res.json({ ok: true, players: us.getTopBalances(20) });
+});
+
 // ── Leaderboard API ──────────────────────────────────────────────────────────
 
 app.get('/api/leaderboard/:gameId', (req, res) => {

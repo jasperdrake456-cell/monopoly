@@ -34,6 +34,8 @@ import PlinkoPage from './pages/PlinkoPage';
 import DicePage from './pages/DicePage';
 import RoulettePage from './pages/RoulettePage';
 import TexasHoldemPage from './pages/TexasHoldemPage';
+import SlotsPage from './pages/SlotsPage';
+import CasinoLeaderboardPage from './pages/CasinoLeaderboardPage';
 import RequireAuth from './components/RequireAuth';
 import './App.css';
 
@@ -71,6 +73,8 @@ export default function App() {
         <Route path="/dice"          element={<RequireAuth><DicePage /></RequireAuth>} />
         <Route path="/roulette"      element={<RequireAuth><RoulettePage /></RequireAuth>} />
         <Route path="/texas-holdem"  element={<RequireAuth><TexasHoldemPage /></RequireAuth>} />
+        <Route path="/slots"         element={<RequireAuth><SlotsPage /></RequireAuth>} />
+        <Route path="/casino-leaderboard" element={<CasinoLeaderboardPage />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/transfer" element={<TransferPage />} />
         <Route path="/admin" element={<AdminPage />} />

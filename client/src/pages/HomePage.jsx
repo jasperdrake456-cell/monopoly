@@ -26,6 +26,7 @@ const CASINO_GAMES = [
   { path: '/baccarat',     name: 'Baccarat',     desc: 'Bet Player, Banker or Tie. Natural 8 or 9 wins!', icon: '🎴', players: '1 player' },
   { path: '/mines',        name: 'Mines',        desc: 'Reveal gems, dodge bombs — cash out before you explode!', icon: '💣', players: '1 player' },
   { path: '/ride-the-bus', name: 'Ride the Bus', desc: 'Guess Red/Black → Hi/Lo → In/Out → Suit. Win up to 20×!', icon: '🚌', players: '1 player' },
+  { path: '/slots',        name: 'Slots',        desc: 'Spin the reels — hit 💎💎💎 for 1000× your bet!', icon: '🎰', players: '1 player' },
   { path: '/texas-holdem', name: "Texas Hold'em", desc: 'Community card poker — bet, raise, bluff your way to the pot', icon: '🃏', players: '2-6 players' },
 ];
 
@@ -74,7 +75,10 @@ export default function HomePage() {
         </section>
 
         <section className="home-section">
-          <h2 className="home-section-title">🎰 Casino</h2>
+          <h2 className="home-section-title" style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+            <span>🎰 Casino</span>
+            <Link to="/casino-leaderboard" className="home-trivia-btn" style={{ fontSize:'0.78rem', padding:'5px 12px' }}>💰 Rich List</Link>
+          </h2>
           <div className="home-grid">
             {CASINO_GAMES.map(g => (
               <Link key={g.path} to={g.path} className="game-card game-card--casino">

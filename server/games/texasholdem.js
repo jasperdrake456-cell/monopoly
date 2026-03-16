@@ -383,7 +383,13 @@ function register(ns) {
 
     const players = room.players.map(p => {
       const gp = gs?.players.find(gp => gp.id === p.id);
-      const showCards = gp && (p.id === forSocketId || isShowdown);
+      const showCards = gp && (p.id === forSocketId || (isShowdown && !gp.folded));
+      // Compute hand name for showdown display
+      let handNameStr = null;
+      if (isShowdown && gp && !gp.folded && gs.communityCards?.length >= 3) {
+        const best = bestHand(gp.holeCards, gs.communityCards);
+        if (best) handNameStr = handName(best.score);
+      }
       return {
         id:       p.id,
         name:     p.name,
@@ -393,6 +399,7 @@ function register(ns) {
         folded:   gp?.folded ?? false,
         allIn:    gp?.allIn  ?? false,
         holeCards: showCards ? gp.holeCards : (gp ? [null, null] : null),
+        handName: handNameStr,
       };
     });
 
@@ -519,6 +526,7 @@ function register(ns) {
       const room = rooms.get(roomCode);
       if (!room || room.status !== 'playing') return;
       if (room.gameState?.handInProgress) return;
+      // Any remaining player can trigger next hand (not just host)
 
       // Remove busted players
       if (room.gameState) {

@@ -481,3 +481,50 @@
   padding: 12px;
 }
 .th-waiting-turn strong { color: #FFD700; }
+
+/* ── Hand name on seat (showdown) ──────────────────────────────────────────── */
+.th-seat-handname {
+  font-size: 0.6rem;
+  color: #FFD700;
+  font-weight: 700;
+  text-align: center;
+  background: rgba(255,215,0,0.12);
+  border-radius: 4px;
+  padding: 1px 5px;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+
+/* ── Mobile responsiveness ─────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .th-lobby { padding: 24px 12px; gap: 14px; }
+  .th-lobby-title { font-size: 1.6rem; }
+  .th-name-row { flex-direction: column; }
+  .th-btn--create { width: 100%; }
+
+  .th-table-wrap { max-width: 100%; }
+  .th-table { border-width: 5px; border-radius: 40% / 35%; }
+
+  .th-seat { min-width: 60px; }
+  .th-seat-name { font-size: 0.6rem; max-width: 64px; }
+  .th-seat-chips { font-size: 0.58rem; }
+  .th-seat-bet { font-size: 0.55rem; }
+
+  .pk-card--small { width: 28px; height: 40px; }
+  .pk-card--small .pk-corner { font-size: 0.4rem; }
+  .pk-card--small .pk-center { font-size: 0.7rem; }
+
+  .th-actions { gap: 6px; padding: 10px 10px; }
+  .th-act-btn { padding: 10px 14px; font-size: 0.85rem; }
+  .th-raise-slider { width: 90px; }
+  .th-raise-input { width: 58px; font-size: 0.78rem; }
+
+  .th-showdown { padding: 14px 16px; }
+  .th-winner-row { font-size: 0.85rem; }
+
+  .th-top-bar { gap: 10px; font-size: 0.8rem; }
+  .th-game-header { padding: 8px 10px; }
+}
