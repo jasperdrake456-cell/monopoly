@@ -33,7 +33,7 @@ export default function HomePage() {
   return (
     <div className="home">
       <header className="home-header">
-        <div className="home-logo">🎮 Game Hub</div>
+        <div className="home-logo">🎮 Game Vault</div>
         <Link to="/trivia" className="home-trivia-btn">🎯 Daily Trivia</Link>
         <Link to="/leaderboard" className="home-trivia-btn">🏆 Leaderboard</Link>
       </header>

@@ -57,7 +57,7 @@ export default function PasswordGate({ children }) {
     <div className="pg-backdrop">
       <div className={`pg-card ${shake ? 'pg-shake' : ''}`}>
         <div className="pg-lock">🔒</div>
-        <h1 className="pg-title">Game Hub</h1>
+        <h1 className="pg-title">Game Vault</h1>
         <p className="pg-subtitle">Enter the password to continue</p>
         <form onSubmit={handleSubmit} className="pg-form">
           <input
