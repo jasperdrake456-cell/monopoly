@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import HighScoreModal from '../components/HighScoreModal';
 import { isHighScore } from '../utils/leaderboard';
+import { addBalance } from '../utils/casinoBalance';
 import './Wordle.css';
 
 const ANSWERS = [
@@ -339,6 +340,7 @@ export default function Wordle({ onBack }) {
     saveGameState(todayKey, { guesses: newGuesses, gameState: newState });
 
     if (won) {
+      addBalance(20); // +$20 for guessing the word
       const winMsgs = ['Genius!','Magnificent!','Impressive!','Splendid!','Great!','Phew!'];
       setTimeout(() => {
         setGameState('won');

@@ -106,7 +106,7 @@ export default function Tile({ space, propertyState, playersHere, isHighlighted,
               className={[
                 'tile-token-badge',
                 p.id === currentPlayerId ? 'is-current' : '',
-                p.isHopping ? 'hopping' : '',
+                p.isThrowing ? 'throwing' : (p.isHopping ? 'hopping' : ''),
               ].filter(Boolean).join(' ')}
               style={{ background: TOKEN_COLORS[p.token] + '22', borderColor: TOKEN_COLORS[p.token] }}
               title={p.name}

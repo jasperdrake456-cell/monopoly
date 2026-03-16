@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import { addBalance } from '../utils/casinoBalance';
 import './Connect4Game.css';
 
 const ROWS = 6, COLS = 7;
@@ -21,6 +22,13 @@ export default function Connect4Game({ roomState, myId, emit, onBack }) {
 
   const winnerName = getWinnerName();
   const iWon = (winner === 'R' && isHost) || (winner === 'Y' && !isHost);
+  const winPaidRef = useRef(false);
+  useEffect(() => {
+    if (iWon && status === 'ended' && !winPaidRef.current) {
+      winPaidRef.current = true;
+      addBalance(20);
+    }
+  }, [iWon, status]);
 
   return (
     <div className="c4-page">

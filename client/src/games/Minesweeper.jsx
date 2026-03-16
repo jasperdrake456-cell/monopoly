@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import HighScoreModal from '../components/HighScoreModal';
 import { isHighScore } from '../utils/leaderboard';
+import { addBalance } from '../utils/casinoBalance';
 import './Minesweeper.css';
 
 const DIFFICULTIES = {
@@ -137,6 +138,7 @@ export default function Minesweeper({ onBack }) {
     setGrid(newGrid);
     if (won) {
       setStatus('won');
+      addBalance(20); // +$20 for clearing the board
       const gameId = `minesweeper_${diff}`;
       isHighScore(gameId, time, false).then(yes => { if (yes) { setPendingTime(time); setShowHS(true); } });
     }

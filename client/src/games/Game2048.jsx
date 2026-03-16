@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import HighScoreModal from '../components/HighScoreModal';
 import { isHighScore } from '../utils/leaderboard';
+import { addBalance } from '../utils/casinoBalance';
 import './Game2048.css';
 
 const TILE_COLORS = {
@@ -111,7 +112,7 @@ export default function Game2048({ onBack }) {
         });
         return ns;
       });
-      if (!keepPlaying && nb.some(row => row.includes(2048))) setWon(true);
+      if (!keepPlaying && nb.some(row => row.includes(2048))) { setWon(true); addBalance(20); } // +$20 for reaching 2048
       if (!canMove(nb)) {
         setOver(true);
         setScore(s => { if (s > 0) isHighScore('2048', s).then(yes => { if (yes) { setPendingScore(s); setShowHS(true); } }); return s; });

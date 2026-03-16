@@ -3,10 +3,10 @@ import Tile from './Tile';
 import { BOARD, TOKEN_COLORS, TOKENS, getGridPos } from '../boardData';
 import './Board.css';
 
-const HOP_MS = 650; // ms per space — slow, deliberate hop
+const HOP_MS = 200; // ms per space — snappy hop
 const JAIL_ANIM_MS = 3200; // how long the police car animation shows
 
-export default function Board({ gameState, myId, board: boardProp }) {
+export default function Board({ gameState, myId, board: boardProp, onMovingChange }) {
   const { players, propertyStates, currentPlayerIndex, freeParking, freeParkingEnabled } = gameState;
   // Use prop if provided (world board), fall back to imported BOARD
   const boardData  = boardProp || BOARD;
@@ -19,7 +19,9 @@ export default function Board({ gameState, myId, board: boardProp }) {
   const timerRef     = useRef([]);   // all pending timers (cleared on unmount)
   const [displayPos, setDisplayPos]   = useState({});   // where to render each player
   const [hoppingIds, setHoppingIds]   = useState({});   // players currently mid-hop
+  const [throwingIds, setThrowingIds] = useState({});   // players on their dramatic first hop
   const [jailAnim,   setJailAnim]     = useState(null); // { name, token, color } when police car plays
+  const movingCountRef = useRef(0);                      // how many movement sequences are in flight
 
   // Clean up timers on unmount
   useEffect(() => () => timerRef.current.forEach(clearTimeout), []);
@@ -71,18 +73,31 @@ export default function Board({ gameState, myId, board: boardProp }) {
       }
 
       // Animate step by step
+      movingCountRef.current++;
+      if (onMovingChange && movingCountRef.current === 1) onMovingChange(true);
+
       steps.forEach((pos, i) => {
         const t1 = setTimeout(() => {
           setDisplayPos(dp => ({ ...dp, [p.id]: pos }));
           setHoppingIds(h => ({ ...h, [p.id]: true }));
-          // Clear hop class shortly before next step lands
+          // First hop gets the dramatic "throw" animation
+          if (i === 0) setThrowingIds(t => ({ ...t, [p.id]: true }));
+          // Clear hop/throw class shortly before next step lands
           const t2 = setTimeout(() => {
             setHoppingIds(h => { const nh = { ...h }; delete nh[p.id]; return nh; });
-          }, HOP_MS - 80);
+            setThrowingIds(t => { const nt = { ...t }; delete nt[p.id]; return nt; });
+          }, HOP_MS - 60);
           timerRef.current.push(t2);
         }, i * HOP_MS);
         timerRef.current.push(t1);
       });
+
+      // After all steps finish, signal that movement is done
+      const tDone = setTimeout(() => {
+        movingCountRef.current = Math.max(0, movingCountRef.current - 1);
+        if (onMovingChange && movingCountRef.current === 0) onMovingChange(false);
+      }, steps.length * HOP_MS);
+      timerRef.current.push(tDone);
     });
   }, [players]); // eslint-disable-line
 
@@ -93,11 +108,11 @@ export default function Board({ gameState, myId, board: boardProp }) {
       if (!p.bankrupt) {
         const pos = displayPos[p.id] ?? p.position;
         if (!map[pos]) map[pos] = [];
-        map[pos].push({ ...p, isHopping: !!hoppingIds[p.id] });
+        map[pos].push({ ...p, isHopping: !!hoppingIds[p.id], isThrowing: !!throwingIds[p.id] });
       }
     });
     return map;
-  }, [players, displayPos, hoppingIds]);
+  }, [players, displayPos, hoppingIds, throwingIds]);
 
   const enrichedStates = useMemo(() => {
     const result = {};

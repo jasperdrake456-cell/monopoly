@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { addBalance } from '../../utils/casinoBalance';
 import './BattleshipGame.css';
 
 const SHIP_DEFS = [
@@ -19,6 +20,13 @@ export default function BattleshipGame({ roomState, myId, emit, onBack }) {
   const opp    = players?.find(p => p.id !== myId);
   const isEnded = roomState.status === 'ended' || phase === 'ended';
   const iWon = winner === myId;
+  const winPaidRef = useRef(false);
+  useEffect(() => {
+    if (iWon && isEnded && !winPaidRef.current) {
+      winPaidRef.current = true;
+      addBalance(20);
+    }
+  }, [iWon, isEnded]);
   const isMyTurn = currentTurn === myId;
 
   // Placement state

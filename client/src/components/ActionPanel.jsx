@@ -4,7 +4,7 @@ import './ActionPanel.css';
 
 const DICE_FACE = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
-export default function ActionPanel({ gameState, myId, roomCode, emit, board: boardProp }) {
+export default function ActionPanel({ gameState, myId, roomCode, emit, board: boardProp, isMoving = false }) {
   const { players, currentPlayerIndex, turnPhase, lastDice, activeTrade, doublesCount } = gameState;
   const currentPlayer = players[currentPlayerIndex];
   const myPlayer = players.find(p => p.id === myId);
@@ -49,10 +49,10 @@ export default function ActionPanel({ gameState, myId, roomCode, emit, board: bo
           <div className="ap-header">🤝 Trade from {from?.name}</div>
           <TradeOfferDisplay trade={activeTrade} players={players} board={ACTIVE_BOARD} />
           <div className="ap-row">
-            <button className="ap-btn primary" onClick={() => act('respondTrade', { roomCode, accepted: true })} disabled={acting}>
+            <button className="ap-btn primary" onClick={() => act('respondTrade', { roomCode, accepted: true })} disabled={acting || isMoving}>
               ✓ Accept
             </button>
-            <button className="ap-btn danger" onClick={() => act('respondTrade', { roomCode, accepted: false })} disabled={acting}>
+            <button className="ap-btn danger" onClick={() => act('respondTrade', { roomCode, accepted: false })} disabled={acting || isMoving}>
               ✗ Reject
             </button>
           </div>
@@ -169,20 +169,20 @@ export default function ActionPanel({ gameState, myId, roomCode, emit, board: bo
           <div className="ap-actions">
             {myPlayer.jailTurns > 0 && (
               <>
-                <button className="ap-btn secondary" disabled={myPlayer.cash < 50 || acting}
+                <button className="ap-btn secondary" disabled={myPlayer.cash < 50 || acting || isMoving}
                   onClick={() => act('payJailFine', { roomCode })}>
                   💸 Pay $50 Fine
                 </button>
                 {myPlayer.getOutOfJailCards > 0 && (
-                  <button className="ap-btn secondary" disabled={acting}
+                  <button className="ap-btn secondary" disabled={acting || isMoving}
                     onClick={() => act('useJailCard', { roomCode })}>
                     🃏 Use Jail Card
                   </button>
                 )}
               </>
             )}
-            <button className="ap-btn primary large" onClick={handleRoll} disabled={rolling || acting}>
-              🎲 {rolling ? 'Rolling…' : isRollingAgain ? 'Roll Again' : 'Roll Dice'}
+            <button className="ap-btn primary large" onClick={handleRoll} disabled={rolling || acting || isMoving}>
+              🎲 {isMoving ? 'Moving…' : rolling ? 'Rolling…' : isRollingAgain ? 'Roll Again' : 'Roll Dice'}
             </button>
           </div>
         )}
@@ -202,11 +202,11 @@ export default function ActionPanel({ gameState, myId, roomCode, emit, board: bo
         {/* End turn */}
         {turnPhase === 'end' && (
           <div className="ap-actions">
-            <button className="ap-btn primary large" disabled={acting}
+            <button className="ap-btn primary large" disabled={acting || isMoving}
               onClick={() => act('endTurn', { roomCode })}>
-              {doublesCount > 0 ? 'Continue → Roll Again 🎲' : 'End Turn ➡️'}
+              {isMoving ? 'Moving…' : doublesCount > 0 ? 'Continue → Roll Again 🎲' : 'End Turn ➡️'}
             </button>
-            <button className="ap-btn danger-subtle" disabled={acting}
+            <button className="ap-btn danger-subtle" disabled={acting || isMoving}
               onClick={() => { if (window.confirm('Declare bankruptcy? This permanently ends your game.')) act('declareBankruptcy', { roomCode }); }}>
               Declare Bankruptcy
             </button>

@@ -93,3 +93,76 @@
   color: #484f58;
   font-size: 0.85rem;
 }
+
+/* ── Report flag button ── */
+.lb-report-flag {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  opacity: 0;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: opacity 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.lb-entry:hover .lb-report-flag { opacity: 1; }
+.lb-report-flag:hover { background: rgba(239,68,68,0.15); }
+
+/* ── Report modal ── */
+.lb-report-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999;
+}
+
+.lb-report-box {
+  background: #1e1e2e;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 16px;
+  padding: 28px 24px;
+  width: 340px;
+  display: flex; flex-direction: column; gap: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+
+.lb-report-title { font-size: 1.1rem; font-weight: 700; color: #f87171; }
+.lb-report-entry { font-size: 0.9rem; color: rgba(255,255,255,0.6); font-style: italic; }
+.lb-report-sent  { color: #a8f0c0; font-weight: 600; text-align: center; padding: 8px 0; }
+
+.lb-report-reason {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.88rem;
+  resize: none;
+}
+.lb-report-reason:focus { outline: none; border-color: #7c3aed; }
+.lb-report-reason::placeholder { color: rgba(255,255,255,0.3); }
+
+.lb-report-actions { display: flex; gap: 8px; }
+
+.lb-report-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.7);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.lb-report-btn:hover { background: rgba(255,255,255,0.12); }
+
+.lb-report-btn--submit {
+  background: rgba(239,68,68,0.15);
+  border-color: rgba(239,68,68,0.35);
+  color: #fca5a5;
+}
+.lb-report-btn--submit:hover { background: rgba(239,68,68,0.25); }

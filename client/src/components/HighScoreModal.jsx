@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { isClean, cleanName } from '../utils/profanity';
 import { getRank, addScore } from '../utils/leaderboard';
+import { addBalance } from '../utils/casinoBalance';
 import './HighScoreModal.css';
+
+const LEADERBOARD_REWARD = 10; // $10 for making the leaderboard
 
 export default function HighScoreModal({ gameId, score, label = 'points', higherIsBetter = true, onSave, onDismiss }) {
   const [name, setName] = useState('');
@@ -18,6 +21,7 @@ export default function HighScoreModal({ gameId, score, label = 'points', higher
     if (trimmed.length < 2) { setError('Name must be at least 2 characters.'); return; }
     if (!isClean(trimmed)) { setError('Please choose a more appropriate name.'); return; }
     addScore(gameId, score, trimmed, higherIsBetter);
+    addBalance(LEADERBOARD_REWARD); // +$10 for making the leaderboard
     onSave(trimmed);
   }
 

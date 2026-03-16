@@ -5,6 +5,7 @@ import PasswordGate from './components/PasswordGate';
 import HomePage from './pages/HomePage';
 import AuthPage from './pages/AuthPage';
 import TransferPage from './pages/TransferPage';
+import AdminPage from './pages/AdminPage';
 import MonopolyPage from './pages/MonopolyPage';
 import Game2048Page from './pages/Game2048Page';
 import SnakePage from './pages/SnakePage';
@@ -61,6 +62,7 @@ export default function App() {
         <Route path="/mines" element={<MinesPage />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/transfer" element={<TransferPage />} />
+        <Route path="/admin" element={<AdminPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </PasswordGate>

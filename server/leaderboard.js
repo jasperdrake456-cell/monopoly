@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const { isClean } = require('./profanity');
 
 const DATA_FILE = path.join(__dirname, 'data', 'leaderboards.json');
 const MAX = 10;
@@ -32,6 +33,7 @@ function isHighScore(gameId, score, higherIsBetter = true) {
 }
 
 function addScore(gameId, score, name, higherIsBetter = true) {
+  if (!isClean(name)) return getLeaderboard(gameId); // silently reject offensive names
   const lb = getLeaderboard(gameId);
   lb.push({ name, score, date: new Date().toLocaleDateString() });
   lb.sort((a, b) => higherIsBetter ? b.score - a.score : a.score - b.score);
@@ -48,4 +50,9 @@ function getRank(gameId, score, higherIsBetter = true) {
   return sorted.findIndex(e => e.score === score) + 1;
 }
 
-module.exports = { getLeaderboard, isHighScore, addScore, getRank };
+function overwriteLeaderboard(gameId, entries) {
+  store[gameId] = entries.slice(0, MAX);
+  save();
+}
+
+module.exports = { getLeaderboard, isHighScore, addScore, getRank, overwriteLeaderboard };

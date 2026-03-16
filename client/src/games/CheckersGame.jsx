@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { addBalance } from '../utils/casinoBalance';
 import './CheckersGame.css';
 
 export default function CheckersGame({ roomState, myId, emit, onBack }) {
@@ -14,6 +15,13 @@ export default function CheckersGame({ roomState, myId, emit, onBack }) {
 
   const iWon = winner === myColor;
   const isEnded = status === 'ended';
+  const winPaidRef = useRef(false);
+  useEffect(() => {
+    if (iWon && isEnded && !winPaidRef.current) {
+      winPaidRef.current = true;
+      addBalance(20);
+    }
+  }, [iWon, isEnded]);
 
   function getValidMoves(r, c) {
     // Determine if any jumps exist for my color

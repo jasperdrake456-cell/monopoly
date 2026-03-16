@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
+import { addBalance } from '../../utils/casinoBalance';
 import './ChessGame.css';
 
 const PIECE_UNICODE = {
@@ -29,12 +30,22 @@ export default function ChessGame({ roomState, myId, emit, onBack }) {
   const [selected, setSelected] = useState(null);
   const [legalMoves, setLegalMoves] = useState([]);
   const [promotionPending, setPromotionPending] = useState(null);
+  const winPaidRef = useRef(false);
 
   // Re-parse legal moves when a piece is selected
   useEffect(() => {
     setSelected(null);
     setLegalMoves([]);
   }, [fen]);
+
+  // Pay $20 win reward exactly once
+  const iWon = isGameOver && winner && ((winner === 'w' && isHost) || (winner === 'b' && !isHost));
+  useEffect(() => {
+    if (iWon && !winPaidRef.current) {
+      winPaidRef.current = true;
+      addBalance(20);
+    }
+  }, [iWon]);
 
   if (!fen) return <div className="chess-loading">Loading…</div>;
 

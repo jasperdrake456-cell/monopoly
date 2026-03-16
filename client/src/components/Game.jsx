@@ -15,6 +15,7 @@ export default function Game({ roomState, myId, roomCode, emit, chatMessages = [
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [showLog, setShowLog] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [isMoving, setIsMoving] = useState(false);
 
   if (!gameState) return <div className="game-loading">Loading game…</div>;
 
@@ -124,6 +125,7 @@ export default function Game({ roomState, myId, roomCode, emit, chatMessages = [
           roomCode={roomCode}
           emit={emit}
           board={activeBoard}
+          isMoving={isMoving}
         />
         <Dashboard
           gameState={gameState}
@@ -153,7 +155,7 @@ export default function Game({ roomState, myId, roomCode, emit, chatMessages = [
             {isMyTurn ? '⚡ Your Turn' : `${gameState.players[gameState.currentPlayerIndex]?.name}'s Turn`}
           </span>
         </div>
-        <Board gameState={gameState} myId={myId} board={activeBoard} />
+        <Board gameState={gameState} myId={myId} board={activeBoard} onMovingChange={setIsMoving} />
       </main>
     </div>
   );

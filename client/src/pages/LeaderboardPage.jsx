@@ -3,6 +3,16 @@ import { Link } from 'react-router-dom';
 import { getLeaderboard } from '../utils/leaderboard';
 import './LeaderboardPage.css';
 
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
+
+async function submitReport(gameId, entryName, entryScore, reason) {
+  await fetch(SERVER_URL + '/api/reports', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ gameId, entryName, entryScore, reason }),
+  });
+}
+
 const SCORE_GAMES = [
   { id: 'snake',         icon: '🐍', name: 'Snake',         unit: 'pts', higherIsBetter: true },
   { id: 'tetris',        icon: '🧱', name: 'Tetris',        unit: 'pts', higherIsBetter: true },
@@ -38,8 +48,47 @@ function rankLabel(i) {
   return `#${i + 1}`;
 }
 
+function ReportModal({ gameId, entry, onClose }) {
+  const [reason, setReason] = useState('');
+  const [sent, setSent]     = useState(false);
+
+  async function send() {
+    await submitReport(gameId, entry.name, entry.score, reason);
+    setSent(true);
+    setTimeout(onClose, 1500);
+  }
+
+  return (
+    <div className="lb-report-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="lb-report-box">
+        <div className="lb-report-title">🚩 Report Name</div>
+        <div className="lb-report-entry">"{entry.name}"</div>
+        {sent ? (
+          <div className="lb-report-sent">✅ Reported! Thank you.</div>
+        ) : (
+          <>
+            <textarea
+              className="lb-report-reason"
+              placeholder="Reason (optional)…"
+              value={reason}
+              onChange={e => setReason(e.target.value)}
+              rows={3}
+              maxLength={200}
+            />
+            <div className="lb-report-actions">
+              <button className="lb-report-btn lb-report-btn--submit" onClick={send}>Submit Report</button>
+              <button className="lb-report-btn" onClick={onClose}>Cancel</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function LeaderboardCard({ game }) {
-  const [entries, setEntries] = useState(null);
+  const [entries, setEntries]     = useState(null);
+  const [reporting, setReporting] = useState(null); // entry being reported
 
   useEffect(() => {
     getLeaderboard(game.id).then(setEntries);
@@ -47,6 +96,9 @@ function LeaderboardCard({ game }) {
 
   return (
     <div className="lb-card">
+      {reporting && (
+        <ReportModal gameId={game.id} entry={reporting} onClose={() => setReporting(null)} />
+      )}
       <div className="lb-card-header">
         <span className="lb-card-icon">{game.icon}</span>
         <span className="lb-card-name">{game.name}</span>
@@ -63,6 +115,7 @@ function LeaderboardCard({ game }) {
                   <span className="lb-name">{e.name}</span>
                   <span className="lb-score">{e.score}</span>
                   <span className="lb-date">{e.date}</span>
+                  <button className="lb-report-flag" title="Report this name" onClick={() => setReporting(e)}>🚩</button>
                 </div>
               ))
         }

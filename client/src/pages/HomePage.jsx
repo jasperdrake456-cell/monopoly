@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import AccountWidget from '../components/AccountWidget';
+import { useAuth } from '../contexts/AuthContext';
 import './HomePage.css';
 
 const SOLO_GAMES = [
@@ -34,6 +35,9 @@ const MULTI_GAMES = [
 ];
 
 export default function HomePage() {
+  const { user } = useAuth();
+  const isAdmin = user?.username === 'jasper';
+
   return (
     <div className="home">
       <header className="home-header">
@@ -41,6 +45,7 @@ export default function HomePage() {
         <div className="home-header-right">
           <Link to="/trivia" className="home-trivia-btn">🎯 Daily Trivia</Link>
           <Link to="/leaderboard" className="home-trivia-btn">🏆 Leaderboard</Link>
+          {isAdmin && <Link to="/admin" className="home-trivia-btn" style={{ background: 'rgba(239,68,68,0.15)', borderColor: 'rgba(239,68,68,0.4)', color: '#fca5a5' }}>🛡️ Admin</Link>}
           <AccountWidget />
         </div>
       </header>

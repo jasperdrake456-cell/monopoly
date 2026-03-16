@@ -8,6 +8,7 @@ const { getPassword, setPassword, generatePassword } = require('./passwordStore'
 const { sendPasswordEmail } = require('./email');
 const lb = require('./leaderboard');
 const us = require('./userStore');
+const rp = require('./reportStore');
 
 const app = express();
 const server = http.createServer(app);
@@ -143,6 +144,63 @@ app.post('/api/leaderboard/:gameId', (req, res) => {
   if (!clean) return res.status(400).json({ error: 'Empty name' });
   const result = lb.addScore(req.params.gameId, score, clean, higherIsBetter);
   res.json(result);
+});
+
+// ── Report API ────────────────────────────────────────────────────────────────
+
+// Anyone can submit a report
+app.post('/api/reports', (req, res) => {
+  const { gameId, entryName, entryScore, reason } = req.body || {};
+  if (!gameId || !entryName) return res.status(400).json({ error: 'Missing fields' });
+  res.json(rp.addReport({ gameId, entryName, entryScore, reason }));
+});
+
+// ── Admin API ─────────────────────────────────────────────────────────────────
+
+function requireAdmin(req, res, next) {
+  if (!us.isAdminToken(getToken(req))) return res.status(403).json({ error: 'Forbidden' });
+  next();
+}
+
+// View all reports
+app.get('/api/admin/reports', requireAdmin, (req, res) => {
+  res.json({ ok: true, reports: rp.getReports() });
+});
+
+// Delete a report
+app.delete('/api/admin/reports/:id', requireAdmin, (req, res) => {
+  rp.deleteReport(req.params.id);
+  res.json({ ok: true });
+});
+
+// Mark a report as reviewed
+app.post('/api/admin/reports/:id/dismiss', requireAdmin, (req, res) => {
+  rp.markReviewed(req.params.id);
+  res.json({ ok: true });
+});
+
+// Remove a leaderboard entry (for handling reports)
+app.delete('/api/admin/leaderboard/:gameId/:name', requireAdmin, (req, res) => {
+  const { gameId, name } = req.params;
+  const board = lb.getLeaderboard(gameId).filter(e => e.name !== decodeURIComponent(name));
+  lb.overwriteLeaderboard(gameId, board);
+  res.json({ ok: true });
+});
+
+// List all users
+app.get('/api/admin/users', requireAdmin, (req, res) => {
+  res.json(us.listUsers(getToken(req)));
+});
+
+// Delete a user
+app.delete('/api/admin/users/:username', requireAdmin, (req, res) => {
+  res.json(us.deleteUser(getToken(req), req.params.username));
+});
+
+// Give money to a user
+app.post('/api/admin/give-money', requireAdmin, (req, res) => {
+  const { username, amount } = req.body || {};
+  res.json(us.adminGiveMoney(getToken(req), username, amount));
 });
 
 // ── Static client ─────────────────────────────────────────────────────────────

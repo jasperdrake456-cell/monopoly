@@ -175,6 +175,7 @@ export function AuthProvider({ children }) {
   const value = {
     user, token, balance, loading,
     isLoggedIn: !!user,
+    isAdmin: user?.username === 'jasper',
     register, login, logout, transfer, syncNow, claimDailyServer,
     refreshBalance: () => pullBalance(token),
   };

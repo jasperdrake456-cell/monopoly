@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { addBalance } from '../utils/casinoBalance';
 import './TriviaPage.css';
+
+const TRIVIA_REWARD = 20; // $20 per correct answer
 
 const QUESTIONS = [
   { q: 'Which movie won Best Picture at the 2024 Oscars?', answers: ['Oppenheimer', 'Poor Things', 'The Zone of Interest', 'American Fiction'], correct: 0 },
@@ -138,6 +141,7 @@ export default function TriviaPage() {
     setSelected(i);
     if (i === questions[qIndex].correct) {
       scoreRef.current += 1;
+      addBalance(TRIVIA_REWARD); // +$20 per correct answer
     }
   }
 

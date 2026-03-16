@@ -91,6 +91,8 @@ function destroySession(token) {
 // ── Constants ─────────────────────────────────────────────────────────────────
 const STARTING_BALANCE = 500;
 const DAILY_AMOUNT     = 250;
+const ADMIN_USERNAME   = 'jasper';
+const ADMIN_BALANCE    = 999_999_999; // effectively infinite
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
@@ -142,12 +144,14 @@ function login(username, password) {
   if (hash !== user.passwordHash) return { ok: false, error: 'Wrong password' };
 
   const token = createSession(clean);
-  return { ok: true, token, username: clean, displayName: user.displayName || clean, balance: user.casinoBalance };
+  const isAdmin = clean === ADMIN_USERNAME;
+  const balance = isAdmin ? ADMIN_BALANCE : user.casinoBalance;
+  return { ok: true, token, username: clean, displayName: user.displayName || clean, balance, isAdmin };
 }
 
 /**
  * Get user info from token.
- * Returns { ok, username, displayName, balance } or { ok: false }
+ * Returns { ok, username, displayName, balance, isAdmin } or { ok: false }
  */
 function getMe(token) {
   const username = validateToken(token);
@@ -155,16 +159,19 @@ function getMe(token) {
   const users = readUsers();
   const user  = users[username];
   if (!user) return { ok: false, error: 'User not found' };
-  return { ok: true, username, displayName: user.displayName || username, balance: user.casinoBalance };
+  const isAdmin = username === ADMIN_USERNAME;
+  const balance = isAdmin ? ADMIN_BALANCE : user.casinoBalance;
+  return { ok: true, username, displayName: user.displayName || username, balance, isAdmin };
 }
 
 /**
  * Sync balance from client.
- * Only updates if the provided balance is valid.
+ * Only updates if the provided balance is valid. Skipped for admin.
  */
 function syncBalance(token, balance) {
   const username = validateToken(token);
   if (!username) return { ok: false, error: 'Invalid session' };
+  if (username === ADMIN_USERNAME) return { ok: true, balance: ADMIN_BALANCE }; // admin never syncs
   if (typeof balance !== 'number' || balance < 0 || !isFinite(balance)) return { ok: false, error: 'Invalid balance' };
 
   const users = readUsers();
@@ -207,6 +214,7 @@ function claimDaily(token) {
 
 /**
  * Transfer casino balance between accounts.
+ * Admin (jasper) can transfer any amount regardless of their own balance.
  * Returns { ok, error, fromBalance, toBalance }
  */
 function transfer(token, toUsername, amount) {
@@ -215,7 +223,6 @@ function transfer(token, toUsername, amount) {
 
   const amt = Math.floor(amount);
   if (!amt || amt < 1) return { ok: false, error: 'Amount must be at least $1' };
-  if (amt > 1000000) return { ok: false, error: 'Amount too large' };
 
   const toClean = toUsername.trim().toLowerCase();
   if (toClean === fromUsername) return { ok: false, error: "Can't transfer to yourself" };
@@ -223,16 +230,81 @@ function transfer(token, toUsername, amount) {
   const users = readUsers();
   const from  = users[fromUsername];
   const to    = users[toClean];
+  const isAdmin = fromUsername === ADMIN_USERNAME;
 
   if (!from) return { ok: false, error: 'Sender not found' };
   if (!to)   return { ok: false, error: `User "${toClean}" not found` };
-  if (from.casinoBalance < amt) return { ok: false, error: `Insufficient balance ($${from.casinoBalance})` };
+  if (!isAdmin && from.casinoBalance < amt) return { ok: false, error: `Insufficient balance ($${from.casinoBalance})` };
 
-  from.casinoBalance -= amt;
-  to.casinoBalance   += amt;
+  if (!isAdmin) from.casinoBalance -= amt;
+  to.casinoBalance += amt;
   writeUsers(users);
 
-  return { ok: true, fromBalance: from.casinoBalance, toBalance: to.casinoBalance, amount: amt, to: toClean };
+  const fromBalance = isAdmin ? ADMIN_BALANCE : from.casinoBalance;
+  return { ok: true, fromBalance, toBalance: to.casinoBalance, amount: amt, to: toClean };
+}
+
+/**
+ * Admin only: delete a user account.
+ */
+function deleteUser(adminToken, targetUsername) {
+  const callerUsername = validateToken(adminToken);
+  if (callerUsername !== ADMIN_USERNAME) return { ok: false, error: 'Forbidden' };
+
+  const clean = targetUsername.trim().toLowerCase();
+  if (clean === ADMIN_USERNAME) return { ok: false, error: "Cannot delete admin account" };
+
+  const users = readUsers();
+  if (!users[clean]) return { ok: false, error: 'User not found' };
+
+  delete users[clean];
+  writeUsers(users);
+  return { ok: true };
+}
+
+/**
+ * Admin only: give money to any user.
+ */
+function adminGiveMoney(adminToken, targetUsername, amount) {
+  const callerUsername = validateToken(adminToken);
+  if (callerUsername !== ADMIN_USERNAME) return { ok: false, error: 'Forbidden' };
+
+  const amt = Math.floor(amount);
+  if (!amt || amt < 1) return { ok: false, error: 'Invalid amount' };
+
+  const clean = targetUsername.trim().toLowerCase();
+  const users = readUsers();
+  if (!users[clean]) return { ok: false, error: 'User not found' };
+
+  users[clean].casinoBalance += amt;
+  writeUsers(users);
+  return { ok: true, balance: users[clean].casinoBalance };
+}
+
+/**
+ * Admin only: list all users.
+ */
+function listUsers(adminToken) {
+  const callerUsername = validateToken(adminToken);
+  if (callerUsername !== ADMIN_USERNAME) return { ok: false, error: 'Forbidden' };
+
+  const users = readUsers();
+  return {
+    ok: true,
+    users: Object.values(users).map(u => ({
+      username: u.username,
+      displayName: u.displayName,
+      balance: u.casinoBalance,
+      createdAt: u.createdAt,
+    })),
+  };
+}
+
+/**
+ * Check if a token belongs to the admin.
+ */
+function isAdminToken(token) {
+  return validateToken(token) === ADMIN_USERNAME;
 }
 
 /**
@@ -252,4 +324,7 @@ function logout(token) {
   return { ok: true };
 }
 
-module.exports = { register, login, getMe, syncBalance, claimDaily, transfer, logout, userExists };
+module.exports = {
+  register, login, getMe, syncBalance, claimDaily, transfer, logout, userExists,
+  deleteUser, adminGiveMoney, listUsers, isAdminToken,
+};
