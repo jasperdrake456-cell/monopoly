@@ -92,10 +92,10 @@ export default function Plinko() {
         if (path[row] === 'R') col++;
       }
       row++;
-      animRef.current = setTimeout(step, 120);
+      animRef.current = setTimeout(step, 300);
     }
 
-    animRef.current = setTimeout(step, 80);
+    animRef.current = setTimeout(step, 150);
   }
 
   function reset() {

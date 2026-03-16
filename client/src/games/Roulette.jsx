@@ -39,16 +39,17 @@ const SECTORS = WHEEL_ORDER.map((num, i) => {
   return { num, path: sectorPath(i), lx, ly, textRot: midDeg, fill };
 });
 
+// payout = total return multiplier (e.g. 2 means bet $100 → get $200 back)
 const OUTSIDE_BETS = [
-  { type: 'red',    label: 'Red',    icon: '🔴', payout: 1 },
-  { type: 'black',  label: 'Black',  icon: '⚫', payout: 1 },
-  { type: 'odd',    label: 'Odd',    icon: '',   payout: 1 },
-  { type: 'even',   label: 'Even',   icon: '',   payout: 1 },
-  { type: 'low',    label: '1–18',   icon: '',   payout: 1 },
-  { type: 'high',   label: '19–36',  icon: '',   payout: 1 },
-  { type: 'dozen1', label: '1st 12', icon: '',   payout: 2 },
-  { type: 'dozen2', label: '2nd 12', icon: '',   payout: 2 },
-  { type: 'dozen3', label: '3rd 12', icon: '',   payout: 2 },
+  { type: 'red',    label: 'Red',    icon: '🔴', payout: 2 },
+  { type: 'black',  label: 'Black',  icon: '⚫', payout: 2 },
+  { type: 'odd',    label: 'Odd',    icon: '',   payout: 2 },
+  { type: 'even',   label: 'Even',   icon: '',   payout: 2 },
+  { type: 'low',    label: '1–18',   icon: '',   payout: 2 },
+  { type: 'high',   label: '19–36',  icon: '',   payout: 2 },
+  { type: 'dozen1', label: '1st 12', icon: '',   payout: 3 },
+  { type: 'dozen2', label: '2nd 12', icon: '',   payout: 3 },
+  { type: 'dozen3', label: '3rd 12', icon: '',   payout: 3 },
 ];
 
 export default function Roulette() {
@@ -113,14 +114,16 @@ export default function Roulette() {
       else if (type === 'dozen3') win = num >= 25 && num <= 36;
 
       let net = -bet;
+      let totalReturn = 0;
       if (win) {
-        const payout = bet * betType.payout;
-        addBalance(bet + payout);
-        net = payout;
+        // payout is total return multiplier: 2× for even-money, 3× for dozens, 36× for single
+        totalReturn = bet * betType.payout;
+        addBalance(totalReturn);
+        net = totalReturn - bet; // profit
       }
       setBalance(getBalance());
 
-      const r = { number: num, color, win, net };
+      const r = { number: num, color, win, net, totalReturn, mult: betType.payout };
       setResult(r);
       setHistory(prev => [r, ...prev].slice(0, 20));
       setPhase('result');
@@ -200,7 +203,7 @@ export default function Roulette() {
             {result.number}
           </span>
           <span className="roulette-result-msg">
-            {result.win ? `✅ Won $${result.net}` : `❌ Lost $${bet}`}
+            {result.win ? `✅ Won $${result.totalReturn} (${result.mult}×)` : `❌ Lost $${bet}`}
           </span>
         </div>
       )}
@@ -224,24 +227,24 @@ export default function Roulette() {
                   onClick={() => setBetType({ ...b })}
                 >
                   {b.icon && <span>{b.icon}</span>} {b.label}
-                  <span className="roulette-ob-pays">{b.payout}:1</span>
+                  <span className="roulette-ob-pays">{b.payout}×</span>
                 </button>
               ))}
             </div>
 
             {/* Number grid */}
             <div className="roulette-num-section">
-              <div className="roulette-num-label">Straight Up — 35:1</div>
+              <div className="roulette-num-label">Straight Up — 36× return (35:1)</div>
               <div className="roulette-num-grid">
                 <button
                   className={`roulette-nb roulette-nb--green ${betType?.type === 'number' && betType.value === 0 ? 'selected' : ''}`}
-                  onClick={() => setBetType({ type: 'number', value: 0, label: '0', payout: 35 })}
+                  onClick={() => setBetType({ type: 'number', value: 0, label: '0', payout: 36 })}
                 >0</button>
                 {Array.from({ length: 36 }, (_, i) => i + 1).map(n => (
                   <button
                     key={n}
                     className={`roulette-nb roulette-nb--${RED_NUMBERS.has(n) ? 'red' : 'black'} ${betType?.type === 'number' && betType.value === n ? 'selected' : ''}`}
-                    onClick={() => setBetType({ type: 'number', value: n, label: String(n), payout: 35 })}
+                    onClick={() => setBetType({ type: 'number', value: n, label: String(n), payout: 36 })}
                   >{n}</button>
                 ))}
               </div>
@@ -267,8 +270,8 @@ export default function Roulette() {
             {betType && (
               <div className="roulette-selection">
                 Bet: <strong>{betType.icon ? `${betType.icon} ` : ''}{betType.label}</strong>
-                {' · '}Payout: <strong>{betType.payout}:1</strong>
-                {' · '}Win: <strong className="roulette-win-preview">${bet * betType.payout}</strong>
+                {' · '}<strong>{betType.payout}×</strong> return
+                {' · '}Get back: <strong className="roulette-win-preview">${bet * betType.payout}</strong>
               </div>
             )}
 
