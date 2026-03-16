@@ -115,7 +115,7 @@ export default function AuthPage() {
           </div>
         )}
 
-        <Link to="/" className="auth-back">← Back to Hub</Link>
+        <Link to="/" className="auth-back">← Back to Game Vault</Link>
       </div>
     </div>
   );

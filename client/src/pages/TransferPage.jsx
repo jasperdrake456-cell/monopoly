@@ -89,7 +89,7 @@ export default function TransferPage() {
           </button>
         </form>
 
-        <Link to="/" className="transfer-back">← Back to Hub</Link>
+        <Link to="/" className="transfer-back">← Back to Game Vault</Link>
       </div>
     </div>
   );

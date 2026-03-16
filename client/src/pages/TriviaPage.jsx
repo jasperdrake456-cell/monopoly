@@ -167,7 +167,7 @@ export default function TriviaPage() {
     <div className="trivia">
       <div className="trivia-container">
         <div className="trivia-header">
-          <Link to="/" className="trivia-back">← Hub</Link>
+          <Link to="/" className="trivia-back">← Game Vault</Link>
           <div className="trivia-title">🎯 Daily Trivia</div>
           <div className="trivia-date">{today}</div>
         </div>
@@ -176,7 +176,7 @@ export default function TriviaPage() {
           <div className="trivia-done">
             <div className="trivia-done-score">{getScoreMessage(finalScore)}</div>
             <p className="trivia-done-sub">Come back tomorrow for 3 new questions!</p>
-            <Link to="/" className="trivia-hub-btn">Back to Hub</Link>
+            <Link to="/" className="trivia-hub-btn">Back to Game Vault</Link>
           </div>
         ) : (
           <div className="trivia-body">

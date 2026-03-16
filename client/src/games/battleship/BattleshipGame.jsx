@@ -94,7 +94,7 @@ export default function BattleshipGame({ roomState, myId, emit, onBack }) {
     return (
       <div className="bs-page">
         <div className="bs-topbar">
-          <button className="bs-back" onClick={onBack}>← Home</button>
+          <button className="bs-back" onClick={onBack}>← Game Vault</button>
           <div className="bs-title">Battleship</div>
         </div>
         <div className="bs-placement">
@@ -137,7 +137,7 @@ export default function BattleshipGame({ roomState, myId, emit, onBack }) {
   return (
     <div className="bs-page">
       <div className="bs-topbar">
-        <button className="bs-back" onClick={onBack}>← Home</button>
+        <button className="bs-back" onClick={onBack}>← Game Vault</button>
         <div className="bs-title">Battleship</div>
         <div className="bs-vs">
           {me?.name} vs {opp?.name || '…'}

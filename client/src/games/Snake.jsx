@@ -175,7 +175,7 @@ export default function Snake({ onBack }) {
   return (
     <div className="snake-page">
       <div className="snake-topbar">
-        <button className="snake-back" onClick={onBack}>← Back</button>
+        <button className="snake-back" onClick={onBack}>← Game Vault</button>
         <div className="snake-title">Snake</div>
         <div className="snake-scores">
           <div className="snake-score-box"><span className="snake-slabel">SCORE</span><span className="snake-sval">{display.score}</span></div>

@@ -197,7 +197,7 @@ export default function Minesweeper({ onBack }) {
   return (
     <div className="ms-page">
       <div className="ms-topbar">
-        <button className="ms-back" onClick={onBack}>← Back</button>
+        <button className="ms-back" onClick={onBack}>← Game Vault</button>
         <div className="ms-title">Minesweeper</div>
         <div className="ms-diff-tabs">
           {Object.keys(DIFFICULTIES).map(d => (

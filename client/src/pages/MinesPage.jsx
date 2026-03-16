@@ -17,7 +17,7 @@ export default function MinesPage() {
           textDecoration: 'none',
           fontSize: '0.85rem',
           fontFamily: 'Roboto, sans-serif',
-        }}>← Back</Link>
+        }}>← Game Vault</Link>
       </div>
       <Mines />
     </>

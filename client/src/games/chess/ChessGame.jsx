@@ -109,7 +109,7 @@ export default function ChessGame({ roomState, myId, emit, onBack }) {
   return (
     <div className="chess-page">
       <div className="chess-topbar">
-        <button className="chess-back" onClick={onBack}>← Home</button>
+        <button className="chess-back" onClick={onBack}>← Game Vault</button>
         <div className="chess-title">Chess</div>
         <div className="chess-players">
           <span>♔ {players?.[0]?.name}{players?.[0]?.id === myId ? ' (you)' : ''}</span>

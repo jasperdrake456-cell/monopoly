@@ -396,7 +396,7 @@ export default function Wordle({ onBack }) {
   return (
     <div className="wordle-page">
       <div className="wordle-topbar">
-        <button className="wordle-back" onClick={onBack}>← Back</button>
+        <button className="wordle-back" onClick={onBack}>← Game Vault</button>
         <h1 className="wordle-title">Wordle</h1>
         <div className="wordle-topbar-right">
           <button

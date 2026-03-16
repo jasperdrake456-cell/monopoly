@@ -75,7 +75,7 @@ export default function LeaderboardPage() {
   return (
     <div className="lb-page">
       <div className="lb-header">
-        <Link to="/">← Hub</Link>
+        <Link to="/">← Game Vault</Link>
         <h1>🏆 Leaderboards</h1>
       </div>
       <div className="lb-main">

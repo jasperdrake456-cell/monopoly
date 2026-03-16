@@ -225,7 +225,7 @@ export default function Sudoku({ onBack }) {
   return (
     <div className="sdk-page">
       <div className="sdk-topbar">
-        <button className="sdk-back" onClick={onBack}>← Back</button>
+        <button className="sdk-back" onClick={onBack}>← Game Vault</button>
         <h1 className="sdk-title">Sudoku</h1>
         <div className="sdk-topbar-right">
           <span className="sdk-timer">{formatTime(time)}</span>

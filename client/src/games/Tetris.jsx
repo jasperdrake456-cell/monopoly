@@ -297,7 +297,7 @@ export default function Tetris({ onBack }) {
   return (
     <div className="tetris-page">
       <div className="tetris-topbar">
-        <button className="tetris-back" onClick={onBack}>← Back</button>
+        <button className="tetris-back" onClick={onBack}>← Game Vault</button>
         <div className="tetris-title">Tetris</div>
       </div>
       <div className="tetris-layout">

@@ -440,7 +440,7 @@ export default function SpaceInvaders({ onBack }) {
   return (
     <div className="si-page">
       <div className="si-topbar">
-        <button className="si-back" onClick={onBack}>← Back</button>
+        <button className="si-back" onClick={onBack}>← Game Vault</button>
         <div className="si-title">Space Invaders</div>
         <div className="si-best">BEST: {best}</div>
       </div>

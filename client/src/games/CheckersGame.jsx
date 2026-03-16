@@ -101,7 +101,7 @@ export default function CheckersGame({ roomState, myId, emit, onBack }) {
   return (
     <div className="ck-page">
       <div className="ck-topbar">
-        <button className="ck-back" onClick={onBack}>← Home</button>
+        <button className="ck-back" onClick={onBack}>← Game Vault</button>
         <div className="ck-title">Checkers</div>
         <div className="ck-players">
           <span style={{ color: '#e74c3c' }}>🔴 {players?.[0]?.name}{players?.[0]?.id === myId ? ' (you)' : ''}</span>

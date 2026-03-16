@@ -25,7 +25,7 @@ export default function Connect4Game({ roomState, myId, emit, onBack }) {
   return (
     <div className="c4-page">
       <div className="c4-topbar">
-        <button className="c4-back" onClick={onBack}>← Home</button>
+        <button className="c4-back" onClick={onBack}>← Game Vault</button>
         <div className="c4-title">Connect 4</div>
         <div className="c4-players">
           <span className="c4-player" style={{ color: '#e74c3c' }}>

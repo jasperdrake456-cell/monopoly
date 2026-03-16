@@ -156,7 +156,7 @@ export default function Game2048({ onBack }) {
   return (
     <div className="g2048-page">
       <div className="g2048-topbar">
-        <button className="g2048-back" onClick={onBack}>← Back</button>
+        <button className="g2048-back" onClick={onBack}>← Game Vault</button>
         <div className="g2048-title">2048</div>
         <div className="g2048-scores">
           <div className="g2048-score-box"><div className="g2048-score-label">SCORE</div><div className="g2048-score-val">{score}</div></div>
