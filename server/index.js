@@ -203,6 +203,12 @@ app.post('/api/admin/give-money', requireAdmin, (req, res) => {
   res.json(us.adminGiveMoney(getToken(req), username, amount));
 });
 
+// Set a user's balance to an exact value
+app.put('/api/admin/users/:username/balance', requireAdmin, (req, res) => {
+  const { amount } = req.body || {};
+  res.json(us.adminSetBalance(getToken(req), req.params.username, amount));
+});
+
 // ── Static client ─────────────────────────────────────────────────────────────
 
 const clientDist = path.join(__dirname, '..', 'client', 'dist');

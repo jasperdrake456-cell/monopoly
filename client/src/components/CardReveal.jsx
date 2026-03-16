@@ -3,13 +3,13 @@ import './CardReveal.css';
 
 // Map card actions to emojis / context lines
 const ACTION_META = {
-  advance_to:               { icon: '🚶', label: 'Move' },
+  advance_to:               { icon: '🌀', label: 'Move' },
   advance_nearest_railroad: { icon: '🚂', label: 'Nearest Railroad' },
   advance_nearest_utility:  { icon: '⚡', label: 'Nearest Utility' },
   collect:                  { icon: '💰', label: 'Collect' },
-  collect_from_each:        { icon: '🎂', label: 'Collect from each player' },
+  collect_from_each:        { icon: '🎉', label: 'Collect from each player' },
   pay:                      { icon: '💸', label: 'Pay' },
-  pay_each:                 { icon: '👑', label: 'Pay each player' },
+  pay_each:                 { icon: '😬', label: 'Pay each player' },
   go_to_jail:               { icon: '🚔', label: 'Go to Jail!' },
   get_out_of_jail:          { icon: '🔑', label: 'Get Out of Jail Free' },
   repairs:                  { icon: '🔨', label: 'Pay for repairs' },

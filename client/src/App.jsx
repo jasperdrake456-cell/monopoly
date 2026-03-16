@@ -29,6 +29,7 @@ import RideTheBusPage from './pages/RideTheBusPage';
 import BlackjackPage from './pages/BlackjackPage';
 import BaccaratPage from './pages/BaccaratPage';
 import MinesPage from './pages/MinesPage';
+import RequireAuth from './components/RequireAuth';
 import './App.css';
 
 export default function App() {
@@ -37,29 +38,29 @@ export default function App() {
       <PasswordGate>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/monopoly" element={<MonopolyPage />} />
-        <Route path="/2048" element={<Game2048Page />} />
-        <Route path="/snake" element={<SnakePage />} />
-        <Route path="/minesweeper" element={<MinesweeperPage />} />
-        <Route path="/tetris" element={<TetrisPage />} />
-        <Route path="/chess" element={<ChessPage />} />
-        <Route path="/connect4" element={<Connect4Page />} />
-        <Route path="/checkers" element={<CheckersPage />} />
-        <Route path="/battleship" element={<BattleshipPage />} />
-        <Route path="/wordle" element={<WordlePage />} />
-        <Route path="/sudoku" element={<SudokuPage />} />
-        <Route path="/space-invaders" element={<SpaceInvadersPage />} />
-        <Route path="/trivia" element={<TriviaPage />} />
-        <Route path="/flappy-bird" element={<FlappyBirdPage />} />
-        <Route path="/memory-match" element={<MemoryMatchPage />} />
-        <Route path="/pong" element={<PongPage />} />
-        <Route path="/tic-tac-toe" element={<TicTacToePage />} />
-        <Route path="/typing-speed" element={<TypingSpeedPage />} />
-        <Route path="/leaderboard" element={<LeaderboardPage />} />
-        <Route path="/ride-the-bus" element={<RideTheBusPage />} />
-        <Route path="/blackjack" element={<BlackjackPage />} />
-        <Route path="/baccarat" element={<BaccaratPage />} />
-        <Route path="/mines" element={<MinesPage />} />
+        <Route path="/monopoly"      element={<RequireAuth><MonopolyPage /></RequireAuth>} />
+        <Route path="/2048"          element={<RequireAuth><Game2048Page /></RequireAuth>} />
+        <Route path="/snake"         element={<RequireAuth><SnakePage /></RequireAuth>} />
+        <Route path="/minesweeper"   element={<RequireAuth><MinesweeperPage /></RequireAuth>} />
+        <Route path="/tetris"        element={<RequireAuth><TetrisPage /></RequireAuth>} />
+        <Route path="/chess"         element={<RequireAuth><ChessPage /></RequireAuth>} />
+        <Route path="/connect4"      element={<RequireAuth><Connect4Page /></RequireAuth>} />
+        <Route path="/checkers"      element={<RequireAuth><CheckersPage /></RequireAuth>} />
+        <Route path="/battleship"    element={<RequireAuth><BattleshipPage /></RequireAuth>} />
+        <Route path="/wordle"        element={<RequireAuth><WordlePage /></RequireAuth>} />
+        <Route path="/sudoku"        element={<RequireAuth><SudokuPage /></RequireAuth>} />
+        <Route path="/space-invaders" element={<RequireAuth><SpaceInvadersPage /></RequireAuth>} />
+        <Route path="/trivia"        element={<RequireAuth><TriviaPage /></RequireAuth>} />
+        <Route path="/flappy-bird"   element={<RequireAuth><FlappyBirdPage /></RequireAuth>} />
+        <Route path="/memory-match"  element={<RequireAuth><MemoryMatchPage /></RequireAuth>} />
+        <Route path="/pong"          element={<RequireAuth><PongPage /></RequireAuth>} />
+        <Route path="/tic-tac-toe"   element={<RequireAuth><TicTacToePage /></RequireAuth>} />
+        <Route path="/typing-speed"  element={<RequireAuth><TypingSpeedPage /></RequireAuth>} />
+        <Route path="/leaderboard"   element={<LeaderboardPage />} />
+        <Route path="/ride-the-bus"  element={<RequireAuth><RideTheBusPage /></RequireAuth>} />
+        <Route path="/blackjack"     element={<RequireAuth><BlackjackPage /></RequireAuth>} />
+        <Route path="/baccarat"      element={<RequireAuth><BaccaratPage /></RequireAuth>} />
+        <Route path="/mines"         element={<RequireAuth><MinesPage /></RequireAuth>} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/transfer" element={<TransferPage />} />
         <Route path="/admin" element={<AdminPage />} />

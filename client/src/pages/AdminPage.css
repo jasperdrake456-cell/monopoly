@@ -156,6 +156,13 @@
 .admin-user-name { font-weight: 700; }
 .admin-user-handle { color: rgba(255,255,255,0.35); font-size: 0.82rem; }
 .admin-user-bal { color: #FFD700; font-weight: 700; margin-left: auto; }
+.admin-user-bal--clickable { cursor: pointer; border-bottom: 1px dashed rgba(255,215,0,0.4); transition: opacity 0.15s; }
+.admin-user-bal--clickable:hover { opacity: 0.75; }
+.admin-user-bal-edit { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.admin-bal-dollar { color: #FFD700; font-weight: 700; }
+.admin-bal-input { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,215,0,0.5); border-radius: 6px; color: #FFD700; font-weight: 700; font-size: 0.95rem; padding: 3px 8px; width: 110px; outline: none; }
+.admin-bal-input:focus { border-color: #FFD700; }
+.admin-btn--sm { padding: 3px 8px; font-size: 0.8rem; }
 
 /* Give money */
 .admin-give-form {

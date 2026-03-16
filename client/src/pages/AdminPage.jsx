@@ -22,6 +22,7 @@ export default function AdminPage() {
   const [status, setStatus]     = useState('');
   const [giveTarget, setGiveTarget] = useState('');
   const [giveAmount, setGiveAmount] = useState('');
+  const [editingBal, setEditingBal] = useState(null); // { username, value }
 
   const isAdmin = user?.username === 'jasper';
 
@@ -62,6 +63,18 @@ export default function AdminPage() {
     await authFetch(`/api/admin/leaderboard/${gameId}/${encodeURIComponent(name)}`, token, { method: 'DELETE' });
     setStatus(`Removed "${name}" from ${gameId} leaderboard`);
     loadReports();
+  }
+
+  async function saveBalance(username) {
+    const amt = parseInt(editingBal.value, 10);
+    if (isNaN(amt) || amt < 0) return setStatus('Enter a valid balance.');
+    const d = await authFetch(`/api/admin/users/${username}/balance`, token, {
+      method: 'PUT',
+      body: JSON.stringify({ amount: amt }),
+    });
+    setStatus(d.ok ? `Set ${username}'s balance to $${d.balance?.toLocaleString()}` : d.error);
+    setEditingBal(null);
+    loadUsers();
   }
 
   async function deleteUser(username) {
@@ -148,7 +161,30 @@ export default function AdminPage() {
                 <div className="admin-user-info">
                   <span className="admin-user-name">{u.displayName}</span>
                   <span className="admin-user-handle">@{u.username}</span>
-                  <span className="admin-user-bal">${(u.balance || 0).toLocaleString()}</span>
+                  {editingBal?.username === u.username ? (
+                    <span className="admin-user-bal-edit">
+                      <span className="admin-bal-dollar">$</span>
+                      <input
+                        className="admin-bal-input"
+                        type="number"
+                        min={0}
+                        value={editingBal.value}
+                        onChange={e => setEditingBal({ username: u.username, value: e.target.value })}
+                        onKeyDown={e => { if (e.key === 'Enter') saveBalance(u.username); if (e.key === 'Escape') setEditingBal(null); }}
+                        autoFocus
+                      />
+                      <button className="admin-btn admin-btn--primary admin-btn--sm" onClick={() => saveBalance(u.username)}>✓</button>
+                      <button className="admin-btn admin-btn--ghost admin-btn--sm" onClick={() => setEditingBal(null)}>✕</button>
+                    </span>
+                  ) : (
+                    <span
+                      className="admin-user-bal admin-user-bal--clickable"
+                      title="Click to edit balance"
+                      onClick={() => setEditingBal({ username: u.username, value: String(u.balance || 0) })}
+                    >
+                      ${(u.balance || 0).toLocaleString()} ✏️
+                    </span>
+                  )}
                 </div>
                 {u.username !== 'jasper' && (
                   <button className="admin-btn admin-btn--danger" onClick={() => deleteUser(u.username)}>

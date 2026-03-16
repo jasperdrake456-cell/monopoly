@@ -301,6 +301,25 @@ function listUsers(adminToken) {
 }
 
 /**
+ * Admin only: set a user's balance to an exact value.
+ */
+function adminSetBalance(adminToken, username, amount) {
+  const callerUsername = validateToken(adminToken);
+  if (callerUsername !== ADMIN_USERNAME) return { ok: false, error: 'Forbidden' };
+
+  const newBalance = Math.floor(amount);
+  if (isNaN(newBalance) || newBalance < 0 || !isFinite(newBalance)) return { ok: false, error: 'Invalid amount' };
+
+  const clean = username.trim().toLowerCase();
+  const users = readUsers();
+  if (!users[clean]) return { ok: false, error: 'User not found' };
+
+  users[clean].casinoBalance = newBalance;
+  writeUsers(users);
+  return { ok: true, balance: newBalance };
+}
+
+/**
  * Check if a token belongs to the admin.
  */
 function isAdminToken(token) {
@@ -326,5 +345,5 @@ function logout(token) {
 
 module.exports = {
   register, login, getMe, syncBalance, claimDaily, transfer, logout, userExists,
-  deleteUser, adminGiveMoney, listUsers, isAdminToken,
+  deleteUser, adminGiveMoney, adminSetBalance, listUsers, isAdminToken,
 };
