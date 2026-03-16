@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { getBalance, addBalance, subtractBalance } from '../utils/casinoBalance';
 import './RideTheBus.css';
 
 // ── Deck constants ──────────────────────────────────────────────────────────
@@ -57,7 +58,7 @@ function Card({ card, faceDown, flipping }) {
 export default function RideTheBus() {
   const deckRef = useRef([]);
 
-  const [balance, setBalance] = useState(100);
+  const [balance, setBalance] = useState(getBalance);
   const [bet, setBet]         = useState(10);
   const [phase, setPhase]     = useState('betting');
   // 'betting' | 'guessing' | 'decide' | 'over'
@@ -77,7 +78,8 @@ export default function RideTheBus() {
     setRound(1);
     setResult(null);
     setFlipping(false);
-    setBalance(b => b - bet);
+    subtractBalance(bet);
+    setBalance(getBalance());
     setPhase('guessing');
   }
 
@@ -125,7 +127,8 @@ export default function RideTheBus() {
         setPhase('over');
       } else if (round === 4) {
         const payout = bet * MULTIPLIERS[4];
-        setBalance(b => b + payout);
+        addBalance(payout);
+        setBalance(getBalance());
         setResult({ correct: true, msg: `JACKPOT! ${MULTIPLIERS[4]}× your bet!`, payout });
         setPhase('over');
       } else {
@@ -139,7 +142,8 @@ export default function RideTheBus() {
   // ── Cash out ──────────────────────────────────────────────────────────────
   function cashOut() {
     const payout = bet * MULTIPLIERS[round];
-    setBalance(b => b + payout);
+    addBalance(payout);
+    setBalance(getBalance());
     setResult({ correct: true, msg: `Cashed out $${payout} (${MULTIPLIERS[round]}×)`, payout });
     setPhase('over');
   }
@@ -156,14 +160,15 @@ export default function RideTheBus() {
 
   // ── Reset ─────────────────────────────────────────────────────────────────
   function reset() {
+    setBalance(getBalance());
     setPhase('betting');
     setRound(0);
     setRevealed([]);
     setPending(null);
     setFlipping(false);
     setResult(null);
-    if (balance < 1) setBet(0);
-    else setBet(Math.min(bet, balance));
+    const b = getBalance();
+    setBet(Math.min(bet > 0 ? bet : 10, b > 0 ? b : 1));
   }
 
   // ── Quick-bet helpers ─────────────────────────────────────────────────────
@@ -206,9 +211,7 @@ export default function RideTheBus() {
         {balance < 1 ? (
           <div className="rtb-broke">
             <div className="rtb-broke-msg">You're broke! 😬</div>
-            <button className="rtb-btn rtb-btn--primary" onClick={() => setBalance(100)}>
-              💸 Reload $100
-            </button>
+            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>Come back tomorrow for your daily $250!</div>
           </div>
         ) : (
           <>

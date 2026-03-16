@@ -47,7 +47,7 @@ export default function ActionPanel({ gameState, myId, roomCode, emit, board: bo
       <div className="action-panel">
         <div className="ap-inner">
           <div className="ap-header">🤝 Trade from {from?.name}</div>
-          <TradeOfferDisplay trade={activeTrade} players={players} />
+          <TradeOfferDisplay trade={activeTrade} players={players} board={ACTIVE_BOARD} />
           <div className="ap-row">
             <button className="ap-btn primary" onClick={() => act('respondTrade', { roomCode, accepted: true })} disabled={acting}>
               ✓ Accept
@@ -189,7 +189,7 @@ export default function ActionPanel({ gameState, myId, roomCode, emit, board: bo
 
         {/* Buy decision */}
         {turnPhase === 'buy_decision' && (
-          <BuyDecision gameState={gameState} myId={myId} roomCode={roomCode} emit={act} acting={acting} />
+          <BuyDecision gameState={gameState} myId={myId} roomCode={roomCode} emit={act} acting={acting} board={ACTIVE_BOARD} />
         )}
 
         {/* Card action — handled by CardReveal overlay in Game.jsx */}
@@ -217,7 +217,8 @@ export default function ActionPanel({ gameState, myId, roomCode, emit, board: bo
   );
 }
 
-function BuyDecision({ gameState, myId, roomCode, emit: act, acting }) {
+function BuyDecision({ gameState, myId, roomCode, emit: act, acting, board }) {
+  const ACTIVE_BOARD = board || BOARD;
   const player = gameState.players.find(p => p.id === myId);
   const space = ACTIVE_BOARD[player.position];
   const color = space.group ? GROUP_COLORS[space.group] : null;
@@ -263,7 +264,8 @@ function BuyDecision({ gameState, myId, roomCode, emit: act, acting }) {
   );
 }
 
-function TradeOfferDisplay({ trade, players }) {
+function TradeOfferDisplay({ trade, players, board }) {
+  const ACTIVE_BOARD = board || BOARD;
   const from = players.find(p => p.id === trade.fromId);
   const to   = players.find(p => p.id === trade.toId);
   return (

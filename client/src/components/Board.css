@@ -437,3 +437,148 @@
 .bpr-token { font-size:.95rem; }
 .bpr-name  { flex:1; }
 .bpr-cash  { font-weight:700; color:#1a6b2a; }
+
+/* ── World Board Theme ─────────────────────────────────────────────────── */
+
+/* World board wrapper — dark ocean background */
+.board-wrap--world {
+  background: transparent;
+}
+
+/* World board grid — dark navy ocean feel */
+.board--world {
+  background: #0a1628;
+  border-color: #1e3a5f;
+  box-shadow: 0 0 0 10px #0d1f3c, 0 0 60px rgba(30,100,255,0.3), 0 24px 80px rgba(0,0,0,.8);
+  outline-color: #1e3a5f;
+}
+
+/* World board tiles get a slightly different base */
+.board--world .tile {
+  background: #f5f0e8;
+  border-color: #2a4a6b;
+}
+
+.board--world .tile--highlighted {
+  background: #fffbe6;
+  box-shadow: inset 0 0 0 3px #FFD700;
+}
+
+.board--world .tile--chance         { background: #fff3cd; }
+.board--world .tile--community_chest { background: #d4eaf7; }
+.board--world .tile--tax            { background: #ffe4e1; }
+
+/* World board center */
+.board--world .board-center {
+  background: radial-gradient(ellipse at center, #0d2545 0%, #071830 60%, #030d1a 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Faint grid lines on world board center (like a map) */
+.board--world .board-center::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(30,100,200,0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30,100,200,0.07) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+/* Floating continent dots */
+.board--world .board-center::after {
+  content: '🌍';
+  position: absolute;
+  font-size: 8rem;
+  opacity: 0.06;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.board--world .board-center-content {
+  position: relative;
+  z-index: 2;
+}
+
+.board--world .board-center-content--world {
+  gap: 0.6rem;
+}
+
+/* World board logo */
+.board-logo--world {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transform: none !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.board-logo-globe {
+  font-size: clamp(2rem, 3vw, 4.5rem);
+  animation: globeSpin 8s linear infinite;
+  line-height: 1;
+}
+
+@keyframes globeSpin {
+  0%   { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+.board-logo-text {
+  font-family: 'Permanent Marker', 'Georgia', serif;
+  font-size: clamp(1.4rem, 2.2vw, 3rem);
+  font-weight: 900;
+  color: #4fc3f7;
+  letter-spacing: 6px;
+  text-shadow: 0 0 20px rgba(79,195,247,0.7), 2px 2px 0 rgba(0,0,0,0.8);
+  line-height: 1.1;
+}
+
+.board-logo-sub {
+  font-family: 'Georgia', serif;
+  font-size: clamp(0.6rem, 1vw, 1.2rem);
+  font-weight: 700;
+  color: #90caf9;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+/* World board player rows — match the dark theme */
+.board--world .board-player-row {
+  background: rgba(255,255,255,0.08);
+  border-left-width: 5px;
+  color: #e0e0e0;
+}
+.board--world .board-player-row.active {
+  background: rgba(79,195,247,0.15);
+  box-shadow: 0 0 0 1px rgba(79,195,247,0.4);
+}
+.board--world .bpr-cash { color: #4fc3f7; }
+
+/* World board corners */
+.board--world .corner-go     { background: #f5efe0; }
+.board--world .corner-jail   { background: #f5efe0; }
+.board--world .corner-fp     { background: #f5efe0; }
+.board--world .corner-gtj    { background: #f5efe0; }
+
+/* ── Flag + Landmark on world tiles ──────────────────────────────────── */
+.tile-flag {
+  font-size: 0.85rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.tile-landmark {
+  font-size: 0.7rem;
+  line-height: 1;
+  flex-shrink: 0;
+  opacity: 0.8;
+}

@@ -33,26 +33,28 @@ export default function Tile({ space, propertyState, playersHere, isHighlighted,
         <div className="tile-inner">
           <div className="tile-name">{space.name}</div>
 
+          {space.flag && (
+            <div className="tile-flag">{space.flag}</div>
+          )}
+
+          {space.type === 'property' && space.landmark && (
+            <div className="tile-landmark">{space.landmark}</div>
+          )}
+
           {space.type === 'property' && (
             <div className="tile-price">${space.price}</div>
           )}
 
           {space.type === 'railroad' && (
             <>
-              <div className="tile-icon">🚂</div>
+              <div className="tile-icon">{space.landmark || '🚂'}</div>
               <div className="tile-price">${space.price}</div>
             </>
           )}
 
-          {space.type === 'utility' && space.id === 12 && (
+          {space.type === 'utility' && (
             <>
-              <div className="tile-icon">💡</div>
-              <div className="tile-price">${space.price}</div>
-            </>
-          )}
-          {space.type === 'utility' && space.id === 28 && (
-            <>
-              <div className="tile-icon">🚿</div>
+              <div className="tile-icon">{space.landmark || (space.id === 12 ? '💡' : '🚿')}</div>
               <div className="tile-price">${space.price}</div>
             </>
           )}

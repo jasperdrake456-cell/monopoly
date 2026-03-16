@@ -1,0 +1,287 @@
+.mines-table {
+  min-height: 100vh;
+  background: radial-gradient(ellipse at center, #1a0a2e 0%, #100520 60%, #060310 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 16px 40px;
+  gap: 16px;
+  font-family: 'Roboto', sans-serif;
+  color: #fff;
+}
+
+.mines-title {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #f59e0b;
+  text-shadow: 0 0 25px rgba(245,158,11,0.7);
+  letter-spacing: 3px;
+}
+
+.mines-balance {
+  font-size: 1.05rem;
+  color: rgba(255,255,255,0.8);
+}
+
+/* ── Grid ── */
+.mines-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  width: 100%;
+  max-width: 360px;
+}
+
+.mines-tile {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  border: 2px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.07);
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  transition: all 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+
+.mines-tile--clickable {
+  cursor: pointer;
+  background: rgba(139,92,246,0.15);
+  border-color: rgba(139,92,246,0.4);
+}
+.mines-tile--clickable:hover {
+  background: rgba(139,92,246,0.3);
+  border-color: #8b5cf6;
+  transform: scale(1.06);
+  box-shadow: 0 0 16px rgba(139,92,246,0.5);
+}
+.mines-tile--clickable:active {
+  transform: scale(0.96);
+}
+
+.mines-tile--gem {
+  background: rgba(16,185,129,0.2);
+  border-color: #10b981;
+  box-shadow: 0 0 12px rgba(16,185,129,0.4);
+  animation: gemReveal 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes gemReveal {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.mines-tile--mine {
+  background: rgba(100,100,100,0.2);
+  border-color: rgba(255,255,255,0.2);
+}
+
+.mines-tile--exploded {
+  background: rgba(239,68,68,0.35);
+  border-color: #ef4444;
+  box-shadow: 0 0 24px rgba(239,68,68,0.8);
+  animation: explode 0.5s ease;
+}
+
+@keyframes explode {
+  0%   { transform: scale(1);    }
+  20%  { transform: scale(1.3);  }
+  40%  { transform: scale(0.9);  }
+  60%  { transform: scale(1.15); }
+  100% { transform: scale(1);    }
+}
+
+.mines-gem,
+.mines-bomb,
+.mines-boom {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.mines-next-mult {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: rgba(139,92,246,0.7);
+}
+
+/* ── Result ── */
+.mines-result {
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: center;
+}
+.mines-result.win  { background: rgba(16,185,129,0.2); border: 2px solid #10b981; color: #10b981; }
+.mines-result.lose { background: rgba(239,68,68,0.2);  border: 2px solid #ef4444; color: #ef4444; }
+
+/* ── Playing info ── */
+.mines-playing-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 360px;
+}
+
+.mines-stat {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 8px;
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.7);
+}
+
+.mines-mult    { color: #f59e0b; font-size: 1.1rem; }
+.mines-cashout { color: #10b981; font-size: 1.1rem; }
+
+.mines-cashout-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 4px 20px rgba(16,185,129,0.4);
+}
+.mines-cashout-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(16,185,129,0.6);
+}
+
+/* ── Betting ── */
+.mines-betting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 360px;
+}
+
+.mines-config { width: 100%; }
+.mines-config-label {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 6px;
+}
+
+.mines-count-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mines-count-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 2px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.8);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-width: 36px;
+  text-align: center;
+}
+.mines-count-btn:hover,
+.mines-count-btn.selected {
+  border-color: #f59e0b;
+  background: rgba(245,158,11,0.2);
+  color: #f59e0b;
+}
+
+.mines-bet-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.9rem;
+}
+
+.mines-bet-input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  font-size: 1rem;
+}
+.mines-bet-input:focus { outline: 2px solid #f59e0b; }
+
+.mines-quick-bets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+.mines-qb {
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.07);
+  color: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.mines-qb:hover, .mines-qb.active {
+  border-color: #f59e0b;
+  color: #f59e0b;
+  background: rgba(245,158,11,0.15);
+}
+
+.mines-preview-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 4px;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.6);
+}
+.mines-preview-row strong { color: #10b981; }
+
+.mines-start-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 4px 20px rgba(139,92,246,0.4);
+}
+.mines-start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 28px rgba(139,92,246,0.6);
+}
+
+.mines-broke {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.mines-hint {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.3);
+  text-align: center;
+}

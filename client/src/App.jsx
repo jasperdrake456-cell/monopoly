@@ -22,6 +22,9 @@ import TicTacToePage from './pages/TicTacToePage';
 import TypingSpeedPage from './pages/TypingSpeedPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import RideTheBusPage from './pages/RideTheBusPage';
+import BlackjackPage from './pages/BlackjackPage';
+import BaccaratPage from './pages/BaccaratPage';
+import MinesPage from './pages/MinesPage';
 import './App.css';
 
 export default function App() {
@@ -49,6 +52,9 @@ export default function App() {
         <Route path="/typing-speed" element={<TypingSpeedPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/ride-the-bus" element={<RideTheBusPage />} />
+        <Route path="/blackjack" element={<BlackjackPage />} />
+        <Route path="/baccarat" element={<BaccaratPage />} />
+        <Route path="/mines" element={<MinesPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </PasswordGate>

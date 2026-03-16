@@ -17,6 +17,9 @@ const SOLO_GAMES = [
 
 const CASINO_GAMES = [
   { path: '/ride-the-bus', name: 'Ride the Bus', desc: 'Guess Red/Black → Hi/Lo → In/Out → Suit. Win up to 20×!', icon: '🚌', players: '1 player' },
+  { path: '/blackjack', name: 'Blackjack', desc: 'Beat the dealer to 21 — Hit, Stand, Double, Split', icon: '♠', players: '1 player' },
+  { path: '/baccarat', name: 'Baccarat', desc: 'Bet Player, Banker or Tie. Natural 8 or 9 wins!', icon: '🎴', players: '1 player' },
+  { path: '/mines', name: 'Mines', desc: 'Reveal gems, dodge bombs — cash out before you explode!', icon: '💣', players: '1 player' },
 ];
 
 const MULTI_GAMES = [

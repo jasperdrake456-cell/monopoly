@@ -9,7 +9,8 @@ const JAIL_ANIM_MS = 3200; // how long the police car animation shows
 export default function Board({ gameState, myId, board: boardProp }) {
   const { players, propertyStates, currentPlayerIndex, freeParking, freeParkingEnabled } = gameState;
   // Use prop if provided (world board), fall back to imported BOARD
-  const boardData = boardProp || BOARD;
+  const boardData  = boardProp || BOARD;
+  const isWorld    = gameState.boardType === 'world';
   const currentPlayer = players[currentPlayerIndex];
 
   // ── Animated positions ───────────────────────────────────────────────────
@@ -108,8 +109,8 @@ export default function Board({ gameState, myId, board: boardProp }) {
   }, [propertyStates, players]);
 
   return (
-    <div className="board-wrap">
-      <div className="board">
+    <div className={`board-wrap ${isWorld ? 'board-wrap--world' : ''}`}>
+      <div className={`board ${isWorld ? 'board--world' : ''}`}>
         {boardData.map(space => {
           const { row, col } = getGridPos(space.id);
           const playersHere = playersByPosition[space.id] || [];
@@ -146,8 +147,16 @@ export default function Board({ gameState, myId, board: boardProp }) {
 
         {/* Center */}
         <div className="board-center" style={{ gridRow: '2 / 11', gridColumn: '2 / 11' }}>
-          <div className="board-center-content">
-            <div className="board-logo">MONOPOLY</div>
+          <div className={`board-center-content ${isWorld ? 'board-center-content--world' : ''}`}>
+            {isWorld ? (
+              <div className="board-logo board-logo--world">
+                <span className="board-logo-globe">🌍</span>
+                <span className="board-logo-text">WORLD</span>
+                <span className="board-logo-sub">MONOPOLY</span>
+              </div>
+            ) : (
+              <div className="board-logo">MONOPOLY</div>
+            )}
             {freeParkingEnabled && freeParking > 0 && (
               <div className="free-parking-pot">
                 <span>Free Parking Pot</span>
