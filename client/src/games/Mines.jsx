@@ -22,16 +22,10 @@ function calcMultiplier(mines, revealed) {
   return parseFloat((0.97 / prob).toFixed(2));
 }
 
-function generateMines(count, avoidIndex) {
+function generateMines(count) {
   const positions = new Set();
-  // Only guarantee a safe first click when there are at least 2 safe tiles.
-  // With 24 mines (only 1 safe tile), skipping avoidance would always make
-  // that tile the clicked one — an instant free win. Don't do that.
-  const shouldAvoid = avoidIndex != null && count <= GRID_SIZE - 2;
   while (positions.size < count) {
-    const idx = Math.floor(Math.random() * GRID_SIZE);
-    if (shouldAvoid && idx === avoidIndex) continue;
-    positions.add(idx);
+    positions.add(Math.floor(Math.random() * GRID_SIZE));
   }
   return positions;
 }
@@ -96,7 +90,7 @@ export default function Mines() {
 
     // First click: place mines (synchronously stored in ref to block re-rolls)
     if (activeMines.size === 0) {
-      activeMines = generateMines(mineCount, idx);
+      activeMines = generateMines(mineCount);
       minesRef.current = activeMines; // update ref immediately (synchronous)
       setMines(activeMines);          // update state for rendering
     }
