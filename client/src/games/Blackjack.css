@@ -222,6 +222,39 @@
 .bj-btn--double { background: #f39c12; color: #fff; }
 .bj-btn--split  { background: #9b59b6; color: #fff; }
 
+/* ── Split hands ── */
+.bj-split-hands {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.bj-hand--active {
+  border: 2px solid #2ecc71;
+  border-radius: 12px;
+  padding: 8px 12px;
+  box-shadow: 0 0 12px rgba(46,204,113,0.3);
+}
+
+.bj-hand--inactive {
+  border: 2px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 8px 12px;
+  opacity: 0.5;
+}
+
+.bj-hand-result {
+  margin-top: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.bj-hand-result.win  { background: rgba(46,204,113,0.25); color: #2ecc71; }
+.bj-hand-result.lose { background: rgba(231,76,60,0.25);  color: #e74c3c; }
+.bj-hand-result.push { background: rgba(255,215,0,0.2);   color: #FFD700; }
+
 .bj-hint {
   font-size: 0.75rem;
   color: rgba(255,255,255,0.35);

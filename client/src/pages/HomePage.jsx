@@ -29,6 +29,7 @@ const CASINO_GAMES = [
 ];
 
 const MULTI_GAMES = [
+  { path: '/texas-holdem', name: "Texas Hold'em", desc: 'Community card poker — bet, raise, bluff your way to the pot', icon: '♠', players: '2-6 players' },
   { path: '/chess', name: 'Chess', desc: 'Classic strategy board game', icon: '♟️', players: '2 players' },
   { path: '/connect4', name: 'Connect 4', desc: 'Drop discs to get 4 in a row', icon: '🟡', players: '2 players' },
   { path: '/checkers', name: 'Checkers', desc: 'Jump and capture all enemy pieces', icon: '⬛', players: '2 players' },

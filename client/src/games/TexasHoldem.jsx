@@ -1,0 +1,370 @@
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSocket } from '../hooks/useSocket';
+import './TexasHoldem.css';
+
+// ── Card component ─────────────────────────────────────────────────────────────
+const RED_SUITS = new Set(['♥', '♦']);
+
+function PokerCard({ card, small, faceDown }) {
+  if (!card || faceDown) {
+    return <div className={`pk-card pk-card--back ${small ? 'pk-card--small' : ''}`}><div className="pk-card-back-pat" /></div>;
+  }
+  const red = RED_SUITS.has(card.suit);
+  return (
+    <div className={`pk-card ${red ? 'pk-card--red' : 'pk-card--black'} ${small ? 'pk-card--small' : ''}`}>
+      <div className="pk-corner pk-tl"><div>{card.rank}</div><div>{card.suit}</div></div>
+      <div className="pk-center">{card.suit}</div>
+      <div className="pk-corner pk-br"><div>{card.suit}</div><div>{card.rank}</div></div>
+    </div>
+  );
+}
+
+// ── Utility ────────────────────────────────────────────────────────────────────
+function getTablePos(relIdx, total) {
+  const angle = (2 * Math.PI * relIdx) / total;
+  return {
+    x: 50 + 43 * Math.sin(angle),
+    y: 52 + 36 * Math.cos(angle),
+  };
+}
+
+function getSeatLabel(playerIdx, dealerIdx, sbIdx, bbIdx, total) {
+  if (playerIdx === dealerIdx) return '🎯';
+  if (playerIdx === sbIdx)     return 'SB';
+  if (playerIdx === bbIdx)     return 'BB';
+  return '';
+}
+
+const ROUND_LABELS = { preflop: 'Pre-Flop', flop: 'Flop', turn: 'Turn', river: 'River', showdown: 'Showdown' };
+
+// ── Lobby (room browser) ───────────────────────────────────────────────────────
+function Lobby({ emit, roomList, errorMsg, myId }) {
+  const [name, setName]     = useState(() => localStorage.getItem('th_name') || '');
+  const [creating, setCr]   = useState(false);
+  const [joiningCode, setJC] = useState(null);
+
+  function saveName(v) { setName(v); localStorage.setItem('th_name', v); }
+
+  function create() {
+    if (!name.trim()) return;
+    setCr(true);
+    emit('createRoom', { playerName: name.trim() });
+  }
+
+  function join(code) {
+    if (!name.trim()) return;
+    setJC(code);
+    emit('joinRoom', { roomCode: code, playerName: name.trim() });
+  }
+
+  return (
+    <div className="th-lobby">
+      <div className="th-lobby-title">♠ Texas Hold'em ♥</div>
+      <div className="th-lobby-sub">Multiplayer Poker — 2 to 6 players • 1,000 starting chips</div>
+
+      {errorMsg && <div className="th-error">{errorMsg}</div>}
+
+      <div className="th-name-row">
+        <input
+          className="th-name-input"
+          placeholder="Your name"
+          value={name}
+          maxLength={16}
+          onChange={e => saveName(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && create()}
+        />
+        <button className="th-btn th-btn--create" onClick={create} disabled={!name.trim()}>
+          + Create Room
+        </button>
+      </div>
+
+      <div className="th-rooms-panel">
+        <div className="th-rooms-title">Open Rooms</div>
+        {roomList.length === 0 ? (
+          <div className="th-rooms-empty">No open rooms — create one above!</div>
+        ) : (
+          <div className="th-rooms-list">
+            {roomList.map(r => (
+              <div key={r.code} className="th-room-row">
+                <div className="th-room-info">
+                  <span className="th-room-host">{r.hostName}'s room</span>
+                  <span className="th-room-count">{r.playerCount} / {r.maxPlayers} players</span>
+                </div>
+                <button
+                  className="th-btn th-btn--join"
+                  onClick={() => join(r.code)}
+                  disabled={!name.trim() || joiningCode === r.code}
+                >
+                  Join
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Waiting room ───────────────────────────────────────────────────────────────
+function WaitingRoom({ roomState, myId, emit, onLeave }) {
+  const isHost = roomState.hostId === myId;
+  return (
+    <div className="th-waiting">
+      <div className="th-waiting-title">♠ Texas Hold'em</div>
+      <div className="th-waiting-code">Room: <strong>{roomState.roomCode}</strong></div>
+      <div className="th-waiting-players">
+        {roomState.players.map(p => (
+          <div key={p.id} className={`th-waiting-player ${p.id === roomState.hostId ? 'host' : ''}`}>
+            {p.id === roomState.hostId ? '👑 ' : '👤 '}{p.name}
+          </div>
+        ))}
+      </div>
+      <div className="th-waiting-hint">{roomState.players.length} / 6 players joined</div>
+      {isHost ? (
+        <button
+          className="th-btn th-btn--start"
+          disabled={roomState.players.length < 2}
+          onClick={() => emit('startGame', { roomCode: roomState.roomCode })}
+        >
+          {roomState.players.length < 2 ? 'Waiting for players…' : '▶ Start Game'}
+        </button>
+      ) : (
+        <div className="th-waiting-hint">Waiting for host to start…</div>
+      )}
+      <button className="th-btn th-btn--leave" onClick={onLeave}>Leave Room</button>
+    </div>
+  );
+}
+
+// ── Main game table ────────────────────────────────────────────────────────────
+function GameTable({ roomState, myId, emit }) {
+  const gs        = roomState;
+  const myPIdx    = gs.players.findIndex(p => p.id === myId);
+  const me        = gs.players[myPIdx] ?? {};
+  const n         = gs.players.length;
+  const isMyTurn  = gs.handInProgress && gs.currentIdx === myPIdx;
+  const toCall    = Math.max(0, gs.currentBet - (me.bet ?? 0));
+  const canCheck  = isMyTurn && toCall === 0;
+  const canCall   = isMyTurn && toCall > 0;
+  const minRaiseTo = (gs.currentBet ?? 0) + (gs.minRaise ?? 20);
+  const maxRaiseTo = (me.chips ?? 0) + (me.bet ?? 0);
+
+  const [raiseAmt, setRaiseAmt] = useState(minRaiseTo);
+
+  // Update raise default when game state changes
+  useEffect(() => {
+    setRaiseAmt(minRaiseTo);
+  }, [minRaiseTo]);
+
+  function act(type, extra = {}) {
+    emit('playerAction', { roomCode: gs.roomCode, action: { type, ...extra } });
+  }
+
+  return (
+    <div className="th-game">
+      {/* Round / pot info */}
+      <div className="th-top-bar">
+        <div className="th-round-label">{ROUND_LABELS[gs.round] || ''}</div>
+        <div className="th-pot">Pot: <strong>${gs.pot?.toLocaleString()}</strong></div>
+        {gs.currentBet > 0 && <div className="th-current-bet">Bet: ${gs.currentBet}</div>}
+      </div>
+
+      {/* Table */}
+      <div className="th-table-wrap">
+        <div className="th-table">
+          {/* Community cards */}
+          <div className="th-community">
+            <div className="th-community-cards">
+              {Array.from({ length: 5 }, (_, i) => (
+                <PokerCard key={i} card={gs.communityCards?.[i]} faceDown={!gs.communityCards?.[i]} small />
+              ))}
+            </div>
+          </div>
+
+          {/* Player seats */}
+          {gs.players.map((player, idx) => {
+            const relIdx = (idx - myPIdx + n) % n;
+            const pos    = getTablePos(relIdx, n);
+            const isMe   = player.id === myId;
+            const isActive = gs.currentIdx === idx && gs.handInProgress;
+            const seatLabel = getSeatLabel(idx, gs.dealerIdx, gs.sbIdx, gs.bbIdx, n);
+
+            return (
+              <div
+                key={player.id}
+                className={`th-seat ${isMe ? 'th-seat--me' : ''} ${isActive ? 'th-seat--active' : ''} ${player.folded ? 'th-seat--folded' : ''}`}
+                style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+              >
+                {seatLabel && <div className="th-seat-badge">{seatLabel}</div>}
+                <div className="th-seat-cards">
+                  {player.holeCards ? player.holeCards.map((c, ci) => (
+                    <PokerCard key={ci} card={c} faceDown={c === null} small />
+                  )) : (
+                    <>
+                      <PokerCard faceDown small />
+                      <PokerCard faceDown small />
+                    </>
+                  )}
+                </div>
+                <div className="th-seat-name">{player.name}{player.allIn ? ' (ALL-IN)' : ''}</div>
+                <div className="th-seat-chips">${player.chips?.toLocaleString()}</div>
+                {player.bet > 0 && <div className="th-seat-bet">Bet: ${player.bet}</div>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Showdown result */}
+      {gs.round === 'showdown' && gs.winners && (
+        <div className="th-showdown">
+          <div className="th-showdown-title">Showdown</div>
+          {gs.winners.map((w, i) => (
+            <div key={i} className="th-winner-row">
+              <span className="th-winner-name">{w.name}</span>
+              <span className="th-winner-hand">{w.handName}</span>
+              <span className="th-winner-amt">+${w.amount}</span>
+            </div>
+          ))}
+          <button
+            className="th-btn th-btn--next"
+            onClick={() => emit('nextHand', { roomCode: gs.roomCode })}
+          >
+            Next Hand ▶
+          </button>
+        </div>
+      )}
+
+      {/* My action buttons */}
+      {isMyTurn && !me.folded && !me.allIn && gs.round !== 'showdown' && (
+        <div className="th-actions">
+          <button className="th-act-btn th-act--fold" onClick={() => act('fold')}>Fold</button>
+          {canCheck && <button className="th-act-btn th-act--check" onClick={() => act('check')}>Check</button>}
+          {canCall && (
+            <button className="th-act-btn th-act--call" onClick={() => act('call')}>
+              Call ${Math.min(toCall, me.chips)}
+            </button>
+          )}
+          {maxRaiseTo > gs.currentBet && (
+            <div className="th-raise-wrap">
+              <div className="th-raise-row">
+                <input
+                  type="range"
+                  className="th-raise-slider"
+                  min={minRaiseTo}
+                  max={maxRaiseTo}
+                  value={Math.min(Math.max(raiseAmt, minRaiseTo), maxRaiseTo)}
+                  onChange={e => setRaiseAmt(+e.target.value)}
+                />
+                <input
+                  type="number"
+                  className="th-raise-input"
+                  min={minRaiseTo}
+                  max={maxRaiseTo}
+                  value={Math.min(Math.max(raiseAmt, minRaiseTo), maxRaiseTo)}
+                  onChange={e => setRaiseAmt(Math.min(Math.max(+e.target.value, minRaiseTo), maxRaiseTo))}
+                />
+              </div>
+              <button
+                className="th-act-btn th-act--raise"
+                onClick={() => act('raise', { totalBet: Math.min(Math.max(raiseAmt, minRaiseTo), maxRaiseTo) })}
+              >
+                {toCall === 0 ? `Bet $${Math.min(Math.max(raiseAmt, minRaiseTo), maxRaiseTo)}` : `Raise to $${Math.min(Math.max(raiseAmt, minRaiseTo), maxRaiseTo)}`}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Waiting for turn */}
+      {!isMyTurn && gs.handInProgress && gs.round !== 'showdown' && (
+        <div className="th-waiting-turn">
+          Waiting for <strong>{gs.players[gs.currentIdx]?.name ?? '…'}</strong> to act…
+        </div>
+      )}
+
+      {/* Bust / eliminated */}
+      {!gs.handInProgress && !gs.winners && (
+        <div className="th-waiting-turn">Waiting for next hand…</div>
+      )}
+    </div>
+  );
+}
+
+// ── Root component ─────────────────────────────────────────────────────────────
+export default function TexasHoldem() {
+  const { emit, on, connected } = useSocket('/texasholdem');
+  const [myId, setMyId]         = useState(null);
+  const [roomState, setRoomState] = useState(null);
+  const [roomList, setRoomList]  = useState([]);
+  const [errorMsg, setErrorMsg]  = useState('');
+  const roomCodeRef              = useRef(null);
+
+  useEffect(() => {
+    const off = [
+      on('roomCreated', ({ roomCode, playerId }) => {
+        setMyId(playerId);
+        roomCodeRef.current = roomCode;
+      }),
+      on('roomJoined', ({ playerId }) => {
+        setMyId(playerId);
+      }),
+      on('gameState', state => {
+        setRoomState(state);
+        roomCodeRef.current = state.roomCode;
+      }),
+      on('roomList', list => setRoomList(list)),
+      on('error', ({ message }) => {
+        setErrorMsg(message);
+        setTimeout(() => setErrorMsg(''), 4000);
+      }),
+    ];
+    return () => off.forEach(fn => fn());
+  }, [on]);
+
+  const doEmit = useCallback((event, data) => {
+    setErrorMsg('');
+    emit(event, data);
+  }, [emit]);
+
+  function leaveRoom() {
+    if (roomCodeRef.current) {
+      doEmit('leaveRoom', { roomCode: roomCodeRef.current });
+    }
+    setRoomState(null);
+    setMyId(null);
+    roomCodeRef.current = null;
+  }
+
+  const inRoom = !!roomState;
+  const inGame = inRoom && (roomState.status === 'playing' || roomState.status === 'ended');
+
+  return (
+    <div className="th-root">
+      {!connected && <div className="th-conn-banner">Connecting…</div>}
+      {errorMsg && <div className="th-error-toast">{errorMsg}</div>}
+
+      {!inRoom && (
+        <Lobby emit={doEmit} roomList={roomList} errorMsg={errorMsg} myId={myId} />
+      )}
+
+      {inRoom && !inGame && (
+        <WaitingRoom roomState={roomState} myId={myId} emit={doEmit} onLeave={leaveRoom} />
+      )}
+
+      {inGame && (
+        <>
+          <div className="th-game-header">
+            <button className="th-leave-btn" onClick={leaveRoom}>← Leave</button>
+            <span className="th-game-title">♠ Texas Hold'em ♥</span>
+            <span className="th-my-chips">
+              ${roomState.players.find(p => p.id === myId)?.chips?.toLocaleString() ?? 0}
+            </span>
+          </div>
+          <GameTable roomState={roomState} myId={myId} emit={doEmit} />
+        </>
+      )}
+    </div>
+  );
+}
