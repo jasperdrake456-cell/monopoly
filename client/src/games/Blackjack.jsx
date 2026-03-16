@@ -156,15 +156,16 @@ export default function Blackjack() {
     // Check instant blackjack
     if (isBlackjack(pHand)) {
       if (isBlackjack(dHand)) {
-        // Push
+        // Push — return original bet
         addBalance(bet);
         syncBalance();
         setResult({ msg: '🤝 Push — Both Blackjack!', net: 0 });
       } else {
-        const payout = Math.floor(bet * 2.5);
+        // Blackjack pays 3:1 (return original bet + 3× profit)
+        const payout = bet * 4;
         addBalance(payout);
         syncBalance();
-        setResult({ msg: '🃏 Blackjack! 3:2 Payout!', net: payout - bet });
+        setResult({ msg: '🃏 Blackjack! 3:1 Payout!', net: bet * 3 });
       }
       setPhase('result');
     } else {
@@ -280,22 +281,26 @@ export default function Blackjack() {
       const label = allHands.length > 1 ? ` (Hand ${idx+1})` : '';
 
       if (pBust && idx === 0) {
+        // Bust — bet already gone
         msgs.push(`💥 Bust${label}`);
         totalNet -= thisBet;
       } else if (isBust(hand)) {
         msgs.push(`💥 Bust${label}`);
         totalNet -= thisBet;
       } else if (dBust || pTotal > dTotal) {
-        addBalance(thisBet * 2);
+        // Win pays 2:1 — return original bet + 2× profit
+        addBalance(thisBet * 3);
         syncBalance();
         msgs.push(`✅ Win${label}`);
-        totalNet += thisBet;
+        totalNet += thisBet * 2;
       } else if (pTotal === dTotal) {
+        // Push — return original bet
         addBalance(thisBet);
         syncBalance();
         msgs.push(`🤝 Push${label}`);
         totalNet += 0;
       } else {
+        // Lose — bet already gone
         msgs.push(`❌ Lose${label}`);
         totalNet -= thisBet;
       }
