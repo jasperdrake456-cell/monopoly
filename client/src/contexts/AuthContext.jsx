@@ -13,6 +13,15 @@ async function apiFetch(path, options = {}) {
     headers: { 'Content-Type': 'application/json', ...optHeaders },
     ...rest,
   });
+  if (!res.ok && res.status !== 200) {
+    // Try to parse JSON error body, fall back to status text
+    try {
+      const errBody = await res.json();
+      return { ok: false, error: errBody.error || `Server error ${res.status}`, ...errBody };
+    } catch {
+      return { ok: false, error: `Server error ${res.status}` };
+    }
+  }
   return res.json();
 }
 
@@ -159,16 +168,25 @@ export function AuthProvider({ children }) {
   // ── Transfer ──────────────────────────────────────────────────────────────
   const transfer = useCallback(async (toUsername, amount) => {
     if (!token) return { ok: false, error: 'Not logged in' };
-    const data = await authFetch('/api/accounts/transfer', token, {
-      method: 'POST',
-      body: JSON.stringify({ toUsername, amount }),
-    });
-    if (data.ok) {
-      setBalance(data.fromBalance);
-      setBalanceState(data.fromBalance);
+    try {
+      // Sync the latest local balance to the server FIRST so the server
+      // knows the sender's real balance before checking affordability.
+      await pushBalance(token, getBalance());
+
+      const data = await authFetch('/api/accounts/transfer', token, {
+        method: 'POST',
+        body: JSON.stringify({ toUsername, amount }),
+      });
+      if (data.ok) {
+        setBalance(data.fromBalance);
+        setBalanceState(data.fromBalance);
+      }
+      return data;
+    } catch (err) {
+      console.error('[transfer] fetch error:', err);
+      return { ok: false, error: 'Network error — check your connection.' };
     }
-    return data;
-  }, [token]);
+  }, [token, pushBalance]);
 
   // ── Sync balance to server (called by casino utils) ───────────────────────
   const syncNow = useCallback(() => {

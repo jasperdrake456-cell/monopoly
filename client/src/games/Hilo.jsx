@@ -32,18 +32,20 @@ function shuffleDeck(deck) {
 // Given current card value, compute multiplier for higher/lower bet
 // mult = (totalRemaining / countInDirection) * HOUSE_EDGE
 function calcMultipliers(cardValue, usedValues) {
-  const fullDeck = buildDeck();
   const usedCount = usedValues.length;
   const totalRemaining = 52 - usedCount;
 
+  // Iterate over the 13 unique card VALUES (not all 52 cards).
+  // The old code looped over individual cards and added `available` (= 4 − used)
+  // for EACH of the 4 suits, overcounting every direction by 4×, which made
+  // all multipliers fall below 1.0 and every correct guess still lose money.
   let higher = 0, lower = 0, equal = 0;
-  for (const c of fullDeck) {
-    // Count how many of this rank have already been used
-    const alreadyUsed = usedValues.filter(v => v === c.value).length;
+  for (const val of Object.values(RANK_VALUES)) {
+    const alreadyUsed = usedValues.filter(v => v === val).length;
     const available = 4 - alreadyUsed;
     if (available <= 0) continue;
-    if (c.value > cardValue) higher += available;
-    else if (c.value < cardValue) lower += available;
+    if (val > cardValue) higher += available;
+    else if (val < cardValue) lower += available;
     else equal += available;
   }
 
@@ -131,8 +133,8 @@ export default function Hilo() {
     const usedValues = revealedCards.map(c => c.value);
     const { multHigher, multLower } = calcMultipliers(currentCard.value, usedValues);
     const baseMult = direction === 'higher' ? multHigher : multLower;
-    // Streak bonus: each consecutive correct guess boosts the multiplier by 3%
-    const streakBonus = 1 + streak * 0.03;
+    // Streak bonus: each consecutive correct guess boosts the multiplier by 10%
+    const streakBonus = 1 + streak * 0.10;
     const pickedMult = baseMult ? parseFloat((baseMult * streakBonus).toFixed(2)) : baseMult;
 
     setTimeout(() => {
@@ -282,7 +284,7 @@ export default function Hilo() {
       {phase === 'playing' && currentCard && mults && (
         <div className="hilo-controls">
           {streak >= 2 && (
-            <div className="hilo-streak-badge">🔥 {streak}-streak · +{(streak * 3)}% bonus</div>
+            <div className="hilo-streak-badge">🔥 {streak}-streak · +{(streak * 10)}% bonus</div>
           )}
           <button
             className="hilo-btn hilo-btn--higher"
@@ -291,7 +293,7 @@ export default function Hilo() {
           >
             ⬆️ Higher
             {mults.multHigher
-              ? <span className="hilo-btn-mult">{parseFloat((mults.multHigher * (1 + streak * 0.03)).toFixed(2))}×</span>
+              ? <span className="hilo-btn-mult">{parseFloat((mults.multHigher * (1 + streak * 0.10)).toFixed(2))}×</span>
               : <span className="hilo-btn-mult">N/A</span>}
           </button>
           <button
@@ -308,7 +310,7 @@ export default function Hilo() {
           >
             ⬇️ Lower
             {mults.multLower
-              ? <span className="hilo-btn-mult">{parseFloat((mults.multLower * (1 + streak * 0.03)).toFixed(2))}×</span>
+              ? <span className="hilo-btn-mult">{parseFloat((mults.multLower * (1 + streak * 0.10)).toFixed(2))}×</span>
               : <span className="hilo-btn-mult">N/A</span>}
           </button>
           <div className="hilo-tie-warning">⚠️ Ties lose</div>
@@ -335,7 +337,7 @@ export default function Hilo() {
         </div>
       )}
 
-      <div className="hilo-hint">Guess higher or lower • Ties lose • Cash out anytime • 1% house edge</div>
+      <div className="hilo-hint">Guess higher or lower • Ties lose • Cash out anytime • Streak = +10% per correct guess</div>
     </div>
   );
 }

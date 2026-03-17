@@ -16,6 +16,22 @@ if (!fs.existsSync(SESSIONS_FILE)) fs.writeFileSync(SESSIONS_FILE, '{}', 'utf8')
 
 console.log(`[userStore] Data directory: ${DATA_DIR}`);
 
+// ── Migration: backfill registerIP for accounts that predate the IP-limit feature ──
+(function migrateRegisterIP() {
+  const users = readUsers();
+  let changed = 0;
+  for (const u of Object.values(users)) {
+    if (!u.registerIP && u.lastIP) {
+      u.registerIP = u.lastIP;
+      changed++;
+    }
+  }
+  if (changed > 0) {
+    writeUsers(users);
+    console.log(`[userStore] Migrated registerIP for ${changed} account(s)`);
+  }
+})();
+
 function readUsers() {
   try { return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8')); }
   catch { return {}; }

@@ -87,8 +87,8 @@ export default function Plinko() {
     let currentRow = 0;
 
     function step() {
-      if (currentRow > ROWS) {
-        // All balls landed
+      // All 8 peg rows processed — balls have their final columns, land them
+      if (currentRow >= ROWS) {
         const buckets = ballData.map(b => b.bucket);
         const totalPayout = buckets.reduce(
           (sum, bkt) => sum + Math.floor(bet * MULTIPLIERS[risk][bkt]),
@@ -111,9 +111,9 @@ export default function Plinko() {
       // Show all balls at their current row/col
       setActiveBalls(ballData.map((b, i) => ({ id: b.id, row: currentRow, col: cols[i] })));
 
-      // Advance each ball's column for next step
+      // Advance each ball's column based on this row's path direction
       ballData.forEach((b, i) => {
-        if (currentRow < ROWS && b.path[currentRow] === 'R') cols[i]++;
+        if (b.path[currentRow] === 'R') cols[i]++;
       });
       currentRow++;
 

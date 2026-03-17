@@ -117,33 +117,34 @@ export default function Wheel() {
     setPhase('spinning');
     setResult(null);
 
-    // Pick winning segment
-    const winSeg = pool[Math.floor(Math.random() * pool.length)];
-
-    // Find the visual segment for winSeg
-    const winWheelSeg = wheelSegs.find(s => s.label === winSeg.label);
-    // Pointer sits at 12 o'clock (0°). Segments are drawn from 0° at 12 o'clock going clockwise.
-    // CSS rotates the SVG clockwise by spinAngle. A segment originally at angle s ends up
-    // at visual position (s + spinAngle) % 360. To land winCenter under pointer:
-    //   (winCenter + newAngle) % 360 = 0  =>  newAngle % 360 = (360 - winCenter) % 360
-    const winCenter = winWheelSeg.startAngle + winWheelSeg.sweep / 2;
-    const baseRotations = 5 * 360; // 5 full spins
-    const currentNorm = ((spinAngle % 360) + 360) % 360;
-    const targetOffset = ((360 - winCenter) - currentNorm + 36000) % 360;
-    const newAngle = spinAngle + baseRotations + targetOffset;
-    targetAngleRef.current = newAngle;
+    // Spin to a truly random angle — winner is determined AFTER by reading
+    // which segment visually sits under the pointer (12 o'clock / 0°).
+    const randomExtra = Math.random() * 360;
+    const newAngle = spinAngle + 5 * 360 + randomExtra;
     setSpinAngle(newAngle);
 
     setTimeout(() => {
-      const won = winSeg.color === selectedColor;
-      const payout = won ? Math.floor(bet * winSeg.mult) : 0;
+      // After the wheel stops, compute which segment is under the pointer.
+      // The SVG was rotated clockwise by newAngle degrees.
+      // A segment whose startAngle is `s` (measured clockwise from 12 o'clock)
+      // is now visually at position (s + newAngle) mod 360 from 12 o'clock.
+      // The pointer is at 12 o'clock (0°). We need the segment such that:
+      //   startAngle ≤ pointerAt < startAngle + sweep
+      // where pointerAt = (360 - finalAngle % 360) % 360
+      const finalNorm = ((newAngle % 360) + 360) % 360;
+      const pointerAt = (360 - finalNorm) % 360;
+
+      const landedSeg = wheelSegs.find(seg =>
+        pointerAt >= seg.startAngle && pointerAt < seg.startAngle + seg.sweep
+      ) || wheelSegs[wheelSegs.length - 1];
+
+      const won = landedSeg.color === selectedColor;
+      const payout = won ? Math.floor(bet * landedSeg.mult) : 0;
       if (won) addBalance(payout);
       syncBalance();
-      setResult({ seg: winSeg, won, payout });
+      setResult({ seg: landedSeg, won, payout });
       setPhase('result');
-      setHistory(h => [{ won, seg: winSeg, payout }, ...h].slice(0, MAX_HISTORY));
-      // Normalize angle to prevent infinite accumulation — do after transition completes
-      setSpinAngle(a => a % 360);
+      setHistory(h => [{ won, seg: landedSeg, payout }, ...h].slice(0, MAX_HISTORY));
     }, SPIN_DURATION + 200);
   }
 

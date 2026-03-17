@@ -73,14 +73,19 @@
 /* Active peg lights up when a ball is near */
 .plinko-peg--ball {
   color: transparent;
-  background: radial-gradient(circle, rgba(255,80,80,0.35) 0%, transparent 70%);
-  animation: ball-arrive 0.25s ease;
+  background: radial-gradient(circle, rgba(255,80,80,0.5) 0%, transparent 70%);
+  box-shadow: 0 0 10px rgba(255, 80, 80, 0.6);
+  animation: ball-arrive 0.2s ease;
+  z-index: 3;
 }
 .plinko-peg--ball::after {
   content: '🔴';
-  font-size: 1.1rem;
+  font-size: 1.35rem;
   position: absolute;
-  animation: ball-bounce 0.3s cubic-bezier(0.25, 1.5, 0.5, 1);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: ball-bounce 0.45s cubic-bezier(0.25, 1.6, 0.5, 1);
 }
 
 .plinko-multi-ball {
