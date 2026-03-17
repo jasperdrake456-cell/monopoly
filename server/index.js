@@ -105,12 +105,20 @@ app.post('/api/accounts/logout', (req, res) => {
 });
 
 app.get('/api/accounts/me', (req, res) => {
-  res.json(us.getMe(getToken(req)));
+  const result = us.getMe(getToken(req));
+  if (result.ok) us.recordIP(result.username, getClientIP(req));
+  res.json(result);
 });
 
 app.post('/api/accounts/balance/sync', (req, res) => {
   const { balance } = req.body || {};
-  res.json(us.syncBalance(getToken(req), balance));
+  const token = getToken(req);
+  const result = us.syncBalance(token, balance);
+  if (result.ok) {
+    const me = us.getMe(token);
+    if (me.ok) us.recordIP(me.username, getClientIP(req));
+  }
+  res.json(result);
 });
 
 app.post('/api/accounts/daily', (req, res) => {
