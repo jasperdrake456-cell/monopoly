@@ -365,8 +365,30 @@ function logout(token) {
   return { ok: true };
 }
 
+/**
+ * Admin only: destroy all active sessions for a user (kick them out).
+ * Returns { ok, sessionsKilled }
+ */
+function kickUser(adminToken, targetUsername) {
+  const callerUsername = validateToken(adminToken);
+  if (callerUsername !== ADMIN_USERNAME) return { ok: false, error: 'Forbidden' };
+
+  const clean = targetUsername.trim().toLowerCase();
+  if (clean === ADMIN_USERNAME) return { ok: false, error: 'Cannot kick admin' };
+
+  let killed = 0;
+  for (const [token, data] of sessions) {
+    if (data.username === clean) {
+      sessions.delete(token);
+      killed++;
+    }
+  }
+  if (killed > 0) writeSessionsToDisk();
+  return { ok: true, sessionsKilled: killed };
+}
+
 module.exports = {
   register, login, getMe, syncBalance, claimDaily, transfer, logout, userExists,
   deleteUser, adminGiveMoney, adminSetBalance, listUsers, isAdminToken, getTopBalances,
-  recordIP,
+  recordIP, kickUser,
 };

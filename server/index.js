@@ -153,7 +153,7 @@ app.get('/api/ban-check', (req, res) => {
 
 // ── Casino Rich List (public) ─────────────────────────────────────────────────
 app.get('/api/casino-leaderboard', (req, res) => {
-  res.json({ ok: true, players: us.getTopBalances(20) });
+  res.json(us.getTopBalances(20));
 });
 
 // ── Leaderboard API ──────────────────────────────────────────────────────────
@@ -246,6 +246,11 @@ app.post('/api/admin/give-money', requireAdmin, (req, res) => {
 app.put('/api/admin/users/:username/balance', requireAdmin, (req, res) => {
   const { amount } = req.body || {};
   res.json(us.adminSetBalance(getToken(req), req.params.username, amount));
+});
+
+// Kick a user (destroy all their sessions — forces logout)
+app.post('/api/admin/kick/:username', requireAdmin, (req, res) => {
+  res.json(us.kickUser(getToken(req), req.params.username));
 });
 
 // ── Ban admin API ──────────────────────────────────────────────────────────────

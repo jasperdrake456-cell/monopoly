@@ -70,7 +70,7 @@ export default function CasinoLeaderboardPage() {
                     {i < 3 ? MEDALS[i] : `#${i + 1}`}
                   </td>
                   <td style={styles.td}>
-                    <span style={styles.playerName}>{player.name || player.username || 'Unknown'}</span>
+                    <span style={styles.playerName}>{player.username || 'Unknown'}</span>
                   </td>
                   <td style={{ ...styles.td, textAlign: 'right', ...styles.balanceCell }}>
                     {formatBalance(player.balance ?? player.coins ?? 0)}

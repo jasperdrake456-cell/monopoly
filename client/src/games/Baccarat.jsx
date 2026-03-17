@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './Baccarat.css';
+import useBanCheck from '../hooks/useBanCheck';
 
 // ── Deck ─────────────────────────────────────────────────────────────────────
 const SUITS = ['♠', '♥', '♦', '♣'];
@@ -58,6 +59,7 @@ function BacCard({ card, faceDown }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export default function Baccarat() {
+  const { banned, reason, expiresAt, loading } = useBanCheck('baccarat');
   const shoeRef   = useRef(createShoe());
   const [balance, setBalance] = useState(getBalance);
   const [bet, setBet]         = useState(10);
@@ -181,6 +183,19 @@ export default function Baccarat() {
     banker: '0.95:1 (5% commission)',
     tie:    '8:1',
   };
+
+  if (loading) return null;
+  if (banned) {
+    const exp = expiresAt ? new Date(expiresAt).toLocaleString() : null;
+    return (
+      <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'#0f0f1a',color:'#fff',fontFamily:'Roboto,sans-serif',gap:'12px',padding:'32px',textAlign:'center'}}>
+        <div style={{fontSize:'4rem'}}>🚫</div>
+        <h2 style={{margin:0,color:'#ef4444'}}>Access Denied</h2>
+        <p style={{margin:0,color:'#aaa',maxWidth:'360px'}}>You have been banned from this game{reason ? `: ${reason}` : '.'}</p>
+        {exp ? <p style={{margin:0,color:'#666',fontSize:'0.85rem'}}>Ban expires: {exp}</p> : <p style={{margin:0,color:'#666',fontSize:'0.85rem'}}>This ban is permanent.</p>}
+      </div>
+    );
+  }
 
   return (
     <div className="bac-table">

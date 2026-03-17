@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './Blackjack.css';
+import useBanCheck from '../hooks/useBanCheck';
 
 // ── Deck ─────────────────────────────────────────────────────────────────────
 const SUITS    = ['♠', '♥', '♦', '♣'];
@@ -106,6 +107,7 @@ function Hand({ cards, hideSecond, label, total, soft, active, handResult, betAm
 
 // ── Main component ────────────────────────────────────────────────────────────
 export default function Blackjack() {
+  const { banned, reason, expiresAt, loading } = useBanCheck('blackjack');
   const shoeRef = useRef(createShoe());
 
   const [balance, setBalance]       = useState(getBalance);
@@ -395,6 +397,19 @@ export default function Blackjack() {
     && cardValue(activeHand.cards[0].rank) === cardValue(activeHand.cards[1].rank)
     && balance_ >= activeHand.bet;
   const canSurrender = inPlay && activeHand && activeHand.cards.length === 2 && !splitAces;
+
+  if (loading) return null;
+  if (banned) {
+    const exp = expiresAt ? new Date(expiresAt).toLocaleString() : null;
+    return (
+      <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'#0f0f1a',color:'#fff',fontFamily:'Roboto,sans-serif',gap:'12px',padding:'32px',textAlign:'center'}}>
+        <div style={{fontSize:'4rem'}}>🚫</div>
+        <h2 style={{margin:0,color:'#ef4444'}}>Access Denied</h2>
+        <p style={{margin:0,color:'#aaa',maxWidth:'360px'}}>You have been banned from this game{reason ? `: ${reason}` : '.'}</p>
+        {exp ? <p style={{margin:0,color:'#666',fontSize:'0.85rem'}}>Ban expires: {exp}</p> : <p style={{margin:0,color:'#666',fontSize:'0.85rem'}}>This ban is permanent.</p>}
+      </div>
+    );
+  }
 
   return (
     <div className="bj-table">

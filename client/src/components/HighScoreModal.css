@@ -120,3 +120,16 @@
   border: 1px solid #30363d;
 }
 .hs-btn--skip:hover { background: #30363d; }
+
+.hs-username-badge {
+  display: inline-block;
+  background: #21262d;
+  border: 2px solid #7c3aed;
+  border-radius: 8px;
+  padding: 8px 20px;
+  color: #c084fc;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+}

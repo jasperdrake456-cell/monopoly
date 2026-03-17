@@ -1,28 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { isClean, cleanName } from '../utils/profanity';
 import { getRank, addScore } from '../utils/leaderboard';
 import { addBalance } from '../utils/casinoBalance';
+import { useAuth } from '../contexts/AuthContext';
 import './HighScoreModal.css';
 
 const LEADERBOARD_REWARD = 10; // $10 for making the leaderboard
 
 export default function HighScoreModal({ gameId, score, label = 'points', higherIsBetter = true, onSave, onDismiss }) {
-  const [name, setName] = useState('');
-  const [error, setError] = useState('');
+  const { user, isLoggedIn } = useAuth();
   const [rank, setRank] = useState(null);
+
+  // The name to submit is always the account username when logged in.
+  // If not logged in, we skip the modal (guests can't submit scores).
+  const displayName = isLoggedIn && user ? user.username : null;
 
   useEffect(() => {
     getRank(gameId, score, higherIsBetter).then(setRank);
   }, [gameId, score, higherIsBetter]);
 
   function handleSave() {
-    const trimmed = cleanName(name);
-    if (!trimmed) { setError('Please enter a name.'); return; }
-    if (trimmed.length < 2) { setError('Name must be at least 2 characters.'); return; }
-    if (!isClean(trimmed)) { setError('Please choose a more appropriate name.'); return; }
-    addScore(gameId, score, trimmed, higherIsBetter);
+    if (!displayName) { onDismiss(); return; }
+    addScore(gameId, score, displayName, higherIsBetter);
     addBalance(LEADERBOARD_REWARD); // +$10 for making the leaderboard
-    onSave(trimmed);
+    onSave(displayName);
+  }
+
+  // If the player isn't logged in, dismiss silently — no guest scores allowed
+  if (!isLoggedIn || !displayName) {
+    return null;
   }
 
   return (
@@ -33,19 +38,10 @@ export default function HighScoreModal({ gameId, score, label = 'points', higher
         <p className="hs-subtitle">You made the leaderboard</p>
         <div className="hs-score">{typeof score === 'number' && !Number.isInteger(score) ? score.toFixed(1) : score} <span style={{ fontSize: '1rem', color: '#8b949e' }}>{label}</span></div>
         {rank !== null && rank <= 10 && <div className="hs-rank">#{rank} on the leaderboard</div>}
-        <label className="hs-label">Your name</label>
-        <input
-          className={`hs-input${error ? ' hs-input--error' : ''}`}
-          value={name}
-          onChange={e => { setName(e.target.value); setError(''); }}
-          onKeyDown={e => e.key === 'Enter' && handleSave()}
-          placeholder="Enter your name…"
-          maxLength={20}
-          autoFocus
-        />
-        {error && <div className="hs-error">{error}</div>}
-        <div className="hs-actions">
-          <button className="hs-btn hs-btn--save" onClick={handleSave} disabled={!name.trim()}>
+        <div className="hs-label" style={{ marginBottom: '4px' }}>Submitting as</div>
+        <div className="hs-username-badge">{displayName}</div>
+        <div className="hs-actions" style={{ marginTop: '16px' }}>
+          <button className="hs-btn hs-btn--save" onClick={handleSave}>
             Save Score
           </button>
           <button className="hs-btn hs-btn--skip" onClick={onDismiss}>

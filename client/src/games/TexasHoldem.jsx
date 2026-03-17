@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSocket } from '../hooks/useSocket';
 import { getBalance, addBalance, subtractBalance } from '../utils/casinoBalance';
 import './TexasHoldem.css';
+import useBanCheck from '../hooks/useBanCheck';
 
 // ── Card component ─────────────────────────────────────────────────────────────
 const RED_SUITS = new Set(['♥', '♦']);
@@ -317,6 +318,7 @@ function GameTable({ roomState, myId, emit }) {
 
 // ── Root component ─────────────────────────────────────────────────────────────
 export default function TexasHoldem() {
+  const { banned, reason, expiresAt, loading } = useBanCheck('texas-holdem');
   const { emit, on, connected } = useSocket('/texasholdem');
   const [myId, setMyId]           = useState(null);
   const [roomState, setRoomState] = useState(null);
@@ -390,6 +392,19 @@ export default function TexasHoldem() {
 
   // Show chips in game header — and casino balance for context
   const myChips = roomState?.players.find(p => p.id === myId)?.chips ?? 0;
+
+  if (loading) return null;
+  if (banned) {
+    const exp = expiresAt ? new Date(expiresAt).toLocaleString() : null;
+    return (
+      <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'#0f0f1a',color:'#fff',fontFamily:'Roboto,sans-serif',gap:'12px',padding:'32px',textAlign:'center'}}>
+        <div style={{fontSize:'4rem'}}>🚫</div>
+        <h2 style={{margin:0,color:'#ef4444'}}>Access Denied</h2>
+        <p style={{margin:0,color:'#aaa',maxWidth:'360px'}}>You have been banned from this game{reason ? `: ${reason}` : '.'}</p>
+        {exp ? <p style={{margin:0,color:'#666',fontSize:'0.85rem'}}>Ban expires: {exp}</p> : <p style={{margin:0,color:'#666',fontSize:'0.85rem'}}>This ban is permanent.</p>}
+      </div>
+    );
+  }
 
   return (
     <div className="th-root">

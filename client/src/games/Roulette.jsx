@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './Roulette.css';
+import useBanCheck from '../hooks/useBanCheck';
 
 const RED_NUMBERS = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
 const WHEEL_ORDER = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
@@ -53,6 +54,7 @@ const OUTSIDE_BETS = [
 ];
 
 export default function Roulette() {
+  const { banned, reason, expiresAt, loading } = useBanCheck('roulette');
   const [balance, setBalance]     = useState(getBalance);
   const [bet, setBet]             = useState(10);
   const [betType, setBetType]     = useState(null);
@@ -132,6 +134,19 @@ export default function Roulette() {
 
   const balance_  = getBalance();
   const quickBets = [5, 10, 25, 50, 100, 250].filter(v => v <= balance_);
+
+  if (loading) return null;
+  if (banned) {
+    const exp = expiresAt ? new Date(expiresAt).toLocaleString() : null;
+    return (
+      <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'#0f0f1a',color:'#fff',fontFamily:'Roboto,sans-serif',gap:'12px',padding:'32px',textAlign:'center'}}>
+        <div style={{fontSize:'4rem'}}>🚫</div>
+        <h2 style={{margin:0,color:'#ef4444'}}>Access Denied</h2>
+        <p style={{margin:0,color:'#aaa',maxWidth:'360px'}}>You have been banned from this game{reason ? `: ${reason}` : '.'}</p>
+        {exp ? <p style={{margin:0,color:'#666',fontSize:'0.85rem'}}>Ban expires: {exp}</p> : <p style={{margin:0,color:'#666',fontSize:'0.85rem'}}>This ban is permanent.</p>}
+      </div>
+    );
+  }
 
   return (
     <div className="roulette-table">

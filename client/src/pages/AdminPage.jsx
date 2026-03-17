@@ -112,6 +112,11 @@ export default function AdminPage() {
     loadUsers();
   }
 
+  async function kickUser(username) {
+    const d = await authFetch(`/api/admin/kick/${encodeURIComponent(username)}`, token, { method: 'POST' });
+    setStatus(d.ok ? `Kicked @${username} — ${d.sessionsKilled} session(s) destroyed` : (d.error || 'Kick failed'));
+  }
+
   function parseDuration(durStr) {
     if (durStr === 'permanent') return null;
     const map = { '1h': 3600000, '6h': 21600000, '24h': 86400000, '7d': 604800000, '30d': 2592000000 };
@@ -291,6 +296,9 @@ export default function AdminPage() {
                         setStatus(`Pre-filled IP ban for ${u.lastIP} (@${u.username})`);
                       }}>🌐 Ban IP</button>
                     )}
+                    <button className="admin-btn admin-btn--warn admin-btn--sm" onClick={() => kickUser(u.username)}>
+                      👢 Kick
+                    </button>
                     <button className="admin-btn admin-btn--ghost admin-btn--sm" onClick={() => deleteUser(u.username)}>
                       🗑 Delete
                     </button>

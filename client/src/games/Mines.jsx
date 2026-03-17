@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './Mines.css';
+import useBanCheck from '../hooks/useBanCheck';
 
 // ── Mines game (Rainbet-style) ────────────────────────────────────────────────
 // Grid: 5×5 = 25 tiles. Player picks mines count (1–24).
@@ -33,6 +34,7 @@ function generateMines(count) {
 const MINE_COUNTS = [1, 2, 3, 5, 7, 10, 15, 20, 24];
 
 export default function Mines() {
+  const { banned, reason, expiresAt, loading } = useBanCheck('mines');
   const [balance, setBalance]   = useState(getBalance);
   const [bet, setBet]           = useState(10);
   const [mineCount, setMineCount] = useState(3);
@@ -147,6 +149,19 @@ export default function Mines() {
     if (allMines.has(idx) && phase === 'result') return 'mine';
     if (revealed.has(idx)) return 'gem';
     return 'hidden';
+  }
+
+  if (loading) return null;
+  if (banned) {
+    const exp = expiresAt ? new Date(expiresAt).toLocaleString() : null;
+    return (
+      <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'#0f0f1a',color:'#fff',fontFamily:'Roboto,sans-serif',gap:'12px',padding:'32px',textAlign:'center'}}>
+        <div style={{fontSize:'4rem'}}>🚫</div>
+        <h2 style={{margin:0,color:'#ef4444'}}>Access Denied</h2>
+        <p style={{margin:0,color:'#aaa',maxWidth:'360px'}}>You have been banned from this game{reason ? `: ${reason}` : '.'}</p>
+        {exp ? <p style={{margin:0,color:'#666',fontSize:'0.85rem'}}>Ban expires: {exp}</p> : <p style={{margin:0,color:'#666',fontSize:'0.85rem'}}>This ban is permanent.</p>}
+      </div>
+    );
   }
 
   return (

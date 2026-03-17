@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './Tower.css';
+import useBanCheck from '../hooks/useBanCheck';
 
 // Tower: ROWS floors, each floor has COLS tiles.
 // Per difficulty: number of bomb tiles per floor.
@@ -55,6 +56,7 @@ function generateTower(bombs) {
 const MAX_HISTORY = 8;
 
 export default function Tower() {
+  const { banned, reason, expiresAt, loading } = useBanCheck('tower');
   const [balance, setBalance]       = useState(getBalance);
   const [bet, setBet]               = useState(10);
   const [difficulty, setDifficulty] = useState('medium');
@@ -176,6 +178,19 @@ export default function Tower() {
 
   // Render floors top-to-bottom (floor ROWS-1 at top, floor 0 at bottom)
   const floorsToRender = [...Array(ROWS).keys()].reverse();
+
+  if (loading) return null;
+  if (banned) {
+    const exp = expiresAt ? new Date(expiresAt).toLocaleString() : null;
+    return (
+      <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'#0f0f1a',color:'#fff',fontFamily:'Roboto,sans-serif',gap:'12px',padding:'32px',textAlign:'center'}}>
+        <div style={{fontSize:'4rem'}}>🚫</div>
+        <h2 style={{margin:0,color:'#ef4444'}}>Access Denied</h2>
+        <p style={{margin:0,color:'#aaa',maxWidth:'360px'}}>You have been banned from this game{reason ? `: ${reason}` : '.'}</p>
+        {exp ? <p style={{margin:0,color:'#666',fontSize:'0.85rem'}}>Ban expires: {exp}</p> : <p style={{margin:0,color:'#666',fontSize:'0.85rem'}}>This ban is permanent.</p>}
+      </div>
+    );
+  }
 
   return (
     <div className="tower-table">

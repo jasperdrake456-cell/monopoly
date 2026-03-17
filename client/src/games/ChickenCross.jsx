@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './ChickenCross.css';
+import useBanCheck from '../hooks/useBanCheck';
 
 const ROWS = 8;
 const COLS = 5;
@@ -31,6 +32,7 @@ function makeEmptyCells() {
 }
 
 export default function ChickenCross() {
+  const { banned, reason, expiresAt, loading } = useBanCheck('chicken-cross');
   const [balance, setBalance]       = useState(getBalance);
   const [bet, setBet]               = useState(10);
   const [difficulty, setDifficulty] = useState('medium');
@@ -149,6 +151,19 @@ export default function ChickenCross() {
   const diff      = DIFFICULTIES[difficulty];
   const quickBets = [5, 10, 25, 50, 100, 250].filter(v => v <= balance_);
   const payout    = phase === 'playing' ? Math.floor(betRef.current * multiplier) : null;
+
+  if (loading) return null;
+  if (banned) {
+    const exp = expiresAt ? new Date(expiresAt).toLocaleString() : null;
+    return (
+      <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'#0f0f1a',color:'#fff',fontFamily:'Roboto,sans-serif',gap:'12px',padding:'32px',textAlign:'center'}}>
+        <div style={{fontSize:'4rem'}}>🚫</div>
+        <h2 style={{margin:0,color:'#ef4444'}}>Access Denied</h2>
+        <p style={{margin:0,color:'#aaa',maxWidth:'360px'}}>You have been banned from this game{reason ? `: ${reason}` : '.'}</p>
+        {exp ? <p style={{margin:0,color:'#666',fontSize:'0.85rem'}}>Ban expires: {exp}</p> : <p style={{margin:0,color:'#666',fontSize:'0.85rem'}}>This ban is permanent.</p>}
+      </div>
+    );
+  }
 
   // Render grid — rows displayed top (row ROWS-1) to bottom (row 0)
   // Chicken is visually at the bottom, moves up as currentRow increases
