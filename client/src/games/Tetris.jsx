@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import HighScoreModal from '../components/HighScoreModal';
 import { isHighScore } from '../utils/leaderboard';
 import './Tetris.css';
+import useGameActivity from '../hooks/useGameActivity';
 
 const COLS = 10, ROWS = 20, CELL = 30;
 const W = COLS * CELL, H = ROWS * CELL;
@@ -89,6 +90,7 @@ const SCORES = [0, 40, 100, 300, 1200];
 const BEST_KEY = 'tetris_best';
 
 export default function Tetris({ onBack }) {
+  useGameActivity('tetris');
   const canvasRef    = useRef(null);
   const previewRef   = useRef(null);
   const stateRef     = useRef(null);

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import HighScoreModal from '../components/HighScoreModal';
 import { isHighScore } from '../utils/leaderboard';
 import './Sudoku.css';
+import useGameActivity from '../hooks/useGameActivity';
 
 // Puzzles: 81-char strings, 0 = empty
 const PUZZLES = {
@@ -94,6 +95,7 @@ function hasConflict(grid, r, c, val) {
 }
 
 export default function Sudoku({ onBack }) {
+  useGameActivity('sudoku');
   const [diff, setDiff] = useState('Easy');
   const [grid, setGrid] = useState(() => parsePuzzle(PUZZLES.Easy[0]));
   const [solution, setSolution] = useState(() => solvePuzzle(PUZZLES.Easy[0]));

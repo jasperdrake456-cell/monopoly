@@ -3,6 +3,7 @@ import HighScoreModal from '../components/HighScoreModal';
 import { isHighScore } from '../utils/leaderboard';
 import { addBalance } from '../utils/casinoBalance';
 import './Minesweeper.css';
+import useGameActivity from '../hooks/useGameActivity';
 
 const DIFFICULTIES = {
   Easy:   { rows: 9,  cols: 9,  mines: 10 },
@@ -68,6 +69,7 @@ function revealBFS(grid, rows, cols, startR, startC) {
 const NUM_COLORS = ['', '#1565c0','#2e7d32','#c62828','#4a148c','#bf360c','#006064','#212121','#546e7a'];
 
 export default function Minesweeper({ onBack }) {
+  useGameActivity('minesweeper');
   const [diff, setDiff]     = useState('Easy');
   const [grid, setGrid]     = useState(null);
   const [status, setStatus] = useState('idle'); // idle, playing, won, lost

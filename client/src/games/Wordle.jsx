@@ -3,6 +3,7 @@ import HighScoreModal from '../components/HighScoreModal';
 import { isHighScore } from '../utils/leaderboard';
 import { addBalance } from '../utils/casinoBalance';
 import './Wordle.css';
+import useGameActivity from '../hooks/useGameActivity';
 
 const ANSWERS = [
   'ABOUT','ABOVE','ABUSE','ACTOR','ACUTE','ADMIT','ADOPT','ADULT','AFTER','AGAIN',
@@ -259,6 +260,7 @@ const KEYBOARD_ROWS = [
 ];
 
 export default function Wordle({ onBack }) {
+  useGameActivity('wordle');
   const todayKey = getTodayKey();
   const target = getDailyWord();
   const saved = loadGameState(todayKey);

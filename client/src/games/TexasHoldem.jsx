@@ -5,6 +5,7 @@ import { isHighScore } from '../utils/leaderboard';
 import HighScoreModal from '../components/HighScoreModal';
 import './TexasHoldem.css';
 import useBanCheck from '../hooks/useBanCheck';
+import useGameActivity from '../hooks/useGameActivity';
 
 // ── Card component ─────────────────────────────────────────────────────────────
 const RED_SUITS = new Set(['♥', '♦']);
@@ -321,6 +322,7 @@ function GameTable({ roomState, myId, emit }) {
 // ── Root component ─────────────────────────────────────────────────────────────
 export default function TexasHoldem() {
   const { banned, reason, expiresAt, loading } = useBanCheck('texas-holdem');
+  useGameActivity('texas-holdem');
   const { emit, on, connected } = useSocket('/texasholdem');
   const [myId, setMyId]           = useState(null);
   const [roomState, setRoomState] = useState(null);

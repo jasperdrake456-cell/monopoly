@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './Slots.css';
 import useBanCheck from '../hooks/useBanCheck';
+import useGameActivity from '../hooks/useGameActivity';
 
 const REEL_POOL = [
   '💎','7️⃣','⭐','⭐','🔔','🔔','🍇','🍇','🍊','🍊','🍋','🍋','🍋','🍒','🍒','🍒'
@@ -58,6 +59,7 @@ const REEL_STOP_DELAY = 150; // ms between each reel stopping
 
 export default function Slots() {
   const { banned, reason, expiresAt, loading } = useBanCheck('slots');
+  useGameActivity('slots');
   const [balance, setBalance] = useState(getBalance);
   const [bet, setBet] = useState(10);
   const [reels, setReels] = useState(['🎰', '🎰', '🎰']);

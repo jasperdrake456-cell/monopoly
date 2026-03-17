@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './Wheel.css';
 import useBanCheck from '../hooks/useBanCheck';
+import useGameActivity from '../hooks/useGameActivity';
 
 // Wheel of Fortune — casino style
 // Segments are weighted by risk mode. Player bets on a color zone.
@@ -76,6 +77,7 @@ const MAX_HISTORY = 8;
 
 export default function Wheel() {
   const { banned, reason, expiresAt, loading } = useBanCheck('wheel');
+  useGameActivity('wheel');
   const [balance, setBalance]       = useState(getBalance);
   const [bet, setBet]               = useState(10);
   const [risk, setRisk]             = useState('medium');

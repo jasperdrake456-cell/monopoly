@@ -366,6 +366,32 @@ function logout(token) {
 }
 
 /**
+ * Enforce a maximum number of accounts per IP address.
+ * If accounts sharing `ip` exceed `maxAccounts`, delete the poorest one(s).
+ * Admin account is never deleted.
+ */
+function enforceIPAccountLimit(ip, maxAccounts = 3) {
+  if (!ip || ip === 'unknown') return;
+  const users = readUsers();
+  const matches = Object.values(users)
+    .filter(u => u.lastIP === ip && u.username !== ADMIN_USERNAME);
+  if (matches.length <= maxAccounts) return;
+
+  // Sort poorest first, delete the extras
+  matches.sort((a, b) => (a.casinoBalance || 0) - (b.casinoBalance || 0));
+  const toDelete = matches.slice(0, matches.length - maxAccounts);
+  for (const u of toDelete) {
+    delete users[u.username];
+    for (const [token, data] of sessions) {
+      if (data.username === u.username) sessions.delete(token);
+    }
+    console.log(`[IPLimit] Auto-deleted @${u.username} (IP ${ip}, bal ${u.casinoBalance})`);
+  }
+  writeUsers(users);
+  writeSessionsToDisk();
+}
+
+/**
  * Admin only: destroy all active sessions for a user (kick them out).
  * Returns { ok, sessionsKilled }
  */
@@ -390,5 +416,5 @@ function kickUser(adminToken, targetUsername) {
 module.exports = {
   register, login, getMe, syncBalance, claimDaily, transfer, logout, userExists,
   deleteUser, adminGiveMoney, adminSetBalance, listUsers, isAdminToken, getTopBalances,
-  recordIP, kickUser,
+  recordIP, kickUser, enforceIPAccountLimit,
 };

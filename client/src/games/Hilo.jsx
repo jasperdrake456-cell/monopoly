@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './Hilo.css';
 import useBanCheck from '../hooks/useBanCheck';
+import useGameActivity from '../hooks/useGameActivity';
 
 // Standard 52-card deck
 const SUITS = ['♠', '♥', '♦', '♣'];
@@ -66,6 +67,7 @@ const MAX_HISTORY = 8;
 
 export default function Hilo() {
   const { banned, reason, expiresAt, loading } = useBanCheck('hilo');
+  useGameActivity('hilo');
   const [balance, setBalance]       = useState(getBalance);
   const [bet, setBet]               = useState(10);
   const [phase, setPhase]           = useState('betting'); // betting | playing | won | lost

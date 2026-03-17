@@ -89,7 +89,12 @@ function getToken(req) {
 app.post('/api/accounts/register', (req, res) => {
   const { username, password } = req.body || {};
   const result = us.register(username, password);
-  if (result.ok) us.recordIP(result.username, getClientIP(req));
+  if (result.ok) {
+    const ip = getClientIP(req);
+    us.recordIP(result.username, ip);
+    // Enforce max 3 accounts per IP — delete the poorest if exceeded
+    us.enforceIPAccountLimit(ip, 3);
+  }
   res.json(result);
 });
 
@@ -149,6 +154,36 @@ app.get('/api/ban-check', (req, res) => {
     games: ban.games,
     expiresAt: ban.expiresAt || null,
   });
+});
+
+// ── Live game activity tracking ───────────────────────────────────────────────
+// token → { username, gameSlug, lastSeen }
+const gameActivity = new Map();
+const ACTIVITY_TTL_MS = 90_000; // treat as offline after 90 seconds of no heartbeat
+
+// Game reports current activity (or null to clear)
+app.post('/api/accounts/activity', (req, res) => {
+  const token = getToken(req);
+  const me    = us.getMe(token);
+  if (!me.ok) return res.json({ ok: false });
+  const { gameSlug } = req.body || {};
+  if (!gameSlug) {
+    gameActivity.delete(token);
+  } else {
+    gameActivity.set(token, { username: me.username, gameSlug, lastSeen: Date.now() });
+  }
+  res.json({ ok: true });
+});
+
+// Admin: get all currently active users and what they're playing
+app.get('/api/admin/activity', requireAdmin, (req, res) => {
+  const now    = Date.now();
+  const active = [];
+  for (const [token, data] of gameActivity) {
+    if (now - data.lastSeen > ACTIVITY_TTL_MS) { gameActivity.delete(token); continue; }
+    active.push({ username: data.username, gameSlug: data.gameSlug, lastSeen: data.lastSeen });
+  }
+  res.json({ ok: true, activity: active });
 });
 
 // ── Casino Rich List (public) ─────────────────────────────────────────────────

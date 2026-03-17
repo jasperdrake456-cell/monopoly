@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import HighScoreModal from '../components/HighScoreModal';
 import { isHighScore } from '../utils/leaderboard';
 import './Snake.css';
+import useGameActivity from '../hooks/useGameActivity';
 
 const COLS = 20, ROWS = 20, CELL = 22;
 const W = COLS * CELL, H = ROWS * CELL;
@@ -17,6 +18,7 @@ function randFood(snake) {
 const BEST_KEY = 'snake_best';
 
 export default function Snake({ onBack }) {
+  useGameActivity('snake');
   const canvasRef = useRef(null);
   const stateRef  = useRef(null);
   const timerRef  = useRef(null);

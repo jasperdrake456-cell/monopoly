@@ -3,7 +3,9 @@ const fs = require('fs');
 const path = require('path');
 const { isClean } = require('./profanity');
 
-const DATA_FILE = path.join(__dirname, 'data', 'leaderboards.json');
+const DATA_DIR  = process.env.DATA_DIR || path.join(__dirname, 'data');
+if (!require('fs').existsSync(DATA_DIR)) require('fs').mkdirSync(DATA_DIR, { recursive: true });
+const DATA_FILE = path.join(DATA_DIR, 'leaderboards.json');
 const MAX = 10;
 
 let store = {};

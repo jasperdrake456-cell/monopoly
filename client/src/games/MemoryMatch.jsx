@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import HighScoreModal from '../components/HighScoreModal';
 import { isHighScore } from '../utils/leaderboard';
 import './MemoryMatch.css';
+import useGameActivity from '../hooks/useGameActivity';
 
 const EMOJIS = ['🎮','🎯','🎲','🎸','🚀','🦊','🍕','🌈','⚡','🎃','🐉','💎','🔥','🌸','🦄','🎭'];
 
@@ -17,6 +18,7 @@ function newBoard() {
 }
 
 export default function MemoryMatch() {
+  useGameActivity('memory-match');
   const [cards, setCards] = useState(newBoard);
   const [moves, setMoves] = useState(0);
   const [time, setTime] = useState(0);

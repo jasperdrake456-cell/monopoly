@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './ChickenCross.css';
 import useBanCheck from '../hooks/useBanCheck';
+import useGameActivity from '../hooks/useGameActivity';
 
 const ROWS = 8;
 const COLS = 5;
@@ -33,6 +34,7 @@ function makeEmptyCells() {
 
 export default function ChickenCross() {
   const { banned, reason, expiresAt, loading } = useBanCheck('chicken-cross');
+  useGameActivity('chicken-cross');
   const [balance, setBalance]       = useState(getBalance);
   const [bet, setBet]               = useState(10);
   const [difficulty, setDifficulty] = useState('medium');

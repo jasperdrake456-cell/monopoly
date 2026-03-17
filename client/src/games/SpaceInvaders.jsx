@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import HighScoreModal from '../components/HighScoreModal';
 import { isHighScore } from '../utils/leaderboard';
 import './SpaceInvaders.css';
+import useGameActivity from '../hooks/useGameActivity';
 
 const W = 560, H = 640;
 const PLAYER_W = 40, PLAYER_H = 24, PLAYER_Y = H - 60;
@@ -104,6 +105,7 @@ function drawPlayer(ctx, x) {
 }
 
 export default function SpaceInvaders({ onBack }) {
+  useGameActivity('space-invaders');
   const canvasRef = useRef(null);
   const stateRef = useRef(null);
   const rafRef = useRef(null);

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './Mines.css';
 import useBanCheck from '../hooks/useBanCheck';
+import useGameActivity from '../hooks/useGameActivity';
 
 // ── Mines game (Rainbet-style) ────────────────────────────────────────────────
 // Grid: 5×5 = 25 tiles. Player picks mines count (1–24).
@@ -35,6 +36,7 @@ const MINE_COUNTS = [1, 2, 3, 5, 7, 10, 15, 20, 24];
 
 export default function Mines() {
   const { banned, reason, expiresAt, loading } = useBanCheck('mines');
+  useGameActivity('mines');
   const [balance, setBalance]   = useState(getBalance);
   const [bet, setBet]           = useState(10);
   const [mineCount, setMineCount] = useState(3);

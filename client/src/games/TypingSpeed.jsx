@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import HighScoreModal from '../components/HighScoreModal';
 import { isHighScore } from '../utils/leaderboard';
 import './TypingSpeed.css';
+import useGameActivity from '../hooks/useGameActivity';
 
 const PASSAGES = [
   "The quick brown fox jumps over the lazy dog near the riverbank where golden leaves drift gently in the autumn breeze.",
@@ -19,6 +20,7 @@ function pick() {
 }
 
 export default function TypingSpeed() {
+  useGameActivity('typing-speed');
   const [passage, setPassage] = useState(pick);
   const [typed, setTyped] = useState('');
   const [started, setStarted] = useState(false);

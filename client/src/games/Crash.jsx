@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './Crash.css';
 import useBanCheck from '../hooks/useBanCheck';
+import useGameActivity from '../hooks/useGameActivity';
 
 // Crash point: 0.99 / (1 - random) with 1% house edge
 // Minimum 1.00x (instant crash ~1% of time)
@@ -15,6 +16,7 @@ const MAX_HISTORY = 10;
 
 export default function Crash() {
   const { banned, reason, expiresAt, loading } = useBanCheck('crash');
+  useGameActivity('crash');
   const [balance, setBalance]         = useState(getBalance);
   const [bet, setBet]                 = useState(10);
   const [autoCashout, setAutoCashout] = useState('');

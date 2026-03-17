@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import HighScoreModal from '../components/HighScoreModal';
 import { isHighScore } from '../utils/leaderboard';
 import './FlappyBird.css';
+import useGameActivity from '../hooks/useGameActivity';
 
 const W = 400, H = 550;
 const BIRD_X = 80, BIRD_R = 16;
@@ -15,6 +16,7 @@ function newPipe(x) {
 }
 
 export default function FlappyBird() {
+  useGameActivity('flappy-bird');
   const canvasRef = useRef(null);
   const state = useRef({
     birdY: H / 2, velY: 0,

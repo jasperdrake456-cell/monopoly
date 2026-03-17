@@ -339,3 +339,18 @@
   font-size: 0.85rem;
   cursor: default;
 }
+
+.admin-user-online {
+  font-size: 0.78rem;
+  color: #4ade80;
+  font-weight: 600;
+  padding: 2px 7px;
+  background: rgba(74,222,128,0.1);
+  border: 1px solid rgba(74,222,128,0.25);
+  border-radius: 999px;
+}
+
+.admin-user-offline {
+  font-size: 0.75rem;
+  color: #4b5563;
+}

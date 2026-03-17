@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './Dice.css';
 import useBanCheck from '../hooks/useBanCheck';
+import useGameActivity from '../hooks/useGameActivity';
 
 // 1% house edge: multiplier = 0.99 / winChance
 function calcMultiplier(target, direction) {
@@ -18,6 +19,7 @@ function calcWinChance(target, direction) {
 
 export default function Dice() {
   const { banned, reason, expiresAt, loading } = useBanCheck('dice');
+  useGameActivity('dice');
   const [balance, setBalance]     = useState(getBalance);
   const [bet, setBet]             = useState(10);
   const [target, setTarget]       = useState(50);

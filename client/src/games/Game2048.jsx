@@ -3,6 +3,7 @@ import HighScoreModal from '../components/HighScoreModal';
 import { isHighScore } from '../utils/leaderboard';
 import { addBalance } from '../utils/casinoBalance';
 import './Game2048.css';
+import useGameActivity from '../hooks/useGameActivity';
 
 const TILE_COLORS = {
   0:    ['#cdc1b4', '#776e65'],
@@ -88,6 +89,7 @@ function canMove(board) {
 const BEST_KEY = '2048_best';
 
 export default function Game2048({ onBack }) {
+  useGameActivity('2048');
   const [board, setBoard] = useState(() => newBoard());
   const [score, setScore] = useState(0);
   const [best, setBest]   = useState(() => parseInt(localStorage.getItem(BEST_KEY) || '0'));

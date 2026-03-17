@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './Baccarat.css';
 import useBanCheck from '../hooks/useBanCheck';
+import useGameActivity from '../hooks/useGameActivity';
 
 // ── Deck ─────────────────────────────────────────────────────────────────────
 const SUITS = ['♠', '♥', '♦', '♣'];
@@ -60,6 +61,7 @@ function BacCard({ card, faceDown }) {
 // ── Main component ────────────────────────────────────────────────────────────
 export default function Baccarat() {
   const { banned, reason, expiresAt, loading } = useBanCheck('baccarat');
+  useGameActivity('baccarat');
   const shoeRef   = useRef(createShoe());
   const [balance, setBalance] = useState(getBalance);
   const [bet, setBet]         = useState(10);

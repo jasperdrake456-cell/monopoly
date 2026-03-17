@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './Plinko.css';
 import useBanCheck from '../hooks/useBanCheck';
+import useGameActivity from '../hooks/useGameActivity';
 
 // Multiplier tables — 8 rows, 9 buckets (indexed 0–8)
 const MULTIPLIERS = {
@@ -31,6 +32,7 @@ function dropBall() {
 
 export default function Plinko() {
   const { banned, reason, expiresAt, loading } = useBanCheck('plinko');
+  useGameActivity('plinko');
   const [balance, setBalance]   = useState(getBalance);
   const [bet, setBet]           = useState(10);
   const [risk, setRisk]         = useState('medium');

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './Blackjack.css';
 import useBanCheck from '../hooks/useBanCheck';
+import useGameActivity from '../hooks/useGameActivity';
 
 // ── Deck ─────────────────────────────────────────────────────────────────────
 const SUITS    = ['♠', '♥', '♦', '♣'];
@@ -108,6 +109,7 @@ function Hand({ cards, hideSecond, label, total, soft, active, handResult, betAm
 // ── Main component ────────────────────────────────────────────────────────────
 export default function Blackjack() {
   const { banned, reason, expiresAt, loading } = useBanCheck('blackjack');
+  useGameActivity('blackjack');
   const shoeRef = useRef(createShoe());
 
   const [balance, setBalance]       = useState(getBalance);

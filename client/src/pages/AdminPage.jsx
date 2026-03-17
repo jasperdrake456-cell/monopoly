@@ -59,6 +59,7 @@ export default function AdminPage() {
   const [banUserReason, setBanUserReason] = useState('');
   const [banUserDur, setBanUserDur] = useState('permanent');
   const [banUserGames, setBanUserGames] = useState('all');
+  const [activity, setActivity]         = useState({}); // username → gameSlug
 
   const ALL_GAMES = [
     'crash','plinko','dice','roulette','blackjack','baccarat',
@@ -96,11 +97,30 @@ export default function AdminPage() {
     authFetch('/api/admin/bans/users', token).then(d => { if (d.ok) setUserBans(d.bans); }).catch(() => {});
   }, [token]);
 
+  const loadActivity = useCallback(() => {
+    if (!token) return;
+    authFetch('/api/admin/activity', token)
+      .then(d => {
+        if (d.ok) {
+          const map = {};
+          for (const a of d.activity) map[a.username] = a.gameSlug;
+          setActivity(map);
+        }
+      }).catch(() => {});
+  }, [token]);
+
   useEffect(() => {
     if (tab === 'reports') { loadReports(); loadUsers(); }
-    if (tab === 'users')   loadUsers();
+    if (tab === 'users')   { loadUsers(); loadActivity(); }
     if (tab === 'bans')  { loadIPBans(); loadUserBans(); }
-  }, [tab, loadReports, loadUsers, loadIPBans, loadUserBans]);
+  }, [tab, loadReports, loadUsers, loadIPBans, loadUserBans, loadActivity]);
+
+  // Poll activity every 10 seconds while on users tab
+  useEffect(() => {
+    if (tab !== 'users') return;
+    const id = setInterval(loadActivity, 10_000);
+    return () => clearInterval(id);
+  }, [tab, loadActivity]);
 
   async function dismissReport(id) {
     await authFetch(`/api/admin/reports/${id}/dismiss`, token, { method: 'POST' });
@@ -371,9 +391,20 @@ export default function AdminPage() {
                     </span>
                   )}
                   {!u.lastIP && <span className="admin-user-ip admin-user-ip--unknown">🌐 No IP yet</span>}
+                  {activity[u.username]
+                    ? <span className="admin-user-online" title="Currently online">🟢 {activity[u.username]}</span>
+                    : <span className="admin-user-offline">⚫ offline</span>
+                  }
                 </div>
                 {u.username !== 'jasper' && (
                   <div className="admin-user-actions">
+                    {activity[u.username] && (
+                      <button className="admin-btn admin-btn--danger admin-btn--sm" onClick={() => {
+                        setBanUser_(u.username); setBanUserGames(activity[u.username]); setBanUserDur('permanent');
+                        setBanUserReason(''); setTab('bans');
+                        setStatus(`Pre-filled ban from ${activity[u.username]} for @${u.username}`);
+                      }}>🎯 Ban from {activity[u.username]}</button>
+                    )}
                     <button className="admin-btn admin-btn--danger admin-btn--sm" onClick={() => {
                       setBanUser_(u.username); setBanUserGames('all'); setBanUserDur('permanent');
                       setBanUserReason(''); setTab('bans');

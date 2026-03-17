@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './Tower.css';
 import useBanCheck from '../hooks/useBanCheck';
+import useGameActivity from '../hooks/useGameActivity';
 
 // Tower: ROWS floors, each floor has COLS tiles.
 // Per difficulty: number of bomb tiles per floor.
@@ -57,6 +58,7 @@ const MAX_HISTORY = 8;
 
 export default function Tower() {
   const { banned, reason, expiresAt, loading } = useBanCheck('tower');
+  useGameActivity('tower');
   const [balance, setBalance]       = useState(getBalance);
   const [bet, setBet]               = useState(10);
   const [difficulty, setDifficulty] = useState('medium');

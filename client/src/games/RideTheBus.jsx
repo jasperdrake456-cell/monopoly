@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
 import './RideTheBus.css';
 import useBanCheck from '../hooks/useBanCheck';
+import useGameActivity from '../hooks/useGameActivity';
 
 // ── Deck constants ──────────────────────────────────────────────────────────
 const SUITS    = ['hearts', 'diamonds', 'clubs', 'spades'];
@@ -58,6 +59,7 @@ function Card({ card, faceDown, flipping }) {
 // ── Main game component ──────────────────────────────────────────────────────
 export default function RideTheBus() {
   const { banned, reason, expiresAt, loading } = useBanCheck('ride-the-bus');
+  useGameActivity('ride-the-bus');
   const deckRef = useRef([]);
 
   const [balance, setBalance] = useState(getBalance);
