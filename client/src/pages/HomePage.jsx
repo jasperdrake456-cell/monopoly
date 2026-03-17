@@ -28,7 +28,10 @@ const CASINO_GAMES = [
   { path: '/ride-the-bus', name: 'Ride the Bus', desc: 'Guess Red/Black → Hi/Lo → In/Out → Suit. Win up to 20×!', icon: '🚌', players: '1 player' },
   { path: '/slots',         name: 'Slots',         desc: 'Spin the reels — hit 💎💎💎 for 1000× your bet!', icon: '🎰', players: '1 player' },
   { path: '/chicken-cross', name: 'Chicken Cross', desc: 'Cross 8 lanes of cars row by row — cash out before you get hit!', icon: '🐔', players: '1 player' },
-  { path: '/texas-holdem', name: "Texas Hold'em", desc: 'Community card poker — bet, raise, bluff your way to the pot', icon: '🃏', players: '2-6 players' },
+  { path: '/texas-holdem',  name: "Texas Hold'em",  desc: 'Community card poker — bet, raise, bluff your way to the pot', icon: '🃏', players: '2-6 players' },
+  { path: '/hilo',          name: 'HiLo',           desc: 'Guess higher or lower each flip — compound your multiplier and cash out!', icon: '🃏', players: '1 player' },
+  { path: '/tower',         name: 'Tower',           desc: 'Pick a safe tile each floor — climb higher for bigger multipliers!', icon: '🗼', players: '1 player' },
+  { path: '/wheel',         name: 'Wheel',           desc: 'Spin the wheel — pick your colour and risk level to win big!', icon: '🎡', players: '1 player' },
 ];
 
 const MULTI_GAMES = [

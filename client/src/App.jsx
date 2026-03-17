@@ -37,6 +37,9 @@ import TexasHoldemPage from './pages/TexasHoldemPage';
 import SlotsPage from './pages/SlotsPage';
 import CasinoLeaderboardPage from './pages/CasinoLeaderboardPage';
 import ChickenCrossPage from './pages/ChickenCrossPage';
+import HiloPage from './pages/HiloPage';
+import TowerPage from './pages/TowerPage';
+import WheelPage from './pages/WheelPage';
 import RequireAuth from './components/RequireAuth';
 import './App.css';
 
@@ -77,6 +80,9 @@ export default function App() {
         <Route path="/slots"         element={<RequireAuth><SlotsPage /></RequireAuth>} />
         <Route path="/casino-leaderboard" element={<CasinoLeaderboardPage />} />
         <Route path="/chicken-cross"      element={<RequireAuth><ChickenCrossPage /></RequireAuth>} />
+        <Route path="/hilo"               element={<RequireAuth><HiloPage /></RequireAuth>} />
+        <Route path="/tower"              element={<RequireAuth><TowerPage /></RequireAuth>} />
+        <Route path="/wheel"              element={<RequireAuth><WheelPage /></RequireAuth>} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/transfer" element={<TransferPage />} />
         <Route path="/admin" element={<AdminPage />} />
