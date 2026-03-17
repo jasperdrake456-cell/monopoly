@@ -229,7 +229,7 @@ export default function Wheel() {
           {bal < 1 ? (
             <div className="wheel-broke">
               <div className="wheel-broke-title">You're broke! 😬</div>
-              <div className="wheel-broke-sub">Your daily $250 arrives in</div>
+              <div className="wheel-broke-sub">Your hourly $1,000 arrives in</div>
               <div className="wheel-broke-countdown">{countdown}</div>
             </div>
           ) : (

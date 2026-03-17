@@ -165,7 +165,7 @@ export default function Dice() {
       {balance_ < 1 ? (
         <div className="dice-broke">
           <div className="dice-broke-title">You're broke! 😬</div>
-          <div className="dice-broke-sub">Daily $250 arrives in</div>
+          <div className="dice-broke-sub">Hourly $1,000 arrives in</div>
           <div className="dice-broke-countdown">{countdown}</div>
         </div>
       ) : (

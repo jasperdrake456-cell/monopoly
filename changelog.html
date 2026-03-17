@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Vault — Changelog</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0f14;
+    --surface: #161b27;
+    --surface2: #1e2535;
+    --border: #2a3147;
+    --text: #e2e8f0;
+    --muted: #7c8ba1;
+    --accent: #4f8ef7;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --purple: #a855f7;
+    --orange: #f97316;
+    --teal: #14b8a6;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    background: linear-gradient(135deg, #1a1f32 0%, #0d1220 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .logo-icon {
+    font-size: 2rem;
+    filter: drop-shadow(0 0 12px rgba(79,142,247,0.5));
+  }
+
+  .logo-text h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #e2e8f0, #4f8ef7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .logo-text p {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.1rem;
+  }
+
+  .stats {
+    display: flex;
+    gap: 1.5rem;
+  }
+
+  .stat { text-align: center; }
+
+  .stat-val {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* ─── CONTROLS ─── */
+  .controls-wrap {
+    max-width: 860px;
+    margin: 1.5rem auto 0;
+    padding: 0 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .filters {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .filter-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-right: 0.25rem;
+  }
+
+  .filter-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .filter-btn:hover { color: var(--text); border-color: #3d4f70; }
+  .filter-btn.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+  .filter-btn[data-type="feature"].active { background: var(--green); border-color: var(--green); }
+  .filter-btn[data-type="fix"].active { background: var(--red); border-color: var(--red); }
+  .filter-btn[data-type="ui"].active { background: var(--purple); border-color: var(--purple); }
+  .filter-btn[data-type="infra"].active { background: var(--orange); border-color: var(--orange); }
+  .filter-btn[data-type="removed"].active { background: var(--muted); border-color: var(--muted); }
+
+  /* ─── SEARCH ─── */
+  .search-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.6rem 1rem 0.6rem 2.5rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.15s;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237c8ba1' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 0.75rem center;
+  }
+
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--muted); }
+
+  /* ─── MAIN ─── */
+  main {
+    max-width: 860px;
+    margin: 2rem auto;
+    padding: 0 2rem 4rem;
+  }
+
+  /* ─── DATE GROUP ─── */
+  .date-group { margin-bottom: 3rem; }
+  .date-group.hidden { display: none; }
+
+  .date-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .date-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.35rem 0.9rem;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+
+  .date-line { flex: 1; height: 1px; background: var(--border); }
+
+  .date-count {
+    font-size: 0.75rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* ─── COMMIT CARD ─── */
+  .commit-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+
+  .commit-card:hover { border-color: #3d4f70; }
+  .commit-card.hidden { display: none; }
+
+  .commit-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.9rem 1rem;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .commit-header:hover { background: rgba(255,255,255,0.02); }
+
+  .type-badge {
+    flex-shrink: 0;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.15rem;
+  }
+
+  .badge-feature { background: rgba(34,197,94,0.15); color: var(--green); }
+  .badge-fix     { background: rgba(239,68,68,0.15);  color: var(--red); }
+  .badge-ui      { background: rgba(168,85,247,0.15); color: var(--purple); }
+  .badge-infra   { background: rgba(249,115,22,0.15); color: var(--orange); }
+  .badge-removed { background: rgba(124,139,161,0.15);color: var(--muted); }
+  .badge-chore   { background: rgba(20,184,166,0.15); color: var(--teal); }
+
+  .commit-title {
+    flex: 1;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .has-details .commit-title::after {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-right: 1.5px solid var(--muted);
+    border-bottom: 1.5px solid var(--muted);
+    transform: rotate(45deg) translateY(-2px);
+    margin-left: 0.5rem;
+    transition: transform 0.2s;
+    vertical-align: middle;
+  }
+
+  .has-details.open .commit-title::after {
+    transform: rotate(225deg) translateY(-2px);
+  }
+
+  /* ─── COMMIT META (hash + time) ─── */
+  .commit-meta {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.15rem;
+    margin-top: 0.1rem;
+  }
+
+  .commit-hash {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+
+  .commit-time {
+    font-size: 0.7rem;
+    color: #4a5568;
+  }
+
+  /* ─── COMMIT BODY ─── */
+  .commit-body {
+    display: none;
+    padding: 0 1rem 1rem 2.75rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .commit-body.open { display: block; }
+
+  .commit-body ul { list-style: none; margin-top: 0.75rem; }
+
+  .commit-body ul li {
+    font-size: 0.83rem;
+    color: #a0aec0;
+    padding: 0.2rem 0 0.2rem 1.1rem;
+    position: relative;
+    line-height: 1.5;
+  }
+
+  .commit-body ul li::before {
+    content: '–';
+    position: absolute;
+    left: 0;
+    color: var(--muted);
+  }
+
+  /* ─── EMPTY STATE ─── */
+  .empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--muted);
+    display: none;
+  }
+
+  .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+  .empty p { font-size: 0.9rem; }
+
+  /* ─── FOOTER ─── */
+  footer {
+    text-align: center;
+    padding: 2rem;
+    color: var(--muted);
+    font-size: 0.78rem;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3d4f70; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-icon">🎲</span>
+      <div class="logo-text">
+        <h1>Game Vault</h1>
+        <p>Development Changelog</p>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-val" id="stat-commits">57</div>
+        <div class="stat-label">Commits</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">3</div>
+        <div class="stat-label">Days Active</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" id="stat-features">—</div>
+        <div class="stat-label">Features</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" id="stat-fixes">—</div>
+        <div class="stat-label">Fixes</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="controls-wrap">
+  <div class="filters">
+    <span class="filter-label">Filter:</span>
+    <button class="filter-btn active" data-type="all">All</button>
+    <button class="filter-btn" data-type="feature">✦ Features</button>
+    <button class="filter-btn" data-type="fix">⚡ Fixes</button>
+    <button class="filter-btn" data-type="ui">◈ UI / Design</button>
+    <button class="filter-btn" data-type="infra">⚙ Infra / Server</button>
+    <button class="filter-btn" data-type="removed">✕ Removed</button>
+  </div>
+  <input type="text" class="search-input" placeholder="Search commits…" id="search" autocomplete="off">
+</div>
+
+<main id="changelog"></main>
+<div class="empty" id="empty"><div class="empty-icon">🔍</div><p>No commits match your search.</p></div>
+
+<footer>Game Vault · <span id="footer-date"></span></footer>
+
+<script>
+const COMMITS = [
+  // ─── March 16 ───
+  { hash:"3f3d747", date:"2026-03-16", time:"15:58", type:"feature",
+    title:"Blackjack full rules + Texas Hold'em casino buy-in integration", body:[] },
+  { hash:"d2cc250", date:"2026-03-16", time:"15:38", type:"feature",
+    title:"Add Slots game, Casino Rich List, Texas Hold'em polish + mobile fixes",
+    body:[
+      "Slots: new 3-reel casino game with 10-entry paytable (💎=1000×, 7=500×, 🍒=5×) plus partial cherry wins; ~93% RTP",
+      "Casino Rich List: public leaderboard showing top 20 players by balance",
+      "Texas Hold'em: show hand name (Flush, Full House, etc.) on each player's seat at showdown",
+      "Texas Hold'em: full mobile responsive CSS (≤600px breakpoints)",
+      "Server: STARTING_BALANCE bumped from 500 → 2000 to match client",
+      "HomePage: Slots added to Casino section; Rich List button next to Casino header",
+    ]},
+  { hash:"9878724", date:"2026-03-16", time:"15:29", type:"removed",
+    title:"Remove first-click safe guarantee from Mines",
+    body:[
+      "Mines are now placed fully randomly — the first tile can be a mine",
+      "Removed avoidIndex logic entirely",
+    ]},
+  { hash:"56a1fe3", date:"2026-03-16", time:"15:25", type:"ui",
+    title:"Move Texas Hold'em to Casino section, set starting balance to $2,000",
+    body:[
+      "Texas Hold'em now appears under Casino Games (not Multiplayer)",
+      "Starting casino balance changed from $25,000 to $2,000",
+      "Updated display text in RequireAuth and AuthPage",
+    ]},
+  { hash:"a295678", date:"2026-03-16", time:"14:59", type:"fix",
+    title:"Fix Mines race condition allowing mine re-rolls on rapid clicks",
+    body:[
+      "Rapid clicking before React re-render caused both handlers to see mines.size === 0, generating different mine placements and letting players reroll the grid",
+      "Fix: store mines in a useRef that updates synchronously",
+      "Use a playingRef guard to block clicks once a terminal state is reached",
+    ]},
+  { hash:"c8027da", date:"2026-03-16", time:"14:56", type:"feature",
+    title:"Add Texas Hold'em multiplayer, rewrite Blackjack rules, raise starting balance to $25k",
+    body:[
+      "Texas Hold'em: full multiplayer poker with room browser (no code needed), 2–6 players, complete hand evaluation, side pots, dealer/blind rotation, all betting actions",
+      "Blackjack: full rewrite with correct casino rules — 3:2 blackjack payout, 1:1 win, split aces, double down, dealer hits soft 17",
+      "Starting balance raised from $500 to $25,000 for all new players",
+    ]},
+  { hash:"2302c3c", date:"2026-03-16", time:"14:26", type:"fix",
+    title:"Fix roulette payouts and slow Plinko ball drop",
+    body:[
+      "Roulette: payouts now show total return multiplier (2× red/black, 3× dozens, 36× straight up)",
+      "Plinko: ball drop slowed from 120ms to 300ms per row",
+    ]},
+  { hash:"aca8e0f", date:"2026-03-16", time:"14:17", type:"feature",
+    title:"Add Crash, Plinko, Dice, Roulette casino games; fix Blackjack split exploit",
+    body:[
+      "Add 4 new Rainbet-style casino games: Crash (rocket multiplier), Plinko (SVG peg board), Dice (over/under slider), Roulette (SVG spinning wheel, authentic European number order, 9 bet types)",
+      "Fix Blackjack split double-payout bug — removed split entirely; resolveResult was scoring the same hand twice",
+      "All new games wrapped in RequireAuth, added to Casino section",
+    ]},
+  { hash:"6988764", date:"2026-03-16", time:"13:52", type:"feature",
+    title:"Add auth gate, custom Monopoly cards, admin balance editor",
+    body:[
+      "Require account to play any game (auth gate wall with sign in/create account)",
+      "Custom wild Monopoly chance & community chest cards (crypto crash, rap battle, IRS audit, etc.)",
+      "Admin Users tab: click balance to edit inline",
+    ]},
+  { hash:"3dd3de2", date:"2026-03-16", time:"13:06", type:"fix",
+    title:"Fix duplicate iWon declaration in ChessGame causing build failure", body:[] },
+  { hash:"aa949fb", date:"2026-03-16", time:"13:04", type:"feature",
+    title:"Major update: accounts, casino balance, rewards, moderation, Monopoly improvements",
+    body:[
+      "Account system: login/register/logout with JWT tokens, sessions persisted to disk",
+      "DATA_DIR env var for Railway Volume support (no account wipes on deploy)",
+      "Admin account: infinite balance, give money, delete accounts, view reports",
+      "Shared casino balance across all games via localStorage",
+      "Removed reload/$500 cheat buttons; live countdown to next daily $250",
+      "Fixed Blackjack payouts: regular win 2:1, blackjack 3:1, double down correct",
+      "Fixed Mines 24-mine auto-win bug",
+      "+$20 per correct trivia, +$10 for leaderboard, +$20 for winning multiplayer/solo games",
+      "Expanded profanity filter with l33tspeak decoding, enforced server-side",
+      "Report button on every leaderboard entry; Admin page with reports/users/give-money tabs",
+      "Monopoly tokens move 3× faster (650ms → 200ms per space)",
+      "Dramatic throw animation on first hop when dice are rolled",
+    ]},
+  { hash:"5de35f3", date:"2026-03-16", time:"12:33", type:"ui",
+    title:"Rename all back buttons to 'Game Vault'", body:[] },
+  { hash:"686ea41", date:"2026-03-16", time:"12:27", type:"infra",
+    title:"Persist sessions to disk + support Railway Volume for account data",
+    body:[
+      "Sessions now saved to sessions.json on every create/destroy, loaded back on startup",
+      "DATA_DIR env var controls where users.json and sessions.json live",
+      "Point at Railway Volume mount (e.g. /data) to prevent accounts being wiped on every deploy",
+    ]},
+  { hash:"9bb132e", date:"2026-03-16", time:"12:23", type:"fix",
+    title:"Fix Blackjack payouts: wins now pay 2:1, blackjack pays 3:1",
+    body:[
+      "Regular win: returns bet × 3 (net +2× bet)",
+      "Blackjack natural: returns bet × 4 (net +3× bet, 3:1 payout)",
+      "Push: returns original bet unchanged",
+      "Double down: 2:1 payout now correctly applied to the doubled stake on win",
+    ]},
+  { hash:"8125016", date:"2026-03-16", time:"12:21", type:"fix",
+    title:"Remove reload buttons, add daily countdown, fix 24-mines auto-win bug",
+    body:[
+      "Removed 'Reload $500' cheat buttons from Blackjack and Baccarat",
+      "All casino games now show a live countdown timer until the next 8am daily $250 reward",
+      "Fixed Mines 24-mine mode: 'first click safe' rule no longer applies when only 1 safe tile exists",
+    ]},
+  { hash:"1ae302c", date:"2026-03-16", time:"12:08", type:"feature",
+    title:"Add account system with login, registration, balance sync, and money transfers",
+    body:[
+      "New server/userStore.js: JSON-based user storage, HMAC-SHA256 password hashing, 30-day session tokens",
+      "New server API: /api/accounts/register|login|logout|me|balance/sync|daily|transfer|exists",
+      "New AuthContext: React context for global auth state, balance polling, server sync on login",
+      "New AuthPage: login/register tabs with username + password fields",
+      "New AccountWidget: header widget with avatar/balance dropdown, Send Money + Sign Out",
+      "New TransferPage: form to transfer casino balance between accounts",
+    ]},
+  { hash:"26ad329", date:"2026-03-16", time:"11:57", type:"feature",
+    title:"Add casino games, fix Monopoly crash, redesign world map board",
+    body:[
+      "Add shared casino balance (casinoBalance.js) with $250 daily reward at 8am",
+      "Add Blackjack — hit/stand/double/split, 3:2 payout, 6-deck shoe",
+      "Add Baccarat — Player/Banker/Tie bets, proper draw rules, 8:1 tie",
+      "Add Mines — 5×5 bomb grid (Rainbet-style), cash out anytime, 1–24 mines",
+      "Fix Monopoly crash on roll dice: BuyDecision and TradeOfferDisplay now receive board as prop",
+      "World Map Board: flag + landmark emojis for every city, dark navy ocean theme, spinning globe center",
+    ]},
+  { hash:"e9d3061", date:"2026-03-16", time:"11:34", type:"ui",
+    title:"Rename Game Hub → Game Vault", body:[] },
+  { hash:"5e48b8a", date:"2026-03-16", time:"11:30", type:"feature",
+    title:"Add card animations, jail police car, world board, reconnect UI, Ride the Bus",
+    body:[
+      "🚔 Police car animation when sent to jail with siren flash and BUSTED! banner",
+      "🃏 Card reveal overlay: Chance/Community Chest cards show as a full-screen flip animation visible to ALL players simultaneously",
+      "🌍 World Map board: second board variant with real world cities; host selects Classic vs World",
+      "🔄 Reconnect UI: 'Rejoin Game' banner when a saved session exists",
+      "🎰 Ride the Bus casino game added (Schedule 1 multipliers: 2×/3×/4×/20×)",
+    ]},
+  { hash:"f1c2035", date:"2026-03-16", time:"11:02", type:"feature",
+    title:"Add John Acido token, jail card trading, hop animation, close room, global leaderboards",
+    body:[
+      "🕺 John Acido token (vivid purple) added to token picker",
+      "Trade modal: offer/request Get Out of Jail Free cards in trades",
+      "Board: tokens hop through each space individually (380ms/space)",
+      "Host can close room from lobby or win screen — kicks all players back to home",
+      "Global server-side leaderboards shared across all users via REST API + JSON file",
+    ]},
+  { hash:"d2d40fd", date:"2026-03-16", time:"10:04", type:"feature",
+    title:"Add leaderboards, game chat, free parking $500 base, missed rent display",
+    body:[
+      "Leaderboards for all solo games with high score modal + profanity filter",
+      "In-game chat for Monopoly (💬 Chat button, slide-in panel)",
+      "Free Parking always starts at $500 and resets to $500 after collection",
+      "Show missed rent count (X/3) for all players in Dashboard + ActionPanel",
+    ]},
+  { hash:"e840323", date:"2026-03-16", time:"09:07", type:"chore",
+    title:"Temporarily disable password gate", body:[] },
+
+  // ─── March 14 ───
+  { hash:"7a3a771", date:"2026-03-14", time:"22:06", type:"feature",
+    title:"Add 5 new games: Flappy Bird, Memory Match, Pong, Tic-Tac-Toe, Typing Speed", body:[] },
+  { hash:"0dff6d4", date:"2026-03-14", time:"21:08", type:"fix",
+    title:"Fix trivia score bug: use useRef to avoid stale closure", body:[] },
+  { hash:"2b2bfd5", date:"2026-03-14", time:"20:59", type:"feature",
+    title:"Add daily pop-culture trivia feature", body:[] },
+  { hash:"7f7ea99", date:"2026-03-14", time:"20:46", type:"removed",
+    title:"Remove AI chat feature", body:[] },
+  { hash:"a7726fa", date:"2026-03-14", time:"19:26", type:"infra",
+    title:"Switch AI chat from Anthropic Claude to Google Gemini",
+    body:[
+      "Replace @anthropic-ai/sdk with @google/generative-ai",
+      "Use gemini-1.5-flash model with streaming via sendMessageStream",
+      "Rename env var ANTHROPIC_API_KEY → GEMINI_API_KEY",
+      "Update all UI text from 'Claude AI' to 'Gemini AI'",
+    ]},
+  { hash:"4dc4eb9", date:"2026-03-14", time:"19:21", type:"ui",
+    title:"Move Claude AI to header button instead of card section", body:[] },
+  { hash:"648a0f5", date:"2026-03-14", time:"19:17", type:"feature",
+    title:"Add Claude AI chat tab to game hub",
+    body:[
+      "New /claude route with full streaming chat UI",
+      "Server proxies to Claude Opus via @anthropic-ai/sdk",
+      "SSE streaming for real-time token display",
+      "Dark themed chat with typing indicator and auto-resize input",
+    ]},
+  { hash:"7eda583", date:"2026-03-14", time:"19:05", type:"fix",
+    title:"Fix password system — deterministic daily password, no stored state",
+    body:[
+      "Root cause: password lived in memory only; any Railway redeploy reset it to the env var default",
+      "Fix: password now computed from today's UTC date + PASSWORD_SECRET using HMAC-SHA256",
+      "Same inputs always produce the same output — identical across redeploys and restarts",
+    ]},
+  { hash:"15e87c1", date:"2026-03-14", time:"18:52", type:"fix",
+    title:"Fix password persistence — write to /tmp file to survive server restarts",
+    body:[
+      "Previously the password lived only in memory, so any redeploy would reset it",
+      "Now setPassword() also writes to /tmp/game_password.json and the server reads it back on startup",
+    ]},
+  { hash:"7502c16", date:"2026-03-14", time:"18:40", type:"fix",
+    title:"Fix Wordle bounce animation color persistence",
+    body:[
+      "Keep static background on color classes so bounce animation doesn't go transparent",
+      "CSS vars still enable the dark-to-color reveal during the flip",
+    ]},
+  { hash:"a15c75e", date:"2026-03-14", time:"18:35", type:"fix",
+    title:"Fix game bugs and improve polish",
+    body:[
+      "SpaceInvaders: fix alien bottom collision (was using alienOffsetX for Y check)",
+      "Sudoku: replace hardcoded (incorrect) solutions with a backtracking solver",
+      "Wordle: fix tile flip animation — color now reveals at the midpoint (45–55%)",
+    ]},
+  { hash:"a14076f", date:"2026-03-14", time:"17:04", type:"fix",
+    title:"Fix Wordle: NYT rules — word validation, hard mode, stats, animations", body:[] },
+  { hash:"304ef79", date:"2026-03-14", time:"15:24", type:"infra",
+    title:"Persist rotated password to Railway env var on rotation", body:[] },
+  { hash:"7b3869b", date:"2026-03-14", time:"08:33", type:"fix",
+    title:"Fix: allow page scroll on home screen", body:[] },
+  { hash:"1239645", date:"2026-03-14", time:"01:04", type:"feature",
+    title:"Add Wordle, Sudoku, and Space Invaders games", body:[] },
+  { hash:"b6882a6", date:"2026-03-14", time:"00:54", type:"feature",
+    title:"Force logout on password rotation + mobile touch controls for all games", body:[] },
+  { hash:"1b44b11", date:"2026-03-14", time:"00:38", type:"fix",
+    title:"Fix Resend error handling — check error response before logging success", body:[] },
+  { hash:"558a37b", date:"2026-03-14", time:"00:31", type:"infra",
+    title:"Switch email to Resend API (fixes Railway SMTP block)", body:[] },
+  { hash:"ad0d722", date:"2026-03-14", time:"00:20", type:"fix",
+    title:"Fix SMTP IPv6 issue on Railway — force IPv4 family", body:[] },
+
+  // ─── March 13 ───
+  { hash:"4600669", date:"2026-03-13", time:"23:52", type:"feature",
+    title:"Add daily password rotation with email",
+    body:[
+      "PasswordGate now verifies against server POST /api/auth (not client-side)",
+      "POST /api/rotate-password generates a new memorable password + emails it",
+      "passwordStore.js: in-memory store, generates Adjective+Noun+NN passwords",
+      "Scheduled task fires daily at 7:30 AM to rotate and email",
+    ]},
+  { hash:"203269a", date:"2026-03-13", time:"23:39", type:"feature",
+    title:"Add full multi-game platform: 9 games, password gate, homepage",
+    body:[
+      "Password gate (MrMoney) wraps entire app via PasswordGate component",
+      "React Router v6 with BrowserRouter, 10 routes (home + 9 games)",
+      "Solo games: 2048, Snake, Minesweeper, Tetris (fully client-side)",
+      "Multiplayer games: Chess, Connect 4, Checkers, Battleship",
+      "Server refactored to use socket.io namespaces (/monopoly /chess etc.)",
+      "MultiplayerLobby component reused across all 4 multiplayer games",
+    ]},
+  { hash:"5f7fb19", date:"2026-03-13", time:"23:03", type:"ui",
+    title:"Improve game UI: fix bugs, add rent data, visual polish",
+    body:[
+      "Add full rent/houseCost/mortgageValue to client boardData (fixes $undefined tooltips)",
+      "Fix accurate Monopoly property group colors",
+      "Brighten token colors (were too dark)",
+      "Show opponent cash/position/properties during waiting state",
+      "Demote Declare Bankruptcy to subtle danger style",
+      "Rename Net: → Worth:, M button → Mtg with proper aria-label",
+    ]},
+  { hash:"5c62219", date:"2026-03-13", time:"22:31", type:"ui",
+    title:"Combine right sidebar into left: single left panel layout",
+    body:[
+      "Remove right sidebar entirely; Dashboard moves into left sidebar below ActionPanel",
+      "Switch to 2-column grid layout (270px sidebar + 1fr board)",
+      "Left sidebar is scrollable to show both panels",
+    ]},
+  { hash:"0e3058e", date:"2026-03-13", time:"22:26", type:"ui",
+    title:"Reorganize game layout: remove leaderboard, add log overlay",
+    body:[
+      "Remove other-players leaderboard from left sidebar",
+      "Game log is now a slide-in overlay panel triggered by 📜 Log button in the topbar",
+    ]},
+  { hash:"ac975fd", date:"2026-03-13", time:"22:22", type:"ui",
+    title:"Add mobile responsive layout",
+    body:[
+      "Game layout switches to single-column flex on mobile (≤767px)",
+      "Board scales via CSS zoom: 44% on phones, 64% on 540–767px tablets",
+      "Topbar is sticky so room code and turn badge always visible while scrolling",
+    ]},
+  { hash:"f274fd8", date:"2026-03-13", time:"22:13", type:"fix",
+    title:"Fix side tile height collapse after writing-mode removal",
+    body:["Add .board-cell { width:100%; height:100% } so tiles fill their CSS grid cells"]},
+  { hash:"3b4f4cc", date:"2026-03-13", time:"22:07", type:"fix",
+    title:"Fix side tile text garbling and lobby overflow",
+    body:[
+      "Replace writing-mode on left/right tiles with CSS transform:rotate() — eliminates emoji garbling in Chrome",
+      "Scale up board tiles from 58px/92px to 64px/100px corners",
+      "Fix lobby waiting room: add overflow-y:auto so Start Game button is always reachable",
+    ]},
+  { hash:"270ac10", date:"2026-03-13", time:"21:51", type:"fix",
+    title:"Full feature audit: bug fixes, doubles UX, net worth, Play Again",
+    body:[
+      "Tax: free parking pot now gets actual paid amount",
+      "End Turn button now says 'Roll Again (Doubles!)' when doublesCount > 0",
+      "Gold doubles banner; warns '3rd doubles = Jail!' on second consecutive doubles",
+      "All action buttons debounced (600ms) to prevent double-fire",
+      "BuyDecision shows full rent table for properties/railroads/utilities",
+      "Net worth shown below cash (cash + property values + half-back on buildings)",
+      "Play Again button in win overlay (host only) — restarts with same players/tokens",
+    ]},
+  { hash:"4d13220", date:"2026-03-13", time:"21:38", type:"ui",
+    title:"Full UI overhaul: no-overflow layout, better design, inline dice",
+    body:[
+      "ActionPanel: has max-height + overflow-y:auto — buttons NEVER go off screen",
+      "Dice: rendered inline with unicode die faces (⚀⚁⚂⚃⚄⚅), shows doubles notification and roll animation",
+      "BuyDecision: shows color bar, rent table preview, cash in red if you can't afford it",
+      "Bankruptcy button shows a confirm dialog to prevent accidental clicks",
+      "Board: tightened to 92px corners / 58px tiles so it fits on 768px screens without zoom",
+    ]},
+  { hash:"18dd79e", date:"2026-03-13", time:"13:22", type:"fix",
+    title:"Fix tile text on all sides, add 12 character tokens",
+    body:[
+      "Fix: removed inner wrapper div from Tile.jsx that was breaking writing-mode on left/right board sides",
+      "Tokens expanded from 6 to 12: car, hat, dog, ship, cat, rocket, crown, lion, frog, robot, dragon, penguin",
+    ]},
+  { hash:"9ae4ae6", date:"2026-03-13", time:"13:15", type:"fix",
+    title:"Fix layout: no page-scroll, everything fits 100vh",
+    body:[
+      "Smaller board tiles (96px corners, 60px regular = ~748px total)",
+      "Strict 100vh containment: html/body/game-layout all overflow:hidden",
+      "EventLog fills remaining right sidebar space, scrolls internally",
+    ]},
+  { hash:"1e7b8a0", date:"2026-03-13", time:"13:10", type:"ui",
+    title:"Remove auctions, redesign board to match classic Monopoly style",
+    body:[
+      "No more auctions: declining to buy a property just skips it (ends turn)",
+      "Board: cream tiles, thick color bands, black borders, red italic MONOPOLY logo",
+      "Corners: GO with red arrow, Jail box, Free Parking, Go To Jail — all classic style",
+    ]},
+  { hash:"f38ca56", date:"2026-03-13", time:"13:00", type:"feature",
+    title:"Bigger board, better tokens, 3-strike bankruptcy rule", body:[] },
+  { hash:"1b062da", date:"2026-03-13", time:"12:28", type:"chore",
+    title:"Remove node_modules", body:[] },
+  { hash:"bbd0fe8", date:"2026-03-13", time:"12:24", type:"chore",
+    title:"Initial commit", body:[] },
+];
+
+// ─── RENDER ───
+
+const TYPE_LABEL = { feature:"Feature", fix:"Fix", ui:"UI", infra:"Infra", removed:"Removed", chore:"Chore" };
+const TYPE_CLASS  = { feature:"badge-feature", fix:"badge-fix", ui:"badge-ui", infra:"badge-infra", removed:"badge-removed", chore:"badge-chore" };
+const DATE_LABELS = { "2026-03-16":"March 16, 2026", "2026-03-14":"March 14, 2026", "2026-03-13":"March 13, 2026" };
+
+function groupByDate(commits) {
+  const g = {};
+  for (const c of commits) { if (!g[c.date]) g[c.date] = []; g[c.date].push(c); }
+  return g;
+}
+
+function buildCard(commit) {
+  const hasBody = commit.body && commit.body.length > 0;
+  const card = document.createElement('div');
+  card.className = 'commit-card' + (hasBody ? ' has-details' : '');
+  card.dataset.type = commit.type;
+  card.dataset.title = commit.title.toLowerCase();
+
+  const header = document.createElement('div');
+  header.className = 'commit-header';
+
+  const badge = document.createElement('span');
+  badge.className = 'type-badge ' + (TYPE_CLASS[commit.type] || 'badge-chore');
+  badge.textContent = TYPE_LABEL[commit.type] || commit.type;
+
+  const title = document.createElement('span');
+  title.className = 'commit-title';
+  title.textContent = commit.title;
+
+  const meta = document.createElement('div');
+  meta.className = 'commit-meta';
+
+  const hash = document.createElement('span');
+  hash.className = 'commit-hash';
+  hash.textContent = commit.hash;
+
+  const time = document.createElement('span');
+  time.className = 'commit-time';
+  time.textContent = commit.time;
+
+  meta.appendChild(hash);
+  meta.appendChild(time);
+
+  header.appendChild(badge);
+  header.appendChild(title);
+  header.appendChild(meta);
+  card.appendChild(header);
+
+  if (hasBody) {
+    const body = document.createElement('div');
+    body.className = 'commit-body';
+    const ul = document.createElement('ul');
+    for (const item of commit.body) {
+      const li = document.createElement('li');
+      li.textContent = item;
+      ul.appendChild(li);
+    }
+    body.appendChild(ul);
+    card.appendChild(body);
+    header.addEventListener('click', () => {
+      body.classList.toggle('open');
+      card.classList.toggle('open');
+    });
+  }
+
+  return card;
+}
+
+function render() {
+  const changelog = document.getElementById('changelog');
+  const groups = groupByDate(COMMITS);
+  const dates = Object.keys(groups).sort((a,b) => b.localeCompare(a));
+  let featureCount = 0, fixCount = 0;
+
+  for (const date of dates) {
+    const group = groups[date];
+    const section = document.createElement('div');
+    section.className = 'date-group';
+    section.dataset.date = date;
+
+    const dh = document.createElement('div');
+    dh.className = 'date-header';
+    const db = document.createElement('span');
+    db.className = 'date-badge';
+    db.textContent = DATE_LABELS[date] || date;
+    const dl = document.createElement('div');
+    dl.className = 'date-line';
+    const dc = document.createElement('span');
+    dc.className = 'date-count';
+    dc.textContent = group.length + ' commit' + (group.length !== 1 ? 's' : '');
+    dh.appendChild(db); dh.appendChild(dl); dh.appendChild(dc);
+    section.appendChild(dh);
+
+    for (const commit of group) {
+      if (commit.type === 'feature') featureCount++;
+      if (commit.type === 'fix') fixCount++;
+      section.appendChild(buildCard(commit));
+    }
+    changelog.appendChild(section);
+  }
+
+  document.getElementById('stat-features').textContent = featureCount;
+  document.getElementById('stat-fixes').textContent = fixCount;
+  document.getElementById('footer-date').textContent = 'Generated ' + new Date().toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'});
+}
+
+// ─── FILTER / SEARCH ───
+
+let activeFilter = 'all', searchQuery = '';
+
+function applyFilters() {
+  const cards  = document.querySelectorAll('.commit-card');
+  const groups = document.querySelectorAll('.date-group');
+
+  cards.forEach(card => {
+    const typeMatch   = activeFilter === 'all' || card.dataset.type === activeFilter;
+    const searchMatch = !searchQuery || card.dataset.title.includes(searchQuery);
+    card.classList.toggle('hidden', !(typeMatch && searchMatch));
+  });
+
+  let anyVisible = false;
+  groups.forEach(group => {
+    const visible = group.querySelectorAll('.commit-card:not(.hidden)').length > 0;
+    group.classList.toggle('hidden', !visible);
+    if (visible) anyVisible = true;
+  });
+
+  document.getElementById('empty').style.display = anyVisible ? 'none' : 'block';
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.type;
+    applyFilters();
+  });
+});
+
+document.getElementById('search').addEventListener('input', e => {
+  searchQuery = e.target.value.toLowerCase().trim();
+  applyFilters();
+});
+
+render();
+</script>
+</body>
+</html>

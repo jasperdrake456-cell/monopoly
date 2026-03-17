@@ -226,7 +226,7 @@ export default function RideTheBus() {
         {balance < 1 ? (
           <div className="rtb-broke">
             <div className="rtb-broke-msg">You're broke! 😬</div>
-            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', marginBottom: 6 }}>Your daily $250 arrives in</div>
+            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', marginBottom: 6 }}>Your hourly $1,000 arrives in</div>
             <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#FFD700', letterSpacing: 1 }}>{countdown}</div>
           </div>
         ) : (

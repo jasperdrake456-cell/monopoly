@@ -227,7 +227,7 @@ export default function Hilo() {
           {bal < 1 ? (
             <div className="hilo-broke">
               <div className="hilo-broke-title">You're broke! 😬</div>
-              <div className="hilo-broke-sub">Your daily $250 arrives in</div>
+              <div className="hilo-broke-sub">Your hourly $1,000 arrives in</div>
               <div className="hilo-broke-countdown">{countdown}</div>
             </div>
           ) : (

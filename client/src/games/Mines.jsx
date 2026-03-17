@@ -215,7 +215,7 @@ export default function Mines() {
           {balance_ < 1 ? (
             <div className="mines-broke">
               <div className="mines-broke-title">You're broke! 😬</div>
-              <div className="mines-broke-sub">Your daily $250 arrives in</div>
+              <div className="mines-broke-sub">Your hourly $1,000 arrives in</div>
               <div className="mines-broke-countdown">{countdown}</div>
             </div>
           ) : (

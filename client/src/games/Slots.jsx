@@ -148,7 +148,7 @@ export default function Slots() {
       {broke ? (
         <div className="slots-broke">
           <div className="slots-broke-title">You're broke! 💸</div>
-          <div className="slots-broke-sub">Next daily reward in:</div>
+          <div className="slots-broke-sub">Next hourly $1,000 in:</div>
           <div className="slots-broke-countdown">{formatMs(countdown)}</div>
         </div>
       ) : (

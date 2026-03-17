@@ -271,7 +271,7 @@ export default function Tower() {
           {bal < 1 ? (
             <div className="tower-broke">
               <div className="tower-broke-title">You're broke! 😬</div>
-              <div className="tower-broke-sub">Your daily $250 arrives in</div>
+              <div className="tower-broke-sub">Your hourly $1,000 arrives in</div>
               <div className="tower-broke-countdown">{countdown}</div>
             </div>
           ) : (

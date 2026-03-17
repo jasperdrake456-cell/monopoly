@@ -174,7 +174,7 @@ export default function Plinko() {
           {balance_ < 1 ? (
             <div className="plinko-broke">
               <div className="plinko-broke-title">You're broke! 😬</div>
-              <div className="plinko-broke-sub">Daily $250 arrives in</div>
+              <div className="plinko-broke-sub">Hourly $1,000 arrives in</div>
               <div className="plinko-broke-countdown">{countdown}</div>
             </div>
           ) : (

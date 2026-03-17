@@ -242,7 +242,7 @@ export default function Baccarat() {
           {balance_ < 1 ? (
             <div className="bac-broke">
               <div className="bac-broke-title">You're broke! 😬</div>
-              <div className="bac-broke-sub">Your daily $250 arrives in</div>
+              <div className="bac-broke-sub">Your hourly $1,000 arrives in</div>
               <div className="bac-broke-countdown">{countdown}</div>
             </div>
           ) : (

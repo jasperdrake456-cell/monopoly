@@ -214,7 +214,7 @@ export default function Roulette() {
           {balance_ < 1 ? (
             <div className="roulette-broke">
               <div className="roulette-broke-title">You're broke! 😬</div>
-              <div className="roulette-broke-sub">Your daily $250 arrives in</div>
+              <div className="roulette-broke-sub">Your hourly $1,000 arrives in</div>
               <div className="roulette-broke-countdown">{countdown}</div>
             </div>
           ) : (<>

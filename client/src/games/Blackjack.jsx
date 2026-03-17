@@ -493,7 +493,7 @@ export default function Blackjack() {
           {balance_ < 1 ? (
             <div className="bj-broke">
               <div className="bj-broke-title">You're broke! 😬</div>
-              <div className="bj-broke-sub">Your daily $250 arrives in</div>
+              <div className="bj-broke-sub">Your hourly $1,000 arrives in</div>
               <div className="bj-broke-countdown">{countdown}</div>
             </div>
           ) : (

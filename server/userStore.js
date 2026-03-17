@@ -90,7 +90,8 @@ function destroySession(token) {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const STARTING_BALANCE = 2000;
-const DAILY_AMOUNT     = 250;
+const DAILY_AMOUNT     = 1000;
+const HOURLY_MS        = 60 * 60 * 1000; // 1 hour
 const ADMIN_USERNAME   = 'jasper';
 const ADMIN_BALANCE    = 999_999_999; // effectively infinite
 
@@ -193,23 +194,18 @@ function claimDaily(token) {
   const user  = users[username];
   if (!user) return { ok: false, error: 'User not found' };
 
-  const now      = new Date();
-  const today8am = new Date(now);
-  today8am.setHours(8, 0, 0, 0);
-  const resetTime = now < today8am
-    ? today8am.getTime() - 86400000
-    : today8am.getTime();
+  const now       = Date.now();
+  const lastClaim = user.lastDaily || 0;
+  const nextReset = lastClaim + HOURLY_MS;
 
-  if (user.lastDaily >= resetTime) {
-    const nextReset = resetTime + 86400000;
+  if (now < nextReset) {
     return { ok: true, claimed: false, amount: 0, balance: user.casinoBalance, nextReset };
   }
 
   user.casinoBalance += DAILY_AMOUNT;
-  user.lastDaily = Date.now();
+  user.lastDaily = now;
   writeUsers(users);
-  const nextReset = resetTime + 86400000;
-  return { ok: true, claimed: true, amount: DAILY_AMOUNT, balance: user.casinoBalance, nextReset };
+  return { ok: true, claimed: true, amount: DAILY_AMOUNT, balance: user.casinoBalance, nextReset: now + HOURLY_MS };
 }
 
 /**

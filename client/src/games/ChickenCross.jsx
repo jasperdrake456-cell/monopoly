@@ -235,7 +235,7 @@ export default function ChickenCross() {
           {balance_ < 1 ? (
             <div className="cc-broke">
               <div className="cc-broke-title">You're broke! 😬</div>
-              <div className="cc-broke-sub">Daily $250 arrives in</div>
+              <div className="cc-broke-sub">Hourly $1,000 arrives in</div>
               <div className="cc-broke-timer">{countdown}</div>
             </div>
           ) : (

@@ -1,10 +1,11 @@
 // Shared casino balance — persisted in localStorage across all casino games
-// Daily reward: $250 at 8:00 AM every day
+// Hourly reward: $1000 every hour
 // When logged in, balance is synced to server after every change.
 
-const BALANCE_KEY    = 'casino_balance';
-const DAILY_KEY      = 'casino_last_daily';
-const DAILY_AMOUNT   = 250;
+const BALANCE_KEY     = 'casino_balance';
+const DAILY_KEY       = 'casino_last_daily';
+const HOURLY_AMOUNT   = 1000;
+const HOURLY_MS       = 60 * 60 * 1000; // 1 hour in ms
 const STARTING_AMOUNT = 2000; // New players start with $2,000
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
@@ -59,30 +60,23 @@ export function subtractBalance(amount) {
   setBalance(getBalance() - amount);
 }
 
-// ── Daily reward (client-side for guests; server handles logged-in users) ─────
+// ── Hourly reward (client-side for guests; server handles logged-in users) ────
 
-// Returns the amount claimed (250) if daily was available, or 0 if already claimed.
+// Returns amount claimed (1000) if an hour has passed, or 0 if not yet.
 export function checkAndClaimDaily() {
-  const now = new Date();
-  const today8am = new Date(now);
-  today8am.setHours(8, 0, 0, 0);
-  const resetTime = now < today8am
-    ? new Date(today8am.getTime() - 86400000)
-    : today8am;
-
-  const lastDaily = parseInt(localStorage.getItem(DAILY_KEY) || '0', 10);
-  if (lastDaily < resetTime.getTime()) {
-    addBalance(DAILY_AMOUNT);
-    localStorage.setItem(DAILY_KEY, String(Date.now()));
-    return DAILY_AMOUNT;
+  const now = Date.now();
+  const lastClaim = parseInt(localStorage.getItem(DAILY_KEY) || '0', 10);
+  if (now - lastClaim >= HOURLY_MS) {
+    addBalance(HOURLY_AMOUNT);
+    localStorage.setItem(DAILY_KEY, String(now));
+    return HOURLY_AMOUNT;
   }
   return 0;
 }
 
+// Returns ms until next hourly reward is available
 export function msUntilNextDaily() {
-  const now = new Date();
-  const next8am = new Date(now);
-  next8am.setHours(8, 0, 0, 0);
-  if (now >= next8am) next8am.setDate(next8am.getDate() + 1);
-  return next8am.getTime() - now.getTime();
+  const lastClaim = parseInt(localStorage.getItem(DAILY_KEY) || '0', 10);
+  const next = lastClaim + HOURLY_MS;
+  return Math.max(0, next - Date.now());
 }
