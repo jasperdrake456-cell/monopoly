@@ -15,14 +15,14 @@ async function sendPasswordEmail(newPassword) {
 
   const resend = new Resend(apiKey);
   const appUrl = process.env.APP_URL || '';
-  const from = process.env.EMAIL_FROM || 'Game Hub <onboarding@resend.dev>';
+  const from = process.env.EMAIL_FROM || 'Game Vault <onboarding@resend.dev>';
 
   const { error } = await resend.emails.send({
     from,
     to: to.split(',').map(e => e.trim()),
-    subject: `🎮 Game Hub — Today's Password`,
+    subject: `🎮 Game Vault — Today's Password`,
     text: [
-      `Today's Game Hub password is:`,
+      `Today's Game Vault password is:`,
       ``,
       `    ${newPassword}`,
       ``,
@@ -32,7 +32,7 @@ async function sendPasswordEmail(newPassword) {
     ].join('\n'),
     html: `
       <div style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto;padding:24px;">
-        <h2 style="color:#0f0f1a;margin-bottom:4px;">🎮 Game Hub</h2>
+        <h2 style="color:#0f0f1a;margin-bottom:4px;">🎮 Game Vault</h2>
         <p style="color:#555;margin-top:0;">Today's password</p>
         <div style="background:#0f0f1a;border-radius:12px;padding:20px 28px;margin:20px 0;text-align:center;">
           <span style="font-size:2rem;font-weight:900;letter-spacing:4px;color:#ffd700;">${newPassword}</span>

@@ -26,7 +26,8 @@ const CASINO_GAMES = [
   { path: '/baccarat',     name: 'Baccarat',     desc: 'Bet Player, Banker or Tie. Natural 8 or 9 wins!', icon: '🎴', players: '1 player' },
   { path: '/mines',        name: 'Mines',        desc: 'Reveal gems, dodge bombs — cash out before you explode!', icon: '💣', players: '1 player' },
   { path: '/ride-the-bus', name: 'Ride the Bus', desc: 'Guess Red/Black → Hi/Lo → In/Out → Suit. Win up to 20×!', icon: '🚌', players: '1 player' },
-  { path: '/slots',        name: 'Slots',        desc: 'Spin the reels — hit 💎💎💎 for 1000× your bet!', icon: '🎰', players: '1 player' },
+  { path: '/slots',         name: 'Slots',         desc: 'Spin the reels — hit 💎💎💎 for 1000× your bet!', icon: '🎰', players: '1 player' },
+  { path: '/chicken-cross', name: 'Chicken Cross', desc: 'Cross 8 lanes of cars row by row — cash out before you get hit!', icon: '🐔', players: '1 player' },
   { path: '/texas-holdem', name: "Texas Hold'em", desc: 'Community card poker — bet, raise, bluff your way to the pot', icon: '🃏', players: '2-6 players' },
 ];
 
