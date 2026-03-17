@@ -6,9 +6,12 @@ const TOKEN_KEY  = 'gv_auth_token';
 const USER_KEY   = 'gv_auth_user';
 
 async function apiFetch(path, options = {}) {
+  // Destructure headers out of options so ...rest doesn't accidentally
+  // overwrite the merged headers object below.
+  const { headers: optHeaders, ...rest } = options;
   const res = await fetch(SERVER_URL + path, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-    ...options,
+    headers: { 'Content-Type': 'application/json', ...optHeaders },
+    ...rest,
   });
   return res.json();
 }

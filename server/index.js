@@ -22,8 +22,15 @@ app.use(express.json());
 
 // ── IP ban middleware ──────────────────────────────────────────────────────────
 function getClientIP(req) {
+  // x-forwarded-for: "client, proxy1, proxy2" — take the leftmost (real client) entry
   const forwarded = req.headers['x-forwarded-for'];
-  if (forwarded) return forwarded.split(',')[0].trim();
+  if (forwarded) {
+    const ip = forwarded.split(',')[0].trim();
+    if (ip) return ip;
+  }
+  // Some reverse proxies use x-real-ip
+  const realIP = req.headers['x-real-ip'];
+  if (realIP) return realIP.trim();
   return req.socket?.remoteAddress || 'unknown';
 }
 
@@ -92,10 +99,15 @@ app.post('/api/accounts/register', (req, res) => {
   // Block registration if this IP already has 3 accounts
   const ipCheck = us.checkIPAccountLimit(ip, 3);
   if (ipCheck.blocked) {
+    console.log(`[register] BLOCKED: IP ${ip} already has ${ipCheck.count} accounts`);
     return res.status(429).json({ ok: false, error: 'Too many accounts from this device. Maximum 3 accounts per IP address.' });
   }
-  const result = us.register(username, password);
-  if (result.ok) us.recordIP(result.username, ip);
+  // Pass IP so it's stored as registerIP (permanent) at creation time
+  const result = us.register(username, password, ip);
+  if (result.ok) {
+    console.log(`[register] New account "${result.username}" from IP ${ip}`);
+    us.recordIP(result.username, ip); // also keeps lastIP in sync
+  }
   res.json(result);
 });
 

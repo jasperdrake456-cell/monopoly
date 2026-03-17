@@ -122,12 +122,14 @@ export default function Wheel() {
 
     // Find the visual segment for winSeg
     const winWheelSeg = wheelSegs.find(s => s.label === winSeg.label);
-    // Target: land pointer (top = 270°) on the center of winWheelSeg
+    // Pointer sits at 12 o'clock (0°). Segments are drawn from 0° at 12 o'clock going clockwise.
+    // CSS rotates the SVG clockwise by spinAngle. A segment originally at angle s ends up
+    // at visual position (s + spinAngle) % 360. To land winCenter under pointer:
+    //   (winCenter + newAngle) % 360 = 0  =>  newAngle % 360 = (360 - winCenter) % 360
     const winCenter = winWheelSeg.startAngle + winWheelSeg.sweep / 2;
-    // Pointer is at top (270° in standard coords). We need: spinAngle + winCenter = 270 (mod 360)
-    // So spinAngle target = 270 - winCenter
     const baseRotations = 5 * 360; // 5 full spins
-    const targetOffset = (270 - winCenter + 360) % 360;
+    const currentNorm = ((spinAngle % 360) + 360) % 360;
+    const targetOffset = ((360 - winCenter) - currentNorm + 36000) % 360;
     const newAngle = spinAngle + baseRotations + targetOffset;
     targetAngleRef.current = newAngle;
     setSpinAngle(newAngle);

@@ -211,6 +211,24 @@
   font-weight: 700;
 }
 
+.hilo-streak-badge {
+  width: 100%;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.1);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  border-radius: 8px;
+  padding: 6px 12px;
+  animation: streakPulse 0.6s ease;
+}
+
+@keyframes streakPulse {
+  0%   { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
 .hilo-tie-warning {
   width: 100%;
   text-align: center;

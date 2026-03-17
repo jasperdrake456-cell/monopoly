@@ -58,27 +58,57 @@
 }
 
 .plinko-peg {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.6rem;
-  color: rgba(255,255,255,0.35);
-  transition: all 0.1s;
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.4);
+  transition: all 0.15s;
   border-radius: 50%;
+  position: relative;
 }
 
+/* Active peg lights up when a ball is near */
 .plinko-peg--ball {
   color: transparent;
-  font-size: 1rem;
-  animation: ball-bounce 0.12s ease;
+  background: radial-gradient(circle, rgba(255,80,80,0.35) 0%, transparent 70%);
+  animation: ball-arrive 0.25s ease;
 }
-.plinko-peg--ball::after { content: '🔴'; font-size: 0.9rem; }
+.plinko-peg--ball::after {
+  content: '🔴';
+  font-size: 1.1rem;
+  position: absolute;
+  animation: ball-bounce 0.3s cubic-bezier(0.25, 1.5, 0.5, 1);
+}
+
+.plinko-multi-ball {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #f59e0b;
+  color: #000;
+  font-size: 0.6rem;
+  font-weight: 900;
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+@keyframes ball-arrive {
+  0%   { background: radial-gradient(circle, rgba(255,80,80,0.6) 0%, transparent 70%); }
+  100% { background: radial-gradient(circle, rgba(255,80,80,0.35) 0%, transparent 70%); }
+}
 
 @keyframes ball-bounce {
-  0%   { transform: scale(1.4); }
-  100% { transform: scale(1); }
+  0%   { transform: scale(1.5) translateY(-4px); }
+  60%  { transform: scale(0.9) translateY(2px); }
+  100% { transform: scale(1) translateY(0); }
 }
 
 /* Buckets */
@@ -132,6 +162,45 @@
 }
 
 .plinko-risk-row { display: flex; gap: 8px; }
+
+.plinko-balls-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.plinko-balls-label {
+  font-size: 0.85rem;
+  color: #8b949e;
+  white-space: nowrap;
+}
+.plinko-balls-btn {
+  flex: 1;
+  padding: 7px 4px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #aaa;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.plinko-balls-btn.active { background: rgba(168,85,247,0.25); border-color: rgba(168,85,247,0.6); color: #fff; }
+.plinko-balls-btn:hover:not(.active) { background: rgba(255,255,255,0.1); }
+
+.plinko-total-bet {
+  font-size: 0.85rem;
+  color: #8b949e;
+  text-align: center;
+}
+.plinko-total-bet strong { color: #c084fc; }
+
+.plinko-bucket-count {
+  font-size: 0.6rem;
+  font-weight: 900;
+  margin-top: 1px;
+}
+
 .plinko-risk-btn {
   flex: 1;
   padding: 8px;

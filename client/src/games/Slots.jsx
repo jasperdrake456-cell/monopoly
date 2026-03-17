@@ -4,8 +4,12 @@ import './Slots.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 
+// Larger pool — more cherries & lemons means wins feel much more frequent.
+// New distribution: 💎×1, 7️⃣×1, ⭐×2, 🔔×2, 🍇×2, 🍊×2, 🍋×4, 🍒×6 (20 total)
+// Approx RTP: ~90% — lemons hit ~0.8% of spins, 3-cherries ~2.7%, single cherry ~21%
 const REEL_POOL = [
-  '💎','7️⃣','⭐','⭐','🔔','🔔','🍇','🍇','🍊','🍊','🍋','🍋','🍋','🍒','🍒','🍒'
+  '💎','7️⃣','⭐','⭐','🔔','🔔','🍇','🍇','🍊','🍊',
+  '🍋','🍋','🍋','🍋','🍒','🍒','🍒','🍒','🍒','🍒'
 ];
 
 const PAYTABLE = [
@@ -15,10 +19,10 @@ const PAYTABLE = [
   { symbols: ['🔔','🔔','🔔'], label: '🔔 🔔 🔔', mult: 30 },
   { symbols: ['🍇','🍇','🍇'], label: '🍇 🍇 🍇', mult: 20 },
   { symbols: ['🍊','🍊','🍊'], label: '🍊 🍊 🍊', mult: 15 },
-  { symbols: ['🍋','🍋','🍋'], label: '🍋 🍋 🍋', mult: 8 },
-  { symbols: ['🍒','🍒','🍒'], label: '🍒 🍒 🍒', mult: 5 },
-  { symbols: ['🍒','🍒','*'], label: '🍒 🍒 any', mult: 2 },
-  { symbols: ['🍒','*','*'], label: '🍒 any any', mult: 1.3 },
+  { symbols: ['🍋','🍋','🍋'], label: '🍋 🍋 🍋', mult: 10 },
+  { symbols: ['🍒','🍒','🍒'], label: '🍒 🍒 🍒', mult: 6 },
+  { symbols: ['🍒','🍒','*'], label: '🍒 🍒 any', mult: 2.5 },
+  { symbols: ['🍒','*','*'], label: '🍒 any any', mult: 1.5 },
 ];
 
 function rand() {
@@ -43,10 +47,10 @@ function evaluate(mids) {
   if (r0 === '🔔' && r1 === '🔔' && r2 === '🔔') return { mult: 30, label: '🔔 🔔 🔔 BELLS!' };
   if (r0 === '🍇' && r1 === '🍇' && r2 === '🍇') return { mult: 20, label: '🍇 🍇 🍇 GRAPES!' };
   if (r0 === '🍊' && r1 === '🍊' && r2 === '🍊') return { mult: 15, label: '🍊 🍊 🍊 ORANGES!' };
-  if (r0 === '🍋' && r1 === '🍋' && r2 === '🍋') return { mult: 8, label: '🍋 🍋 🍋 LEMONS!' };
-  if (r0 === '🍒' && r1 === '🍒' && r2 === '🍒') return { mult: 5, label: '🍒 🍒 🍒 CHERRIES!' };
-  if (r0 === '🍒' && r1 === '🍒' && r2 !== '🍒') return { mult: 2, label: '🍒 🍒 — Double Cherry!' };
-  if (r0 === '🍒' && r1 !== '🍒') return { mult: 1.3, label: '🍒 — Single Cherry!' };
+  if (r0 === '🍋' && r1 === '🍋' && r2 === '🍋') return { mult: 10, label: '🍋 🍋 🍋 LEMONS!' };
+  if (r0 === '🍒' && r1 === '🍒' && r2 === '🍒') return { mult: 6, label: '🍒 🍒 🍒 CHERRIES!' };
+  if (r0 === '🍒' && r1 === '🍒' && r2 !== '🍒') return { mult: 2.5, label: '🍒 🍒 — Double Cherry!' };
+  if (r0 === '🍒' && r1 !== '🍒') return { mult: 1.5, label: '🍒 — Single Cherry!' };
 
   return { mult: 0, label: 'No match. Better luck next time!' };
 }

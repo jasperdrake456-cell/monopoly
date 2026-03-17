@@ -101,7 +101,7 @@ const ADMIN_BALANCE    = 999_999_999; // effectively infinite
  * Register a new user.
  * Returns { ok, error, token, username, balance }
  */
-function register(username, password) {
+function register(username, password, ip = null) {
   if (!username || typeof username !== 'string') return { ok: false, error: 'Invalid username' };
   if (!password || typeof password !== 'string') return { ok: false, error: 'Invalid password' };
 
@@ -114,6 +114,7 @@ function register(username, password) {
   if (users[clean]) return { ok: false, error: 'Username already taken' };
 
   const salt = makeSalt();
+  const normIP = ip ? normalizeIP(ip) : null;
   users[clean] = {
     username: clean,
     displayName: username.trim().slice(0, 20),
@@ -122,6 +123,10 @@ function register(username, password) {
     casinoBalance: STARTING_BALANCE,
     lastDaily: 0,
     createdAt: Date.now(),
+    // registerIP is set once at creation and never overwritten — used for account-per-IP limits
+    registerIP: normIP,
+    lastIP: normIP,
+    lastSeen: normIP ? Date.now() : null,
   };
   writeUsers(users);
 
@@ -299,15 +304,24 @@ function recordIP(username, ip) {
 
 /**
  * Check if an IP already has maxAccounts accounts.
+ * Uses registerIP (permanent) as the primary signal, falls back to lastIP.
  * Returns { blocked: true, count } if at limit, { blocked: false } otherwise.
  */
 function checkIPAccountLimit(ip, maxAccounts = 3) {
   const normIP = normalizeIP(ip);
-  if (!normIP || normIP === 'unknown') return { blocked: false };
+  if (!normIP || normIP === 'unknown') {
+    console.log(`[ipCheck] Could not determine IP — skipping limit check`);
+    return { blocked: false };
+  }
   const users = readUsers();
-  const count = Object.values(users).filter(
-    u => (u.lastIP === normIP || u.lastIP === ip) && u.username !== ADMIN_USERNAME
-  ).length;
+  const count = Object.values(users).filter(u => {
+    if (u.username === ADMIN_USERNAME) return false;
+    // Check registerIP (permanent registration IP) first, then lastIP as fallback
+    // Also check un-normalized variants for backwards compatibility
+    return u.registerIP === normIP || u.registerIP === ip ||
+           u.lastIP     === normIP || u.lastIP     === ip;
+  }).length;
+  console.log(`[ipCheck] IP ${normIP}: found ${count} existing account(s) (limit ${maxAccounts})`);
   return count >= maxAccounts ? { blocked: true, count } : { blocked: false };
 }
 

@@ -242,7 +242,6 @@ export default function AdminPage() {
   async function giveMoney() {
     const amt = parseInt(giveAmount, 10);
     if (!giveTarget.trim() || !amt || amt < 1) return setStatus('Enter a valid username and amount.');
-    if (amt > 500) return setStatus('Maximum $500 per transaction.');
     try {
       const d = await authFetch('/api/admin/give-money', token, {
         method: 'POST',
@@ -254,7 +253,7 @@ export default function AdminPage() {
   }
 
   // Derived: users with suspect usernames or very high balances (for auto-flags)
-  const flaggedUsernames = useMemo(() => users.filter(u => isSuspectUsername(u.username)), [users]);
+  const flaggedUsernames = useMemo(() => users.filter(u => isSuspectUsername(u.username) && u.username !== 'jasper'), [users]);
   const flaggedBalances  = useMemo(() => users.filter(u => (u.balance || 0) >= BAL_HIGH && u.username !== 'jasper'), [users]);
 
   // After applying admin dismissals

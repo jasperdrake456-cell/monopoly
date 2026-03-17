@@ -76,6 +76,7 @@ export default function Hilo() {
   const [currentMult, setCurrentMult]     = useState(1.00);
   const [profit, setProfit]         = useState(0);
   const [lastGuess, setLastGuess]   = useState(null); // 'higher'|'lower'
+  const [streak, setStreak]         = useState(0);    // consecutive correct guesses
   const [history, setHistory]       = useState([]);
   const [countdown, setCountdown]   = useState('');
   const [animating, setAnimating]   = useState(false);
@@ -129,7 +130,10 @@ export default function Hilo() {
 
     const usedValues = revealedCards.map(c => c.value);
     const { multHigher, multLower } = calcMultipliers(currentCard.value, usedValues);
-    const pickedMult = direction === 'higher' ? multHigher : multLower;
+    const baseMult = direction === 'higher' ? multHigher : multLower;
+    // Streak bonus: each consecutive correct guess boosts the multiplier by 3%
+    const streakBonus = 1 + streak * 0.03;
+    const pickedMult = baseMult ? parseFloat((baseMult * streakBonus).toFixed(2)) : baseMult;
 
     setTimeout(() => {
       const newRevealed = [...revealedCards, nextCard];
@@ -140,6 +144,7 @@ export default function Hilo() {
         const newMult = parseFloat((currentMult * pickedMult).toFixed(2));
         setCurrentMult(newMult);
         setProfit(Math.floor(bet * newMult) - bet);
+        setStreak(s => s + 1);
         // Max 10 correct guesses then auto-win
         if (newRevealed.length >= 11) {
           cashOut(newMult);
@@ -147,7 +152,8 @@ export default function Hilo() {
           setPhase('playing');
         }
       } else {
-        // Wrong or tie = lose
+        // Wrong or tie = lose — reset streak
+        setStreak(0);
         setPhase('lost');
         setHistory(h => [{ win: false, mult: currentMult }, ...h].slice(0, MAX_HISTORY));
         syncBalance();
@@ -174,6 +180,7 @@ export default function Hilo() {
     setCurrentMult(1.00);
     setProfit(0);
     setLastGuess(null);
+    setStreak(0);
     syncBalance();
   }
 
@@ -274,13 +281,18 @@ export default function Hilo() {
       {/* Phase: playing */}
       {phase === 'playing' && currentCard && mults && (
         <div className="hilo-controls">
+          {streak >= 2 && (
+            <div className="hilo-streak-badge">🔥 {streak}-streak · +{(streak * 3)}% bonus</div>
+          )}
           <button
             className="hilo-btn hilo-btn--higher"
             onClick={() => guess('higher')}
             disabled={animating || !mults.multHigher}
           >
             ⬆️ Higher
-            {mults.multHigher ? <span className="hilo-btn-mult">{mults.multHigher}×</span> : <span className="hilo-btn-mult">N/A</span>}
+            {mults.multHigher
+              ? <span className="hilo-btn-mult">{parseFloat((mults.multHigher * (1 + streak * 0.03)).toFixed(2))}×</span>
+              : <span className="hilo-btn-mult">N/A</span>}
           </button>
           <button
             className="hilo-btn hilo-btn--cashout"
@@ -295,7 +307,9 @@ export default function Hilo() {
             disabled={animating || !mults.multLower}
           >
             ⬇️ Lower
-            {mults.multLower ? <span className="hilo-btn-mult">{mults.multLower}×</span> : <span className="hilo-btn-mult">N/A</span>}
+            {mults.multLower
+              ? <span className="hilo-btn-mult">{parseFloat((mults.multLower * (1 + streak * 0.03)).toFixed(2))}×</span>
+              : <span className="hilo-btn-mult">N/A</span>}
           </button>
           <div className="hilo-tie-warning">⚠️ Ties lose</div>
         </div>
