@@ -321,3 +321,12 @@
   font-size: 0.8rem;
   border-radius: 7px;
 }
+
+.admin-btn--casino {
+  background: rgba(234,179,8,0.15);
+  border: 1px solid rgba(234,179,8,0.35);
+  color: #fbbf24;
+}
+.admin-btn--casino:hover {
+  background: rgba(234,179,8,0.28);
+}

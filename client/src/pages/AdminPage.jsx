@@ -135,9 +135,15 @@ export default function AdminPage() {
     loadIPBans();
   }
 
+  const CASINO_GAMES = [
+    'crash','plinko','dice','roulette','blackjack','baccarat',
+    'mines','ride-the-bus','slots','chicken-cross','texas-holdem',
+    'hilo','tower','wheel',
+  ];
+
   async function submitUserBan() {
     if (!banUser_.trim()) return setStatus('Enter a username.');
-    const games = banUserGames === 'all' ? ['*'] : [banUserGames];
+    const games = banUserGames === 'all' ? ['*'] : banUserGames === 'casino' ? CASINO_GAMES : [banUserGames];
     const d = await authFetch('/api/admin/bans/user', token, {
       method: 'POST',
       body: JSON.stringify({ username: banUser_.trim(), games, reason: banUserReason, durationMs: parseDuration(banUserDur) }),
@@ -268,6 +274,11 @@ export default function AdminPage() {
                       setBanUserReason(''); setTab('bans');
                       setStatus(`Pre-filled ban form for @${u.username}`);
                     }}>🚫 Perma Ban</button>
+                    <button className="admin-btn admin-btn--casino admin-btn--sm" onClick={() => {
+                      setBanUser_(u.username); setBanUserGames('casino'); setBanUserDur('permanent');
+                      setBanUserReason(''); setTab('bans');
+                      setStatus(`Pre-filled casino ban for @${u.username}`);
+                    }}>🎰 Casino Ban</button>
                     <button className="admin-btn admin-btn--warn admin-btn--sm" onClick={() => {
                       setBanUser_(u.username); setBanUserGames('all'); setBanUserDur('24h');
                       setBanUserReason(''); setTab('bans');
@@ -358,7 +369,8 @@ export default function AdminPage() {
             <input className="admin-input" placeholder="Username" value={banUser_} onChange={e => setBanUser_(e.target.value)} />
             <input className="admin-input" placeholder="Reason (optional)" value={banUserReason} onChange={e => setBanUserReason(e.target.value)} />
             <select className="admin-input admin-select" value={banUserGames} onChange={e => setBanUserGames(e.target.value)}>
-              <option value="all">All casino games</option>
+              <option value="all">Everything (all games)</option>
+              <option value="casino">Casino games only</option>
               {ALL_GAMES.map(g => <option key={g} value={g}>{g}</option>)}
             </select>
             <select className="admin-input admin-select" value={banUserDur} onChange={e => setBanUserDur(e.target.value)}>
