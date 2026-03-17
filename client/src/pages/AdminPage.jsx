@@ -1,7 +1,32 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import './AdminPage.css';
+
+// ── Username moderation helpers ───────────────────────────────────────────────
+const BAD_WORDS = [
+  'fuck','shit','ass','bitch','cunt','dick','cock','pussy','bastard',
+  'retard','piss','wank','prick','arse','twat','slag','whore','slut','skank',
+  'nigger','nigga','chink','spic','kike','cracker','wetback','gook','beaner',
+  'coon','jigaboo','sambo','zipperhead','redskin','injun','squaw',
+  'raghead','towelhead','sandnigger','heeb','yid','hymie','greaseball',
+  'dago','wop','guinea','polack','kraut','mick','paddy','paki','coolie','spaz',
+  'jewboy','ihatejews','jewscum','gassthejews','killalljews','hitlerdidnothingwrong',
+  'goatfucker','faggot','fag','dyke','tranny','shemale',
+  'rape','lynch','nazi','hitler','kkk','heil','1488','rahowa','whitepride',
+];
+function normUsername(s) {
+  return s.toLowerCase().replace(/[4@]/g,'a').replace(/3/g,'e').replace(/[1!|]/g,'i')
+    .replace(/0/g,'o').replace(/[5$]/g,'s').replace(/7/g,'t').replace(/[^a-z0-9]/g,'');
+}
+function isSuspectUsername(username) {
+  const n = normUsername(username);
+  return BAD_WORDS.some(w => n.includes(normUsername(w)));
+}
+
+// Balance thresholds for flagging
+const BAL_HIGH   = 100_000;   // yellow flag
+const BAL_VERY_HIGH = 1_000_000; // red flag
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
 
@@ -72,7 +97,7 @@ export default function AdminPage() {
   }, [token]);
 
   useEffect(() => {
-    if (tab === 'reports') loadReports();
+    if (tab === 'reports') { loadReports(); loadUsers(); }
     if (tab === 'users')   loadUsers();
     if (tab === 'bans')  { loadIPBans(); loadUserBans(); }
   }, [tab, loadReports, loadUsers, loadIPBans, loadUserBans]);
@@ -115,6 +140,15 @@ export default function AdminPage() {
   async function kickUser(username) {
     const d = await authFetch(`/api/admin/kick/${encodeURIComponent(username)}`, token, { method: 'POST' });
     setStatus(d.ok ? `Kicked @${username} — ${d.sessionsKilled} session(s) destroyed` : (d.error || 'Kick failed'));
+  }
+
+  async function resetBalance(username) {
+    const d = await authFetch(`/api/admin/users/${username}/balance`, token, {
+      method: 'PUT',
+      body: JSON.stringify({ amount: 2000 }),
+    });
+    setStatus(d.ok ? `Reset ${username}'s balance to $2,000` : (d.error || 'Reset failed'));
+    loadUsers();
   }
 
   function parseDuration(durStr) {
@@ -175,6 +209,10 @@ export default function AdminPage() {
     setGiveTarget(''); setGiveAmount('');
   }
 
+  // Derived: users with suspect usernames or very high balances (for auto-flags)
+  const flaggedUsernames = useMemo(() => users.filter(u => isSuspectUsername(u.username)), [users]);
+  const flaggedBalances  = useMemo(() => users.filter(u => (u.balance || 0) >= BAL_HIGH && u.username !== 'jasper'), [users]);
+
   if (!isAdmin) return null;
 
   return (
@@ -227,6 +265,65 @@ export default function AdminPage() {
               </div>
             </div>
           ))}
+
+          {/* ── Auto-flagged: suspect usernames ── */}
+          <div className="admin-section-title" style={{ marginTop: 28 }}>
+            🚩 Flagged Usernames ({flaggedUsernames.length})
+          </div>
+          {flaggedUsernames.length === 0
+            ? <div className="admin-empty">No suspicious usernames detected.</div>
+            : flaggedUsernames.map(u => (
+              <div key={u.username} className="admin-report admin-report--flagged">
+                <div className="admin-report-meta">
+                  <span className="admin-report-name" style={{ color: '#f87171' }}>@{u.username}</span>
+                  <span className="admin-report-date">Joined {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'unknown'}</span>
+                  {u.lastIP && <span className="admin-report-game">IP: {u.lastIP}</span>}
+                </div>
+                <div className="admin-report-actions">
+                  <button className="admin-btn admin-btn--danger admin-btn--sm" onClick={() => {
+                    setBanUser_(u.username); setBanUserGames('all'); setBanUserDur('permanent');
+                    setBanUserReason('Inappropriate username'); setTab('bans');
+                    setStatus(`Pre-filled ban for @${u.username}`);
+                  }}>🚫 Ban</button>
+                  <button className="admin-btn admin-btn--ghost admin-btn--sm" onClick={() => deleteUser(u.username)}>
+                    🗑 Delete
+                  </button>
+                </div>
+              </div>
+            ))
+          }
+
+          {/* ── Auto-flagged: very high balances ── */}
+          <div className="admin-section-title" style={{ marginTop: 28 }}>
+            💰 Flagged Balances ({flaggedBalances.length})
+            <span style={{ fontSize: '0.78rem', fontWeight: 400, color: '#6b7280', marginLeft: 8 }}>
+              ≥ $100,000
+            </span>
+          </div>
+          {flaggedBalances.length === 0
+            ? <div className="admin-empty">No unusually high balances.</div>
+            : flaggedBalances.sort((a, b) => b.balance - a.balance).map(u => (
+              <div key={u.username} className="admin-report admin-report--flagged">
+                <div className="admin-report-meta">
+                  <span className="admin-report-name">@{u.username}</span>
+                  <span className="admin-report-score" style={{ color: (u.balance || 0) >= BAL_VERY_HIGH ? '#f87171' : '#fbbf24' }}>
+                    {(u.balance || 0) >= BAL_VERY_HIGH ? '🔴' : '🟡'} ${(u.balance || 0).toLocaleString()}
+                  </span>
+                  {u.lastIP && <span className="admin-report-game">IP: {u.lastIP}</span>}
+                </div>
+                <div className="admin-report-actions">
+                  <button className="admin-btn admin-btn--warn admin-btn--sm" onClick={() => resetBalance(u.username)}>
+                    ↩ Reset $2k
+                  </button>
+                  <button className="admin-btn admin-btn--danger admin-btn--sm" onClick={() => {
+                    setBanUser_(u.username); setBanUserGames('casino'); setBanUserDur('permanent');
+                    setBanUserReason('Suspected cheating'); setTab('bans');
+                    setStatus(`Pre-filled casino ban for @${u.username}`);
+                  }}>🎰 Casino Ban</button>
+                </div>
+              </div>
+            ))
+          }
         </div>
       )}
 
@@ -241,6 +338,9 @@ export default function AdminPage() {
                 <div className="admin-user-info">
                   <span className="admin-user-name">{u.displayName}</span>
                   <span className="admin-user-handle">@{u.username}</span>
+                  {(u.balance || 0) >= BAL_VERY_HIGH && <span className="admin-user-flag admin-user-flag--red" title="Very high balance — possible cheating">🔴</span>}
+                  {(u.balance || 0) >= BAL_HIGH && (u.balance || 0) < BAL_VERY_HIGH && <span className="admin-user-flag admin-user-flag--yellow" title="High balance">🟡</span>}
+                  {isSuspectUsername(u.username) && <span className="admin-user-flag" title="Suspicious username">🚩</span>}
                   {editingBal?.username === u.username ? (
                     <span className="admin-user-bal-edit">
                       <span className="admin-bal-dollar">$</span>
@@ -296,6 +396,9 @@ export default function AdminPage() {
                         setStatus(`Pre-filled IP ban for ${u.lastIP} (@${u.username})`);
                       }}>🌐 Ban IP</button>
                     )}
+                    <button className="admin-btn admin-btn--ghost admin-btn--sm" onClick={() => resetBalance(u.username)} title="Reset casino balance to $2,000">
+                      ↩ Reset $2k
+                    </button>
                     <button className="admin-btn admin-btn--warn admin-btn--sm" onClick={() => kickUser(u.username)}>
                       👢 Kick
                     </button>

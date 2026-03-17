@@ -330,3 +330,12 @@
 .admin-btn--casino:hover {
   background: rgba(234,179,8,0.28);
 }
+
+.admin-report--flagged {
+  border-left: 3px solid #f87171;
+}
+
+.admin-user-flag {
+  font-size: 0.85rem;
+  cursor: default;
+}

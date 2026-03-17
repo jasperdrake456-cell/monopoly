@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSocket } from '../hooks/useSocket';
 import { getBalance, addBalance, subtractBalance } from '../utils/casinoBalance';
+import { isHighScore } from '../utils/leaderboard';
+import HighScoreModal from '../components/HighScoreModal';
 import './TexasHoldem.css';
 import useBanCheck from '../hooks/useBanCheck';
 
@@ -325,6 +327,8 @@ export default function TexasHoldem() {
   const [roomList, setRoomList]   = useState([]);
   const [errorMsg, setErrorMsg]   = useState('');
   const [casinoBalance, setCasinoBalance] = useState(getBalance);
+  const [sessionBuyIn, setSessionBuyIn]   = useState(0);
+  const [pokerHSScore, setPokerHSScore]   = useState(null); // profit chips for HS modal
   const roomCodeRef               = useRef(null);
 
   function syncBalance() { setCasinoBalance(getBalance()); }
@@ -340,6 +344,7 @@ export default function TexasHoldem() {
       }),
       on('roomJoined', ({ playerId, buyIn }) => {
         setMyId(playerId);
+        setSessionBuyIn(buyIn ?? 0);
         subtractBalance(buyIn ?? 0);
         syncBalance();
       }),
@@ -353,10 +358,18 @@ export default function TexasHoldem() {
         if (chips > 0) {
           addBalance(chips);
           syncBalance();
+          // Check if session profit is a leaderboard high score
+          const profit = chips - sessionBuyIn;
+          if (profit > 0) {
+            isHighScore('texas-holdem', profit).then(yes => {
+              if (yes) setPokerHSScore(profit);
+            });
+          }
         }
         setRoomState(null);
         setMyId(null);
         roomCodeRef.current = null;
+        setSessionBuyIn(0);
       }),
       on('bustedOut', () => {
         // Lost all chips — 0 returned, go back to lobby
@@ -408,6 +421,16 @@ export default function TexasHoldem() {
 
   return (
     <div className="th-root">
+      {pokerHSScore !== null && (
+        <HighScoreModal
+          gameId="texas-holdem"
+          score={pokerHSScore}
+          label="chip profit"
+          higherIsBetter={true}
+          onSave={() => setPokerHSScore(null)}
+          onDismiss={() => setPokerHSScore(null)}
+        />
+      )}
       {!connected && <div className="th-conn-banner">Connecting…</div>}
       {errorMsg && <div className="th-error-toast">{errorMsg}</div>}
 

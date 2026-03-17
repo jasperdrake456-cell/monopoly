@@ -14,12 +14,13 @@ async function submitReport(gameId, entryName, entryScore, reason) {
 }
 
 const SCORE_GAMES = [
-  { id: 'snake',         icon: '🐍', name: 'Snake',         unit: 'pts', higherIsBetter: true },
-  { id: 'tetris',        icon: '🧱', name: 'Tetris',        unit: 'pts', higherIsBetter: true },
-  { id: '2048',          icon: '🔢', name: '2048',          unit: 'pts', higherIsBetter: true },
-  { id: 'space_invaders',icon: '👾', name: 'Space Invaders',unit: 'pts', higherIsBetter: true },
-  { id: 'flappy_bird',   icon: '🐦', name: 'Flappy Bird',   unit: 'pipes',higherIsBetter: true },
-  { id: 'typing_speed',  icon: '⌨️', name: 'Typing Speed',  unit: 'WPM', higherIsBetter: true },
+  { id: 'snake',         icon: '🐍', name: 'Snake',         unit: 'pts',    higherIsBetter: true },
+  { id: 'tetris',        icon: '🧱', name: 'Tetris',        unit: 'pts',    higherIsBetter: true },
+  { id: '2048',          icon: '🔢', name: '2048',          unit: 'pts',    higherIsBetter: true },
+  { id: 'space_invaders',icon: '👾', name: 'Space Invaders',unit: 'pts',    higherIsBetter: true },
+  { id: 'flappy_bird',   icon: '🐦', name: 'Flappy Bird',   unit: 'pipes',  higherIsBetter: true },
+  { id: 'typing_speed',  icon: '⌨️', name: 'Typing Speed',  unit: 'WPM',   higherIsBetter: true },
+  { id: 'texas-holdem',  icon: '♠️', name: 'Texas Hold\'em',unit: 'chip profit', higherIsBetter: true },
 ];
 
 const TIME_GAMES = [
