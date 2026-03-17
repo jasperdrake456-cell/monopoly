@@ -375,6 +375,16 @@ app.get('/api/admin/bans/lookup-ip', requireAdmin, (req, res) => {
   res.json({ ok: true, yourIP: getClientIP(req) });
 });
 
+// Set a custom account limit for an IP (admin: allow extra accounts)
+app.put('/api/admin/ip-limit', requireAdmin, (req, res) => {
+  const { ip, limit } = req.body || {};
+  if (!ip) return res.status(400).json({ ok: false, error: 'IP required' });
+  const n = parseInt(limit, 10);
+  if (isNaN(n) || n < 1) return res.status(400).json({ ok: false, error: 'Invalid limit' });
+  us.setIPLimit(ip, n);
+  res.json({ ok: true, ip, limit: n });
+});
+
 // ── Static client ─────────────────────────────────────────────────────────────
 
 const clientDist = path.join(__dirname, '..', 'client', 'dist');

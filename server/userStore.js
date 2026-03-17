@@ -11,11 +11,14 @@ const USERS_FILE    = path.join(DATA_DIR, 'users.json');
 const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
 // Permanent record of every registration by IP — survives account deletions
 const REG_LOG_FILE  = path.join(DATA_DIR, 'registrationLog.json');
+// Per-IP account limit overrides set by admin (default limit is 3)
+const IP_LIMITS_FILE = path.join(DATA_DIR, 'ipLimits.json');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-if (!fs.existsSync(USERS_FILE))    fs.writeFileSync(USERS_FILE,    '{}', 'utf8');
-if (!fs.existsSync(SESSIONS_FILE)) fs.writeFileSync(SESSIONS_FILE, '{}', 'utf8');
-if (!fs.existsSync(REG_LOG_FILE))  fs.writeFileSync(REG_LOG_FILE,  '[]', 'utf8');
+if (!fs.existsSync(USERS_FILE))     fs.writeFileSync(USERS_FILE,     '{}', 'utf8');
+if (!fs.existsSync(SESSIONS_FILE))  fs.writeFileSync(SESSIONS_FILE,  '{}', 'utf8');
+if (!fs.existsSync(REG_LOG_FILE))   fs.writeFileSync(REG_LOG_FILE,   '[]', 'utf8');
+if (!fs.existsSync(IP_LIMITS_FILE)) fs.writeFileSync(IP_LIMITS_FILE, '{}', 'utf8');
 
 console.log(`[userStore] Data directory: ${DATA_DIR}`);
 
@@ -371,6 +374,37 @@ function logRegistration(ip, username) {
   console.log(`[regLog] Logged registration for "${username}" from IP ${normIP} (total entries: ${log.length})`);
 }
 
+// ── Per-IP account limit overrides (admin-set) ────────────────────────────────
+
+function readIPLimits() {
+  try { return JSON.parse(fs.readFileSync(IP_LIMITS_FILE, 'utf8')); }
+  catch { return {}; }
+}
+function writeIPLimits(limits) {
+  fs.writeFileSync(IP_LIMITS_FILE, JSON.stringify(limits, null, 2), 'utf8');
+}
+/** Returns the effective account limit for an IP (default 3, or admin override). */
+function getIPLimit(normIP) {
+  const limits = readIPLimits();
+  return typeof limits[normIP] === 'number' ? limits[normIP] : 3;
+}
+/** Admin: set a custom account limit for an IP. Pass null/undefined to reset to default. */
+function setIPLimit(ip, limit) {
+  const normIP = normalizeIP(ip);
+  const limits = readIPLimits();
+  if (limit == null || limit <= 3) {
+    delete limits[normIP]; // back to default
+  } else {
+    limits[normIP] = Math.floor(limit);
+  }
+  writeIPLimits(limits);
+  console.log(`[ipLimit] Set limit for ${normIP} to ${limit ?? 'default(3)'}`);
+}
+/** List all per-IP overrides with their current count. */
+function listIPLimits() {
+  return readIPLimits();
+}
+
 /**
  * Count how many times accounts were registered from this IP.
  * Combines the registration log (permanent) with the current account store
@@ -408,8 +442,11 @@ function checkIPAccountLimit(ip, maxAccounts = 3) {
   // Take the higher of the two counts (belt-and-suspenders)
   const count = Math.max(logCount, storeCount);
 
-  console.log(`[ipCheck] IP ${normIP}: logCount=${logCount} storeCount=${storeCount} effective=${count} (limit ${maxAccounts})`);
-  return count >= maxAccounts ? { blocked: true, count } : { blocked: false, count };
+  // Use per-IP override limit if set, otherwise the passed-in default
+  const limit = Math.max(getIPLimit(normIP), maxAccounts);
+
+  console.log(`[ipCheck] IP ${normIP}: logCount=${logCount} storeCount=${storeCount} effective=${count} (limit ${limit})`);
+  return count >= limit ? { blocked: true, count, limit } : { blocked: false, count, limit };
 }
 
 /**
@@ -431,16 +468,36 @@ function listUsers(adminToken) {
   if (callerUsername !== ADMIN_USERNAME) return { ok: false, error: 'Forbidden' };
 
   const users = readUsers();
+  const log   = readRegLog();
+  const ipLimits = readIPLimits();
+
+  // Build a count per normalized IP from the registration log
+  const ipCounts = {};
+  for (const entry of log) {
+    const n = normalizeIP(entry.ip);
+    ipCounts[n] = (ipCounts[n] || 0) + 1;
+  }
+
   return {
     ok: true,
-    users: Object.values(users).map(u => ({
-      username: u.username,
-      displayName: u.displayName,
-      balance: u.casinoBalance,
-      createdAt: u.createdAt,
-      lastIP: u.lastIP || null,
-      lastSeen: u.lastSeen || null,
-    })),
+    ipLimits, // { "1.2.3.4": 5, ... } — only IPs with non-default limits
+    users: Object.values(users).map(u => {
+      const normIP = u.lastIP ? normalizeIP(u.lastIP) : null;
+      const regIP  = u.registerIP ? normalizeIP(u.registerIP) : normIP;
+      const count  = regIP ? (ipCounts[regIP] || 0) : 0;
+      const limit  = regIP ? (ipLimits[regIP] ?? 3) : 3;
+      return {
+        username:    u.username,
+        displayName: u.displayName,
+        balance:     u.casinoBalance,
+        createdAt:   u.createdAt,
+        lastIP:      u.lastIP   || null,
+        registerIP:  u.registerIP || null,
+        lastSeen:    u.lastSeen || null,
+        ipCount:     count,
+        ipLimit:     limit,
+      };
+    }),
   };
 }
 
@@ -526,4 +583,5 @@ module.exports = {
   register, login, getMe, syncBalance, claimDaily, transfer, logout, userExists,
   deleteUser, adminGiveMoney, adminSetBalance, listUsers, isAdminToken, getTopBalances,
   recordIP, kickUser, checkIPAccountLimit, logRegistration, addBonus,
+  setIPLimit, listIPLimits,
 };
