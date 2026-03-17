@@ -7,6 +7,7 @@ export default function TransferPage() {
   const { isLoggedIn, balance, transfer } = useAuth();
   const navigate = useNavigate();
 
+  const TRANSFER_CAP = 750;
   const [toUsername, setToUsername] = useState('');
   const [amount, setAmount]         = useState('');
   const [status, setStatus]         = useState(null); // null | { ok, msg }
@@ -29,6 +30,7 @@ export default function TransferPage() {
     const amt = parseInt(amount, 10);
     if (!toUsername.trim()) return setStatus({ ok: false, msg: 'Enter a recipient username.' });
     if (!amt || amt < 1) return setStatus({ ok: false, msg: 'Amount must be at least $1.' });
+    if (amt > TRANSFER_CAP) return setStatus({ ok: false, msg: `Maximum transfer is $${TRANSFER_CAP.toLocaleString()} per transaction.` });
     if (amt > balance) return setStatus({ ok: false, msg: `Insufficient balance ($${balance.toLocaleString()}).` });
 
     setLoading(true);
@@ -72,10 +74,11 @@ export default function TransferPage() {
               type="number"
               placeholder="100"
               min={1}
-              max={balance}
+              max={Math.min(balance, TRANSFER_CAP)}
               value={amount}
               onChange={e => setAmount(e.target.value)}
             />
+            <span className="transfer-cap-hint">Max $750 per transfer</span>
           </label>
 
           {status && (

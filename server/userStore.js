@@ -276,6 +276,7 @@ function transfer(token, toUsername, amount) {
 
   if (!from) return { ok: false, error: 'Sender not found' };
   if (!to)   return { ok: false, error: `User "${toClean}" not found` };
+  if (!isAdmin && amt > 750) return { ok: false, error: 'Maximum transfer is $750 per transaction' };
   if (!isAdmin && from.casinoBalance < amt) return { ok: false, error: `Insufficient balance ($${from.casinoBalance})` };
 
   if (!isAdmin) from.casinoBalance -= amt;
