@@ -88,13 +88,14 @@ function getToken(req) {
 
 app.post('/api/accounts/register', (req, res) => {
   const { username, password } = req.body || {};
-  const result = us.register(username, password);
-  if (result.ok) {
-    const ip = getClientIP(req);
-    us.recordIP(result.username, ip);
-    // Enforce max 3 accounts per IP — delete the poorest if exceeded
-    us.enforceIPAccountLimit(ip, 3);
+  const ip = getClientIP(req);
+  // Block registration if this IP already has 3 accounts
+  const ipCheck = us.checkIPAccountLimit(ip, 3);
+  if (ipCheck.blocked) {
+    return res.status(429).json({ ok: false, error: 'Too many accounts from this device. Maximum 3 accounts per IP address.' });
   }
+  const result = us.register(username, password);
+  if (result.ok) us.recordIP(result.username, ip);
   res.json(result);
 });
 
@@ -161,6 +162,22 @@ app.get('/api/ban-check', (req, res) => {
 const gameActivity = new Map();
 const ACTIVITY_TTL_MS = 90_000; // treat as offline after 90 seconds of no heartbeat
 
+// token → pending bonus chips to deliver on next heartbeat
+const pendingBonuses = new Map();
+
+// Every 5 minutes: give all active online players $5,000
+setInterval(() => {
+  const now = Date.now();
+  let count = 0;
+  for (const [token, data] of gameActivity) {
+    if (now - data.lastSeen > ACTIVITY_TTL_MS) continue;
+    us.addBonus(data.username, 5000);
+    pendingBonuses.set(token, (pendingBonuses.get(token) || 0) + 5000);
+    count++;
+  }
+  if (count > 0) console.log(`[Bonus] Gave $5,000 to ${count} online player(s)`);
+}, 5 * 60 * 1000);
+
 // Game reports current activity (or null to clear)
 app.post('/api/accounts/activity', (req, res) => {
   const token = getToken(req);
@@ -169,10 +186,14 @@ app.post('/api/accounts/activity', (req, res) => {
   const { gameSlug } = req.body || {};
   if (!gameSlug) {
     gameActivity.delete(token);
+    pendingBonuses.delete(token);
   } else {
     gameActivity.set(token, { username: me.username, gameSlug, lastSeen: Date.now() });
   }
-  res.json({ ok: true });
+  // Deliver any pending bonus chips to the client
+  const bonus = pendingBonuses.get(token) || 0;
+  if (bonus > 0) pendingBonuses.delete(token);
+  res.json({ ok: true, bonus });
 });
 
 // Admin: get all currently active users and what they're playing

@@ -140,6 +140,8 @@ export default function Wheel() {
       setResult({ seg: winSeg, won, payout });
       setPhase('result');
       setHistory(h => [{ won, seg: winSeg, payout }, ...h].slice(0, MAX_HISTORY));
+      // Normalize angle to prevent infinite accumulation — do after transition completes
+      setSpinAngle(a => a % 360);
     }, SPIN_DURATION + 200);
   }
 

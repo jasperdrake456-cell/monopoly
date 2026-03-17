@@ -49,6 +49,27 @@ export default function AdminPage() {
   const [giveAmount, setGiveAmount] = useState('');
   const [editingBal, setEditingBal] = useState(null); // { username, value }
 
+  // Dismissed flags (persisted to localStorage)
+  const [dismissedUsernames, setDismissedUsernames] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('admin_dismissed_usernames') || '[]')); }
+    catch { return new Set(); }
+  });
+  const [dismissedBalances, setDismissedBalances] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('admin_dismissed_balances') || '[]')); }
+    catch { return new Set(); }
+  });
+
+  function dismissUsername(username) {
+    const next = new Set([...dismissedUsernames, username]);
+    setDismissedUsernames(next);
+    localStorage.setItem('admin_dismissed_usernames', JSON.stringify([...next]));
+  }
+  function dismissBalance(username) {
+    const next = new Set([...dismissedBalances, username]);
+    setDismissedBalances(next);
+    localStorage.setItem('admin_dismissed_balances', JSON.stringify([...next]));
+  }
+
   // Bans state
   const [ipBans, setIpBans]         = useState([]);
   const [userBans, setUserBans]     = useState([]);
@@ -220,18 +241,53 @@ export default function AdminPage() {
 
   async function giveMoney() {
     const amt = parseInt(giveAmount, 10);
-    if (!giveTarget || !amt || amt < 1) return setStatus('Enter a username and amount.');
-    const d = await authFetch('/api/admin/give-money', token, {
-      method: 'POST',
-      body: JSON.stringify({ username: giveTarget.trim().toLowerCase(), amount: amt }),
-    });
-    setStatus(d.ok ? `Gave $${amt.toLocaleString()} to ${giveTarget}. New balance: $${d.balance?.toLocaleString()}` : d.error);
-    setGiveTarget(''); setGiveAmount('');
+    if (!giveTarget.trim() || !amt || amt < 1) return setStatus('Enter a valid username and amount.');
+    if (amt > 500) return setStatus('Maximum $500 per transaction.');
+    try {
+      const d = await authFetch('/api/admin/give-money', token, {
+        method: 'POST',
+        body: JSON.stringify({ username: giveTarget.trim().toLowerCase(), amount: amt }),
+      });
+      setStatus(d.ok ? `Gave $${amt.toLocaleString()} to ${giveTarget}. New balance: $${d.balance?.toLocaleString()}` : (d.error || 'Failed'));
+      if (d.ok) { setGiveTarget(''); setGiveAmount(''); }
+    } catch { setStatus('Network error — try again.'); }
   }
 
   // Derived: users with suspect usernames or very high balances (for auto-flags)
   const flaggedUsernames = useMemo(() => users.filter(u => isSuspectUsername(u.username)), [users]);
   const flaggedBalances  = useMemo(() => users.filter(u => (u.balance || 0) >= BAL_HIGH && u.username !== 'jasper'), [users]);
+
+  // After applying admin dismissals
+  const visibleFlaggedUsernames = useMemo(
+    () => flaggedUsernames.filter(u => !dismissedUsernames.has(u.username)),
+    [flaggedUsernames, dismissedUsernames]
+  );
+  const visibleFlaggedBalances = useMemo(
+    () => flaggedBalances.filter(u => !dismissedBalances.has(u.username)),
+    [flaggedBalances, dismissedBalances]
+  );
+
+  // IP grouping: richest account per IP is primary, others are sub-accounts
+  const ipGroups = useMemo(() => {
+    const byIP = {};
+    const noIP = [];
+    for (const u of users) {
+      if (!u.lastIP) { noIP.push(u); }
+      else {
+        if (!byIP[u.lastIP]) byIP[u.lastIP] = [];
+        byIP[u.lastIP].push(u);
+      }
+    }
+    for (const ip in byIP) byIP[ip].sort((a, b) => (b.balance || 0) - (a.balance || 0));
+    noIP.sort((a, b) => (b.balance || 0) - (a.balance || 0));
+    const result = [];
+    const groups = Object.values(byIP).sort((a, b) => (b[0].balance || 0) - (a[0].balance || 0));
+    for (const group of groups) {
+      group.forEach((u, idx) => result.push({ user: u, isSubAccount: idx > 0, groupSize: group.length }));
+    }
+    for (const u of noIP) result.push({ user: u, isSubAccount: false, groupSize: 1 });
+    return result;
+  }, [users]);
 
   if (!isAdmin) return null;
 
@@ -288,11 +344,16 @@ export default function AdminPage() {
 
           {/* ── Auto-flagged: suspect usernames ── */}
           <div className="admin-section-title" style={{ marginTop: 28 }}>
-            🚩 Flagged Usernames ({flaggedUsernames.length})
+            🚩 Flagged Usernames ({visibleFlaggedUsernames.length})
+            {dismissedUsernames.size > 0 && (
+              <span style={{ fontSize: '0.75rem', fontWeight: 400, color: '#6b7280', marginLeft: 8 }}>
+                ({dismissedUsernames.size} dismissed)
+              </span>
+            )}
           </div>
-          {flaggedUsernames.length === 0
+          {visibleFlaggedUsernames.length === 0
             ? <div className="admin-empty">No suspicious usernames detected.</div>
-            : flaggedUsernames.map(u => (
+            : visibleFlaggedUsernames.map(u => (
               <div key={u.username} className="admin-report admin-report--flagged">
                 <div className="admin-report-meta">
                   <span className="admin-report-name" style={{ color: '#f87171' }}>@{u.username}</span>
@@ -308,6 +369,9 @@ export default function AdminPage() {
                   <button className="admin-btn admin-btn--ghost admin-btn--sm" onClick={() => deleteUser(u.username)}>
                     🗑 Delete
                   </button>
+                  <button className="admin-btn admin-btn--ghost admin-btn--sm" onClick={() => dismissUsername(u.username)}>
+                    ✓ Dismiss
+                  </button>
                 </div>
               </div>
             ))
@@ -315,14 +379,19 @@ export default function AdminPage() {
 
           {/* ── Auto-flagged: very high balances ── */}
           <div className="admin-section-title" style={{ marginTop: 28 }}>
-            💰 Flagged Balances ({flaggedBalances.length})
+            💰 Flagged Balances ({visibleFlaggedBalances.length})
             <span style={{ fontSize: '0.78rem', fontWeight: 400, color: '#6b7280', marginLeft: 8 }}>
               ≥ $100,000
             </span>
+            {dismissedBalances.size > 0 && (
+              <span style={{ fontSize: '0.75rem', fontWeight: 400, color: '#6b7280', marginLeft: 8 }}>
+                ({dismissedBalances.size} dismissed)
+              </span>
+            )}
           </div>
-          {flaggedBalances.length === 0
+          {visibleFlaggedBalances.length === 0
             ? <div className="admin-empty">No unusually high balances.</div>
-            : flaggedBalances.sort((a, b) => b.balance - a.balance).map(u => (
+            : visibleFlaggedBalances.sort((a, b) => b.balance - a.balance).map(u => (
               <div key={u.username} className="admin-report admin-report--flagged">
                 <div className="admin-report-meta">
                   <span className="admin-report-name">@{u.username}</span>
@@ -340,6 +409,9 @@ export default function AdminPage() {
                     setBanUserReason('Suspected cheating'); setTab('bans');
                     setStatus(`Pre-filled casino ban for @${u.username}`);
                   }}>🎰 Casino Ban</button>
+                  <button className="admin-btn admin-btn--ghost admin-btn--sm" onClick={() => dismissBalance(u.username)}>
+                    ✓ Dismiss
+                  </button>
                 </div>
               </div>
             ))
@@ -353,8 +425,8 @@ export default function AdminPage() {
           <div className="admin-section-title">All Accounts ({users.length})</div>
           {users.length === 0 && <div className="admin-empty">No users found.</div>}
           <div className="admin-user-list">
-            {users.sort((a, b) => b.balance - a.balance).map(u => (
-              <div key={u.username} className="admin-user-row admin-user-row--expanded">
+            {ipGroups.map(({ user: u, isSubAccount }) => (
+              <div key={u.username} className={`admin-user-row admin-user-row--expanded${isSubAccount ? ' admin-user-row--sub' : ''}`}>
                 <div className="admin-user-info">
                   <span className="admin-user-name">{u.displayName}</span>
                   <span className="admin-user-handle">@{u.username}</span>

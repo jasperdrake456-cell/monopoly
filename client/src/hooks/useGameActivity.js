@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { addBalance } from '../utils/casinoBalance';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
 const HEARTBEAT_MS = 30_000; // report every 30 seconds to keep activity alive
@@ -17,15 +18,19 @@ export default function useGameActivity(gameSlug) {
   useEffect(() => {
     if (!token || !gameSlug) return;
 
-    function report(slug) {
-      fetch(`${SERVER_URL}/api/accounts/activity`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ gameSlug: slug }),
-      }).catch(() => {});
+    async function report(slug) {
+      try {
+        const res = await fetch(`${SERVER_URL}/api/accounts/activity`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ gameSlug: slug }),
+        });
+        const data = await res.json();
+        if (data.bonus > 0) addBalance(data.bonus);
+      } catch {}
     }
 
     report(gameSlug); // announce on mount

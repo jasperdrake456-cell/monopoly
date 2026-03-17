@@ -21,12 +21,21 @@ const PAYTABLE = [
   { symbols: ['🍒','*','*'], label: '🍒 any any', mult: 1.3 },
 ];
 
-function randomSymbol() {
+function rand() {
   return REEL_POOL[Math.floor(Math.random() * REEL_POOL.length)];
 }
 
-function evaluate(reels) {
-  const [r0, r1, r2] = reels;
+// Returns [top, mid, bottom] for a reel with a given payline symbol
+function makeReelFace(paylineSym) {
+  return [rand(), paylineSym, rand()];
+}
+
+function initReelDisplays() {
+  return Array.from({ length: 3 }, () => [rand(), rand(), rand()]);
+}
+
+function evaluate(mids) {
+  const [r0, r1, r2] = mids;
 
   if (r0 === '💎' && r1 === '💎' && r2 === '💎') return { mult: 1000, label: '💎 💎 💎 JACKPOT!' };
   if (r0 === '7️⃣' && r1 === '7️⃣' && r2 === '7️⃣') return { mult: 500, label: '7️⃣ 7️⃣ 7️⃣ LUCKY SEVENS!' };
@@ -54,20 +63,23 @@ function formatMs(ms) {
 }
 
 const QUICK_BETS = [5, 10, 25, 50, 100, 250];
-const SPIN_DURATION = 1200; // ms
-const REEL_STOP_DELAY = 150; // ms between each reel stopping
+const SPIN_MS = 1000;       // base spin duration
+const REEL_GAP_MS = 250;    // gap between each reel stopping
+const CYCLE_MS = 70;        // symbol cycle interval during spin
 
 export default function Slots() {
   const { banned, reason, expiresAt, loading } = useBanCheck('slots');
   useGameActivity('slots');
   const [balance, setBalance] = useState(getBalance);
   const [bet, setBet] = useState(10);
-  const [reels, setReels] = useState(['🎰', '🎰', '🎰']);
+  // reelDisplays[i] = [top, mid, bot]
+  const [reelDisplays, setReelDisplays] = useState(initReelDisplays);
   const [spinning, setSpinning] = useState([false, false, false]);
-  const [result, setResult] = useState(null); // { mult, label, payout }
+  const [result, setResult] = useState(null);
   const [disabled, setDisabled] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const countdownRef = useRef(null);
+  const cycleIntervals = useRef([null, null, null]);
 
   const broke = balance <= 0;
 
@@ -82,15 +94,76 @@ export default function Slots() {
     return () => clearInterval(countdownRef.current);
   }, [broke]);
 
-  // Keep bet clamped when balance changes
+  // Clamp bet when balance changes
   useEffect(() => {
-    if (bet > balance && balance > 0) {
-      setBet(Math.max(1, Math.floor(balance)));
-    }
+    if (bet > balance && balance > 0) setBet(Math.max(1, Math.floor(balance)));
   }, [balance]);
 
-  function syncBalance() {
+  // Cleanup cycle intervals on unmount
+  useEffect(() => {
+    return () => cycleIntervals.current.forEach(t => clearInterval(t));
+  }, []);
+
+  function syncBalance() { setBalance(getBalance()); }
+
+  function handleSpin() {
+    if (disabled || broke || bet <= 0 || bet > balance) return;
+
+    const finalMids = [rand(), rand(), rand()];
+    const outcome = evaluate(finalMids);
+
+    subtractBalance(bet);
     setBalance(getBalance());
+    setResult(null);
+    setDisabled(true);
+    setSpinning([true, true, true]);
+
+    // Clear any leftover intervals
+    cycleIntervals.current.forEach(t => clearInterval(t));
+
+    // Start rapid symbol cycling for each reel
+    for (let i = 0; i < 3; i++) {
+      cycleIntervals.current[i] = setInterval(() => {
+        setReelDisplays(prev => {
+          const next = prev.map(r => [...r]);
+          next[i] = [rand(), rand(), rand()];
+          return next;
+        });
+      }, CYCLE_MS);
+    }
+
+    // Stop each reel sequentially
+    const betSnapshot = bet; // capture bet value for payout calculation
+    [0, 1, 2].forEach(reelIdx => {
+      setTimeout(() => {
+        clearInterval(cycleIntervals.current[reelIdx]);
+        cycleIntervals.current[reelIdx] = null;
+
+        // Settle this reel on its final symbol
+        setReelDisplays(prev => {
+          const next = prev.map(r => [...r]);
+          next[reelIdx] = makeReelFace(finalMids[reelIdx]);
+          return next;
+        });
+        setSpinning(prev => {
+          const next = [...prev];
+          next[reelIdx] = false;
+          return next;
+        });
+
+        // Last reel stopped — apply outcome
+        if (reelIdx === 2) {
+          let payout = 0;
+          if (outcome.mult > 0) {
+            payout = Math.floor(betSnapshot * outcome.mult);
+            addBalance(payout);
+          }
+          setBalance(getBalance());
+          setResult({ ...outcome, payout, win: outcome.mult > 0 });
+          setDisabled(false);
+        }
+      }, SPIN_MS + reelIdx * REEL_GAP_MS);
+    });
   }
 
   function handleBetChange(e) {
@@ -98,50 +171,9 @@ export default function Slots() {
     setBet(val);
   }
 
-  function handleMax() {
-    setBet(Math.max(1, Math.floor(balance)));
-  }
-
-  function handleSpin() {
-    if (disabled || broke || bet <= 0 || bet > balance) return;
-
-    const finalReels = [randomSymbol(), randomSymbol(), randomSymbol()];
-    const outcome = evaluate(finalReels);
-
-    subtractBalance(bet);
-    setBalance(getBalance());
-
-    setResult(null);
-    setDisabled(true);
-    setSpinning([true, true, true]);
-
-    // Stop reels sequentially
-    setTimeout(() => {
-      setSpinning(prev => [false, prev[1], prev[2]]);
-      setReels(prev => [finalReels[0], prev[1], prev[2]]);
-    }, SPIN_DURATION);
-
-    setTimeout(() => {
-      setSpinning(prev => [prev[0], false, prev[2]]);
-      setReels(prev => [prev[0], finalReels[1], prev[2]]);
-    }, SPIN_DURATION + REEL_STOP_DELAY);
-
-    setTimeout(() => {
-      setSpinning([false, false, false]);
-      setReels(finalReels);
-
-      let payout = 0;
-      if (outcome.mult > 0) {
-        payout = Math.floor(bet * outcome.mult);
-        addBalance(payout);
-      }
-      setBalance(getBalance());
-      setResult({ ...outcome, payout, win: outcome.mult > 0 });
-      setDisabled(false);
-    }, SPIN_DURATION + REEL_STOP_DELAY * 2);
-  }
-
   const availableQuickBets = QUICK_BETS.filter(v => v <= balance);
+  const anySpinning = spinning.some(Boolean);
+  const showWin = result?.win && !anySpinning;
 
   if (loading) return null;
   if (banned) {
@@ -173,13 +205,20 @@ export default function Slots() {
           <div className="slots-machine">
             <div className="slots-title">🎰 SLOTS 🎰</div>
             <div className="slots-reels-container">
+              {/* Payline bar */}
               <div className="slots-payline" />
-              {reels.map((sym, i) => (
+              {reelDisplays.map((syms, i) => (
                 <div
                   key={i}
-                  className={`slots-reel${spinning[i] ? ' slots-reel--spinning' : ''}`}
+                  className={[
+                    'slots-reel',
+                    spinning[i] ? 'slots-reel--spinning' : '',
+                    showWin ? 'slots-reel--win' : '',
+                  ].filter(Boolean).join(' ')}
                 >
-                  <span className="slots-reel-symbol">{sym}</span>
+                  <div className="slots-sym slots-sym--top">{syms[0]}</div>
+                  <div className="slots-sym slots-sym--mid">{syms[1]}</div>
+                  <div className="slots-sym slots-sym--bot">{syms[2]}</div>
                 </div>
               ))}
             </div>
@@ -208,7 +247,7 @@ export default function Slots() {
                 onChange={handleBetChange}
                 disabled={disabled}
               />
-              <button className="slots-btn slots-btn--max" onClick={handleMax} disabled={disabled}>
+              <button className="slots-btn slots-btn--max" onClick={() => setBet(Math.max(1, Math.floor(balance)))} disabled={disabled}>
                 Max
               </button>
             </div>

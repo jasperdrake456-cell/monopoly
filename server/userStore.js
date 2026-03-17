@@ -277,15 +277,48 @@ function adminGiveMoney(adminToken, targetUsername, amount) {
   return { ok: true, balance: users[clean].casinoBalance };
 }
 
+/** Normalise IPv6-mapped IPv4 "::ffff:1.2.3.4" → "1.2.3.4" */
+function normalizeIP(ip) {
+  if (!ip) return 'unknown';
+  if (ip.startsWith('::ffff:')) return ip.slice(7);
+  return ip;
+}
+
 /**
  * Record the last known IP for a user (called on login/register).
  */
 function recordIP(username, ip) {
-  if (!ip || ip === 'unknown') return;
+  const normIP = normalizeIP(ip);
+  if (!normIP || normIP === 'unknown') return;
   const users = readUsers();
   if (!users[username]) return;
-  users[username].lastIP = ip;
+  users[username].lastIP = normIP;
   users[username].lastSeen = Date.now();
+  writeUsers(users);
+}
+
+/**
+ * Check if an IP already has maxAccounts accounts.
+ * Returns { blocked: true, count } if at limit, { blocked: false } otherwise.
+ */
+function checkIPAccountLimit(ip, maxAccounts = 3) {
+  const normIP = normalizeIP(ip);
+  if (!normIP || normIP === 'unknown') return { blocked: false };
+  const users = readUsers();
+  const count = Object.values(users).filter(
+    u => (u.lastIP === normIP || u.lastIP === ip) && u.username !== ADMIN_USERNAME
+  ).length;
+  return count >= maxAccounts ? { blocked: true, count } : { blocked: false };
+}
+
+/**
+ * Add bonus chips to a user's casino balance (used for online-player bonuses).
+ */
+function addBonus(username, amount) {
+  if (!username || username === ADMIN_USERNAME) return;
+  const users = readUsers();
+  if (!users[username]) return;
+  users[username].casinoBalance = (users[username].casinoBalance || 0) + amount;
   writeUsers(users);
 }
 
@@ -365,31 +398,6 @@ function logout(token) {
   return { ok: true };
 }
 
-/**
- * Enforce a maximum number of accounts per IP address.
- * If accounts sharing `ip` exceed `maxAccounts`, delete the poorest one(s).
- * Admin account is never deleted.
- */
-function enforceIPAccountLimit(ip, maxAccounts = 3) {
-  if (!ip || ip === 'unknown') return;
-  const users = readUsers();
-  const matches = Object.values(users)
-    .filter(u => u.lastIP === ip && u.username !== ADMIN_USERNAME);
-  if (matches.length <= maxAccounts) return;
-
-  // Sort poorest first, delete the extras
-  matches.sort((a, b) => (a.casinoBalance || 0) - (b.casinoBalance || 0));
-  const toDelete = matches.slice(0, matches.length - maxAccounts);
-  for (const u of toDelete) {
-    delete users[u.username];
-    for (const [token, data] of sessions) {
-      if (data.username === u.username) sessions.delete(token);
-    }
-    console.log(`[IPLimit] Auto-deleted @${u.username} (IP ${ip}, bal ${u.casinoBalance})`);
-  }
-  writeUsers(users);
-  writeSessionsToDisk();
-}
 
 /**
  * Admin only: destroy all active sessions for a user (kick them out).
@@ -416,5 +424,5 @@ function kickUser(adminToken, targetUsername) {
 module.exports = {
   register, login, getMe, syncBalance, claimDaily, transfer, logout, userExists,
   deleteUser, adminGiveMoney, adminSetBalance, listUsers, isAdminToken, getTopBalances,
-  recordIP, kickUser, enforceIPAccountLimit,
+  recordIP, kickUser, checkIPAccountLimit, addBonus,
 };

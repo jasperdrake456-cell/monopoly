@@ -285,6 +285,12 @@
   gap: 8px;
 }
 
+.admin-user-row--sub {
+  margin-left: 20px;
+  border-left: 3px solid rgba(124, 58, 237, 0.35);
+  background: rgba(124, 58, 237, 0.03);
+}
+
 .admin-user-actions {
   display: flex;
   gap: 6px;

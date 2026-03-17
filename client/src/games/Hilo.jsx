@@ -30,29 +30,28 @@ function shuffleDeck(deck) {
 }
 
 // Given current card value, compute multiplier for higher/lower bet
-// P(higher) = cards_higher / remaining_cards * HOUSE_EDGE
+// mult = (totalRemaining / countInDirection) * HOUSE_EDGE
 function calcMultipliers(cardValue, usedValues) {
-  // Count remaining cards in deck (excluding already-revealed cards)
   const fullDeck = buildDeck();
-  const remaining = fullDeck.filter(c => !usedValues.includes(c)); // approximate: just use value distribution
-  // Use theoretical distribution: 4 cards per rank, 52 total, minus used
   const usedCount = usedValues.length;
   const totalRemaining = 52 - usedCount;
 
   let higher = 0, lower = 0, equal = 0;
   for (const c of fullDeck) {
+    // Count how many of this rank have already been used
     const alreadyUsed = usedValues.filter(v => v === c.value).length;
-    const available = 4 - alreadyUsed; // how many of this rank remain
+    const available = 4 - alreadyUsed;
     if (available <= 0) continue;
     if (c.value > cardValue) higher += available;
     else if (c.value < cardValue) lower += available;
     else equal += available;
   }
 
-  const multHigher = totalRemaining > higher && higher > 0
+  // Show multiplier whenever there are valid cards in that direction
+  const multHigher = higher > 0
     ? parseFloat(((totalRemaining / higher) * HOUSE_EDGE).toFixed(2))
     : null;
-  const multLower = totalRemaining > lower && lower > 0
+  const multLower = lower > 0
     ? parseFloat(((totalRemaining / lower) * HOUSE_EDGE).toFixed(2))
     : null;
 
