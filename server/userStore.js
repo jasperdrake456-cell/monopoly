@@ -35,27 +35,6 @@ console.log(`[userStore] Data directory: ${DATA_DIR}`);
   }
 })();
 
-// ── Migration: seed registrationLog from existing accounts ────────────────────
-// Ensures accounts created before the log existed are counted by the new check.
-(function seedRegLog() {
-  const users = readUsers();
-  const log   = readRegLog();
-  // Build a set of usernames already in the log
-  const logged = new Set(log.map(e => e.username));
-  let added = 0;
-  for (const u of Object.values(users)) {
-    if (u.username === ADMIN_USERNAME) continue;
-    if (logged.has(u.username)) continue; // already in log
-    const ip = u.registerIP || u.lastIP;
-    if (!ip) continue; // no IP data — skip
-    log.push({ ip: normalizeIP(ip), username: u.username, createdAt: u.createdAt || Date.now() });
-    added++;
-  }
-  if (added > 0) {
-    writeRegLog(log);
-    console.log(`[userStore] Seeded registrationLog with ${added} existing account(s)`);
-  }
-})();
 
 function readUsers() {
   try { return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8')); }
@@ -135,6 +114,28 @@ const DAILY_AMOUNT     = 1000;
 const HOURLY_MS        = 60 * 60 * 1000; // 1 hour
 const ADMIN_USERNAME   = 'jasper';
 const ADMIN_BALANCE    = 999_999_999; // effectively infinite
+
+// ── Migration: seed registrationLog from existing accounts ────────────────────
+// Ensures accounts created before the log existed are counted by the new check.
+// Must run AFTER ADMIN_USERNAME is declared (constants block above).
+(function seedRegLog() {
+  const users = readUsers();
+  const log   = readRegLog();
+  const logged = new Set(log.map(e => e.username));
+  let added = 0;
+  for (const u of Object.values(users)) {
+    if (u.username === ADMIN_USERNAME) continue;
+    if (logged.has(u.username)) continue;
+    const ip = u.registerIP || u.lastIP;
+    if (!ip) continue;
+    log.push({ ip: normalizeIP(ip), username: u.username, createdAt: u.createdAt || Date.now() });
+    added++;
+  }
+  if (added > 0) {
+    writeRegLog(log);
+    console.log(`[userStore] Seeded registrationLog with ${added} existing account(s)`);
+  }
+})();
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
