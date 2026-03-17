@@ -219,10 +219,10 @@ export default function ChickenCross() {
           {isActive && phase === 'lost' && (
             <div className="cc-chicken cc-chicken--dead">💀</div>
           )}
-          {/* Multiplier label on cleared rows */}
+          {/* Multiplier label on cleared rows — show the mult earned AT this row */}
           {isCleared && (
             <div className="cc-row-mult-label">
-              ×{parseFloat((Math.pow(diff.rowMult, currentRow)).toFixed(2))}
+              ×{parseFloat((Math.pow(diff.rowMult, row + 1)).toFixed(2))}
             </div>
           )}
         </div>

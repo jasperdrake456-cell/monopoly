@@ -16,24 +16,18 @@ const COLS = 3;  // 3 tiles per floor
 
 const HOUSE_EDGE = 0.99;
 
-const DIFFICULTIES = {
-  easy:   { bombs: 1, label: 'Easy',   emoji: '😌', color: '#22c55e', rowMult: parseFloat(((COLS / (COLS - 1)) * HOUSE_EDGE).toFixed(4)) },
-  medium: { bombs: 2, label: 'Medium', emoji: '😰', color: '#eab308', rowMult: parseFloat(((COLS / (COLS - 2)) * HOUSE_EDGE).toFixed(4)) },
-  hard:   { bombs: 1, label: 'Hard',   emoji: '💀', color: '#ef4444', rowMult: parseFloat(((COLS / (COLS - 1)) * HOUSE_EDGE * 1.35).toFixed(4)) },
-};
-
-// Recalculate: easy=3/2*0.99=1.485, medium=3/1*0.99=2.97, hard=4+ tiers
-// Redefine properly:
+// DIFF_CONFIG: Easy=1 bomb (66% safe), Medium=2 bombs (33% safe),
+// Hard=2 bombs (33% safe) with 1.5× multiplier boost per floor for higher risk/reward.
 const DIFF_CONFIG = {
-  easy:   { bombs: 1, label: 'Easy',   emoji: '😌', color: '#22c55e' },
-  medium: { bombs: 2, label: 'Medium', emoji: '😰', color: '#eab308' },
-  hard:   { bombs: 2, label: 'Hard',   emoji: '💀', color: '#ef4444', colsOverride: 3, bombsOverride: 2 },
+  easy:   { bombs: 1, label: 'Easy',   emoji: '😌', color: '#22c55e', multBoost: 1.0 },
+  medium: { bombs: 2, label: 'Medium', emoji: '😰', color: '#eab308', multBoost: 1.0 },
+  hard:   { bombs: 2, label: 'Hard',   emoji: '💀', color: '#ef4444', multBoost: 1.5 },
 };
 
-// Row multiplier: safe_tiles/total_tiles probability inverted with house edge
-function rowMultiplier(bombs) {
+// Row multiplier: (total / safe) * HOUSE_EDGE, with an optional boost for Hard mode
+function rowMultiplier(bombs, multBoost = 1.0) {
   const safe = COLS - bombs;
-  return parseFloat(((COLS / safe) * HOUSE_EDGE).toFixed(4));
+  return parseFloat(((COLS / safe) * HOUSE_EDGE * multBoost).toFixed(4));
 }
 
 // Generate tower layout: array of ROWS floors, each floor is array of COLS booleans (true=bomb)
@@ -86,7 +80,7 @@ export default function Tower() {
   function syncBalance() { setBalance(getBalance()); }
 
   const diff = DIFF_CONFIG[difficulty];
-  const rowMult = rowMultiplier(diff.bombs);
+  const rowMult = rowMultiplier(diff.bombs, diff.multBoost);
 
   function startGame() {
     const b = getBalance();
@@ -303,7 +297,7 @@ export default function Tower() {
                     onClick={() => setDifficulty(key)}
                   >
                     {d.emoji} {d.label}
-                    <span className="tower-diff-mult">{rowMultiplier(d.bombs).toFixed(2)}×/floor</span>
+                    <span className="tower-diff-mult">{rowMultiplier(d.bombs, d.multBoost).toFixed(2)}×/floor</span>
                   </button>
                 ))}
               </div>

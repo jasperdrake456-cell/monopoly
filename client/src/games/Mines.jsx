@@ -53,6 +53,8 @@ export default function Mines() {
   // so two clicks before re-render both see stale values. Refs update immediately.
   const minesRef    = useRef(new Set()); // synchronous mine map
   const playingRef  = useRef(false);     // blocks clicks after terminal state
+  const revealedRef = useRef(new Set()); // synchronous mirror of revealed set
+  const revCountRef = useRef(0);         // synchronous mirror of revealedCount
 
   // Live countdown to next daily reward
   useEffect(() => {
@@ -74,7 +76,9 @@ export default function Mines() {
     if (bet < 1 || bet > getBalance()) return;
     subtractBalance(bet);
     syncBalance();
-    minesRef.current = new Set(); // reset synchronous mine map
+    minesRef.current   = new Set(); // reset synchronous mine map
+    revealedRef.current = new Set(); // reset synchronous revealed set
+    revCountRef.current = 0;
     playingRef.current = true;
     setMines(new Set()); // mines placed on first click
     setRevealed(new Set());
@@ -86,9 +90,10 @@ export default function Mines() {
   }
 
   function handleTileClick(idx) {
-    // Use ref instead of state — prevents race condition on rapid clicks
+    // Use refs instead of state — prevents race condition on rapid clicks
+    // (React state updates are batched; refs are synchronous)
     if (!playingRef.current) return;
-    if (revealed.has(idx)) return;
+    if (revealedRef.current.has(idx)) return; // use ref, not stale state
 
     let activeMines = minesRef.current;
 
@@ -107,10 +112,14 @@ export default function Mines() {
       setResult({ win: false, payout: 0, msg: `💥 BOOM! Lost $${bet}` });
       setPhase('result');
     } else {
-      const newRevealed = new Set(revealed);
-      newRevealed.add(idx);
-      const newCount = revealedCount + 1;
-      setRevealed(newRevealed);
+      // Update refs synchronously so rapid subsequent clicks see correct state
+      revealedRef.current = new Set(revealedRef.current);
+      revealedRef.current.add(idx);
+      revCountRef.current += 1;
+      const newCount = revCountRef.current;
+
+      // Update React state for rendering
+      setRevealed(new Set(revealedRef.current));
       setRevealedCount(newCount);
 
       // Auto-win if all safe tiles revealed
@@ -129,9 +138,9 @@ export default function Mines() {
   }
 
   function cashOut() {
-    if (!playingRef.current || revealedCount === 0) return;
+    if (!playingRef.current || revCountRef.current === 0) return;
     playingRef.current = false;
-    const mult = calcMultiplier(mineCount, revealedCount);
+    const mult = calcMultiplier(mineCount, revCountRef.current);
     const payout = Math.floor(bet * mult);
     addBalance(payout);
     syncBalance();

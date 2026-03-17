@@ -201,7 +201,7 @@ export default function RideTheBus() {
       case 3: {
         const vals = revealed.map(c => c.value);
         const lo = Math.min(...vals), hi = Math.max(...vals);
-        if (lo === hi) return 'Inside or Outside?';
+        if (lo === hi) return `Cards are equal (${VAL_LBL[lo]}) — Only Outside can win!`;
         return `Inside (${VAL_LBL[lo]}–${VAL_LBL[hi]}) or Outside?`;
       }
       case 4: return 'Pick the Suit!';

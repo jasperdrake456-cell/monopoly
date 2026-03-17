@@ -131,8 +131,8 @@ export default function Baccarat() {
       else if (newBScore === 5 && [4,5,6,7].includes(p3Val)) bankerDraws = true;
       else if (newBScore === 6 && [6,7].includes(p3Val)) bankerDraws = true;
       if (bankerDraws) finalBHand = [...bHand, getCard()];
-    } else if (bScore <= 5 && bScore < 8 && pScore >= 6) {
-      // Player didn't draw, banker draws on 0-5
+    } else if (bScore <= 5 && bScore < 8 && pScore >= 6 && pScore < 8) {
+      // Player stood on 6 or 7 (not a natural 8/9) — banker draws on 0–5
       finalBHand = [...bHand, getCard()];
     }
 
