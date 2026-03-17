@@ -9,6 +9,7 @@ const { sendPasswordEmail } = require('./email');
 const lb = require('./leaderboard');
 const us = require('./userStore');
 const rp = require('./reportStore');
+const bn = require('./banStore');
 
 const app = express();
 const server = http.createServer(app);
@@ -18,6 +19,31 @@ const io = new Server(server, {
 
 app.use(cors());
 app.use(express.json());
+
+// ── IP ban middleware ──────────────────────────────────────────────────────────
+function getClientIP(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) return forwarded.split(',')[0].trim();
+  return req.socket?.remoteAddress || 'unknown';
+}
+
+app.use((req, res, next) => {
+  // Skip static file serving and non-API routes
+  if (!req.path.startsWith('/api/')) return next();
+  // Admin and auth routes are always allowed (so admin can unban)
+  if (req.path.startsWith('/api/admin/') || req.path === '/api/auth') return next();
+  const ip = getClientIP(req);
+  if (bn.isIPBanned(ip)) {
+    const ban = bn.getIPBan(ip);
+    return res.status(403).json({
+      ok: false,
+      error: 'Your IP has been banned.',
+      reason: ban?.reason || '',
+      expiresAt: ban?.expiresAt || null,
+    });
+  }
+  next();
+});
 
 // ── Auth API ─────────────────────────────────────────────────────────────────
 
@@ -94,6 +120,23 @@ app.post('/api/accounts/transfer', (req, res) => {
 
 app.get('/api/accounts/exists/:username', (req, res) => {
   res.json({ exists: us.userExists(req.params.username) });
+});
+
+// ── Ban check (called by client on game load) ─────────────────────────────────
+app.get('/api/ban-check', (req, res) => {
+  const token    = getToken(req);
+  const gameSlug = req.query.game || '';
+  const me       = us.getMe(token);
+  if (!me.ok) return res.json({ banned: false });
+  const ban = bn.getUserBan(me.username);
+  if (!ban) return res.json({ banned: false });
+  const bannedFromThis = ban.games.includes('*') || ban.games.includes(gameSlug);
+  res.json({
+    banned: bannedFromThis,
+    reason: ban.reason || '',
+    games: ban.games,
+    expiresAt: ban.expiresAt || null,
+  });
 });
 
 // ── Casino Rich List (public) ─────────────────────────────────────────────────
@@ -191,6 +234,52 @@ app.post('/api/admin/give-money', requireAdmin, (req, res) => {
 app.put('/api/admin/users/:username/balance', requireAdmin, (req, res) => {
   const { amount } = req.body || {};
   res.json(us.adminSetBalance(getToken(req), req.params.username, amount));
+});
+
+// ── Ban admin API ──────────────────────────────────────────────────────────────
+
+// List all IP bans
+app.get('/api/admin/bans/ips', requireAdmin, (req, res) => {
+  res.json({ ok: true, bans: bn.listIPBans() });
+});
+
+// Ban an IP
+app.post('/api/admin/bans/ip', requireAdmin, (req, res) => {
+  const { ip, reason = '', durationMs = null } = req.body || {};
+  if (!ip) return res.status(400).json({ ok: false, error: 'IP required' });
+  bn.banIP(ip, reason, durationMs);
+  res.json({ ok: true });
+});
+
+// Unban an IP
+app.delete('/api/admin/bans/ip/:ip', requireAdmin, (req, res) => {
+  bn.unbanIP(decodeURIComponent(req.params.ip));
+  res.json({ ok: true });
+});
+
+// List all user game bans
+app.get('/api/admin/bans/users', requireAdmin, (req, res) => {
+  res.json({ ok: true, bans: bn.listUserBans() });
+});
+
+// Ban a user from game(s)
+app.post('/api/admin/bans/user', requireAdmin, (req, res) => {
+  const { username, games = ['*'], reason = '', durationMs = null } = req.body || {};
+  if (!username) return res.status(400).json({ ok: false, error: 'Username required' });
+  bn.banUser(username.trim().toLowerCase(), games, reason, durationMs);
+  res.json({ ok: true });
+});
+
+// Unban a user
+app.delete('/api/admin/bans/user/:username', requireAdmin, (req, res) => {
+  bn.unbanUser(decodeURIComponent(req.params.username));
+  res.json({ ok: true });
+});
+
+// Get the current IP of a request (so admin can look up IPs)
+app.get('/api/admin/bans/lookup-ip', requireAdmin, (req, res) => {
+  // Returns IP from query param user's last known IP — simplified: just shows IP of this request
+  res.json({ ok: true, yourIP: getClientIP(req) });
 });
 
 // ── Static client ─────────────────────────────────────────────────────────────

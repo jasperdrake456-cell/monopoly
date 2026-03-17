@@ -16,13 +16,30 @@ export default function AdminPage() {
   const { user, token, isLoggedIn } = useAuth();
   const navigate = useNavigate();
 
-  const [tab, setTab]           = useState('reports'); // 'reports' | 'users' | 'money'
+  const [tab, setTab]           = useState('reports'); // 'reports' | 'users' | 'money' | 'bans'
   const [reports, setReports]   = useState([]);
   const [users, setUsers]       = useState([]);
   const [status, setStatus]     = useState('');
   const [giveTarget, setGiveTarget] = useState('');
   const [giveAmount, setGiveAmount] = useState('');
   const [editingBal, setEditingBal] = useState(null); // { username, value }
+
+  // Bans state
+  const [ipBans, setIpBans]         = useState([]);
+  const [userBans, setUserBans]     = useState([]);
+  const [banIP, setBanIP]           = useState('');
+  const [banIPReason, setBanIPReason] = useState('');
+  const [banIPDur, setBanIPDur]     = useState('permanent');
+  const [banUser_, setBanUser_]     = useState('');
+  const [banUserReason, setBanUserReason] = useState('');
+  const [banUserDur, setBanUserDur] = useState('permanent');
+  const [banUserGames, setBanUserGames] = useState('all');
+
+  const ALL_GAMES = [
+    'crash','plinko','dice','roulette','blackjack','baccarat',
+    'mines','ride-the-bus','slots','chicken-cross','texas-holdem',
+    'hilo','tower','wheel',
+  ];
 
   const isAdmin = user?.username === 'jasper';
 
@@ -44,10 +61,21 @@ export default function AdminPage() {
       .catch(() => {});
   }, [token]);
 
+  const loadIPBans = useCallback(() => {
+    if (!token) return;
+    authFetch('/api/admin/bans/ips', token).then(d => { if (d.ok) setIpBans(d.bans); }).catch(() => {});
+  }, [token]);
+
+  const loadUserBans = useCallback(() => {
+    if (!token) return;
+    authFetch('/api/admin/bans/users', token).then(d => { if (d.ok) setUserBans(d.bans); }).catch(() => {});
+  }, [token]);
+
   useEffect(() => {
     if (tab === 'reports') loadReports();
     if (tab === 'users')   loadUsers();
-  }, [tab, loadReports, loadUsers]);
+    if (tab === 'bans')  { loadIPBans(); loadUserBans(); }
+  }, [tab, loadReports, loadUsers, loadIPBans, loadUserBans]);
 
   async function dismissReport(id) {
     await authFetch(`/api/admin/reports/${id}/dismiss`, token, { method: 'POST' });
@@ -84,6 +112,47 @@ export default function AdminPage() {
     loadUsers();
   }
 
+  function parseDuration(durStr) {
+    if (durStr === 'permanent') return null;
+    const map = { '1h': 3600000, '6h': 21600000, '24h': 86400000, '7d': 604800000, '30d': 2592000000 };
+    return map[durStr] || null;
+  }
+
+  async function submitIPBan() {
+    if (!banIP.trim()) return setStatus('Enter an IP address.');
+    const d = await authFetch('/api/admin/bans/ip', token, {
+      method: 'POST',
+      body: JSON.stringify({ ip: banIP.trim(), reason: banIPReason, durationMs: parseDuration(banIPDur) }),
+    });
+    setStatus(d.ok ? `Banned IP ${banIP}` : d.error);
+    setBanIP(''); setBanIPReason(''); setBanIPDur('permanent');
+    loadIPBans();
+  }
+
+  async function removeIPBan(ip) {
+    await authFetch(`/api/admin/bans/ip/${encodeURIComponent(ip)}`, token, { method: 'DELETE' });
+    setStatus(`Unbanned IP ${ip}`);
+    loadIPBans();
+  }
+
+  async function submitUserBan() {
+    if (!banUser_.trim()) return setStatus('Enter a username.');
+    const games = banUserGames === 'all' ? ['*'] : [banUserGames];
+    const d = await authFetch('/api/admin/bans/user', token, {
+      method: 'POST',
+      body: JSON.stringify({ username: banUser_.trim(), games, reason: banUserReason, durationMs: parseDuration(banUserDur) }),
+    });
+    setStatus(d.ok ? `Banned ${banUser_} from ${banUserGames === 'all' ? 'all games' : banUserGames}` : d.error);
+    setBanUser_(''); setBanUserReason(''); setBanUserDur('permanent'); setBanUserGames('all');
+    loadUserBans();
+  }
+
+  async function removeUserBan(username) {
+    await authFetch(`/api/admin/bans/user/${encodeURIComponent(username)}`, token, { method: 'DELETE' });
+    setStatus(`Unbanned ${username}`);
+    loadUserBans();
+  }
+
   async function giveMoney() {
     const amt = parseInt(giveAmount, 10);
     if (!giveTarget || !amt || amt < 1) return setStatus('Enter a username and amount.');
@@ -106,7 +175,7 @@ export default function AdminPage() {
       </div>
 
       <div className="admin-tabs">
-        {[['reports','📋 Reports'],['users','👥 Users'],['money','💰 Give Money']].map(([id, label]) => (
+        {[['reports','📋 Reports'],['users','👥 Users'],['money','💰 Give Money'],['bans','🚫 Bans']].map(([id, label]) => (
           <button key={id} className={`admin-tab${tab === id ? ' active' : ''}`} onClick={() => setTab(id)}>
             {label}
           </button>
@@ -220,6 +289,78 @@ export default function AdminPage() {
               💰 Give Money
             </button>
           </div>
+        </div>
+      )}
+      {/* ── Bans ── */}
+      {tab === 'bans' && (
+        <div className="admin-section">
+
+          {/* IP Bans */}
+          <div className="admin-section-title">🌐 IP Bans ({ipBans.length})</div>
+          <div className="admin-ban-form">
+            <input className="admin-input" placeholder="IP address (e.g. 1.2.3.4)" value={banIP} onChange={e => setBanIP(e.target.value)} />
+            <input className="admin-input" placeholder="Reason (optional)" value={banIPReason} onChange={e => setBanIPReason(e.target.value)} />
+            <select className="admin-input admin-select" value={banIPDur} onChange={e => setBanIPDur(e.target.value)}>
+              <option value="1h">1 hour</option>
+              <option value="6h">6 hours</option>
+              <option value="24h">24 hours</option>
+              <option value="7d">7 days</option>
+              <option value="30d">30 days</option>
+              <option value="permanent">Permanent</option>
+            </select>
+            <button className="admin-btn admin-btn--danger" onClick={submitIPBan}>🚫 Ban IP</button>
+          </div>
+
+          {ipBans.length === 0 && <div className="admin-empty">No IP bans active.</div>}
+          {ipBans.map(b => (
+            <div key={b.ip} className="admin-ban-row">
+              <div className="admin-ban-info">
+                <span className="admin-ban-target">{b.ip}</span>
+                {b.reason && <span className="admin-ban-reason">"{b.reason}"</span>}
+                <span className="admin-ban-expiry">
+                  {b.expiresAt ? `Expires ${new Date(b.expiresAt).toLocaleString()}` : 'Permanent'}
+                </span>
+              </div>
+              <button className="admin-btn admin-btn--ghost" onClick={() => removeIPBan(b.ip)}>Unban</button>
+            </div>
+          ))}
+
+          <div style={{ marginTop: 28 }} />
+
+          {/* User Game Bans */}
+          <div className="admin-section-title">👤 User Game Bans ({userBans.length})</div>
+          <div className="admin-ban-form">
+            <input className="admin-input" placeholder="Username" value={banUser_} onChange={e => setBanUser_(e.target.value)} />
+            <input className="admin-input" placeholder="Reason (optional)" value={banUserReason} onChange={e => setBanUserReason(e.target.value)} />
+            <select className="admin-input admin-select" value={banUserGames} onChange={e => setBanUserGames(e.target.value)}>
+              <option value="all">All casino games</option>
+              {ALL_GAMES.map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+            <select className="admin-input admin-select" value={banUserDur} onChange={e => setBanUserDur(e.target.value)}>
+              <option value="1h">1 hour</option>
+              <option value="6h">6 hours</option>
+              <option value="24h">24 hours</option>
+              <option value="7d">7 days</option>
+              <option value="30d">30 days</option>
+              <option value="permanent">Permanent</option>
+            </select>
+            <button className="admin-btn admin-btn--danger" onClick={submitUserBan}>🚫 Ban User</button>
+          </div>
+
+          {userBans.length === 0 && <div className="admin-empty">No user game bans active.</div>}
+          {userBans.map(b => (
+            <div key={b.username} className="admin-ban-row">
+              <div className="admin-ban-info">
+                <span className="admin-ban-target">@{b.username}</span>
+                <span className="admin-ban-games">{b.games.includes('*') ? 'All games' : b.games.join(', ')}</span>
+                {b.reason && <span className="admin-ban-reason">"{b.reason}"</span>}
+                <span className="admin-ban-expiry">
+                  {b.expiresAt ? `Expires ${new Date(b.expiresAt).toLocaleString()}` : 'Permanent'}
+                </span>
+              </div>
+              <button className="admin-btn admin-btn--ghost" onClick={() => removeUserBan(b.username)}>Unban</button>
+            </div>
+          ))}
         </div>
       )}
     </div>
