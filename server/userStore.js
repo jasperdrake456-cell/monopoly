@@ -278,6 +278,18 @@ function adminGiveMoney(adminToken, targetUsername, amount) {
 }
 
 /**
+ * Record the last known IP for a user (called on login/register).
+ */
+function recordIP(username, ip) {
+  if (!ip || ip === 'unknown') return;
+  const users = readUsers();
+  if (!users[username]) return;
+  users[username].lastIP = ip;
+  users[username].lastSeen = Date.now();
+  writeUsers(users);
+}
+
+/**
  * Admin only: list all users.
  */
 function listUsers(adminToken) {
@@ -292,6 +304,8 @@ function listUsers(adminToken) {
       displayName: u.displayName,
       balance: u.casinoBalance,
       createdAt: u.createdAt,
+      lastIP: u.lastIP || null,
+      lastSeen: u.lastSeen || null,
     })),
   };
 }
@@ -354,4 +368,5 @@ function logout(token) {
 module.exports = {
   register, login, getMe, syncBalance, claimDaily, transfer, logout, userExists,
   deleteUser, adminGiveMoney, adminSetBalance, listUsers, isAdminToken, getTopBalances,
+  recordIP,
 };

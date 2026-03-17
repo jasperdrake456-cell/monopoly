@@ -88,12 +88,16 @@ function getToken(req) {
 
 app.post('/api/accounts/register', (req, res) => {
   const { username, password } = req.body || {};
-  res.json(us.register(username, password));
+  const result = us.register(username, password);
+  if (result.ok) us.recordIP(result.username, getClientIP(req));
+  res.json(result);
 });
 
 app.post('/api/accounts/login', (req, res) => {
   const { username, password } = req.body || {};
-  res.json(us.login(username, password));
+  const result = us.login(username, password);
+  if (result.ok) us.recordIP(result.username, getClientIP(req));
+  res.json(result);
 });
 
 app.post('/api/accounts/logout', (req, res) => {

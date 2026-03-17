@@ -226,7 +226,7 @@ export default function AdminPage() {
           {users.length === 0 && <div className="admin-empty">No users found.</div>}
           <div className="admin-user-list">
             {users.sort((a, b) => b.balance - a.balance).map(u => (
-              <div key={u.username} className="admin-user-row">
+              <div key={u.username} className="admin-user-row admin-user-row--expanded">
                 <div className="admin-user-info">
                   <span className="admin-user-name">{u.displayName}</span>
                   <span className="admin-user-handle">@{u.username}</span>
@@ -254,11 +254,36 @@ export default function AdminPage() {
                       ${(u.balance || 0).toLocaleString()} ✏️
                     </span>
                   )}
+                  {u.lastIP && (
+                    <span className="admin-user-ip" title={`Last seen ${u.lastSeen ? new Date(u.lastSeen).toLocaleString() : 'unknown'}`}>
+                      🌐 {u.lastIP}
+                    </span>
+                  )}
+                  {!u.lastIP && <span className="admin-user-ip admin-user-ip--unknown">🌐 No IP yet</span>}
                 </div>
                 {u.username !== 'jasper' && (
-                  <button className="admin-btn admin-btn--danger" onClick={() => deleteUser(u.username)}>
-                    Delete
-                  </button>
+                  <div className="admin-user-actions">
+                    <button className="admin-btn admin-btn--danger admin-btn--sm" onClick={() => {
+                      setBanUser_(u.username); setBanUserGames('all'); setBanUserDur('permanent');
+                      setBanUserReason(''); setTab('bans');
+                      setStatus(`Pre-filled ban form for @${u.username}`);
+                    }}>🚫 Perma Ban</button>
+                    <button className="admin-btn admin-btn--warn admin-btn--sm" onClick={() => {
+                      setBanUser_(u.username); setBanUserGames('all'); setBanUserDur('24h');
+                      setBanUserReason(''); setTab('bans');
+                      setStatus(`Pre-filled 24h ban form for @${u.username}`);
+                    }}>⏱ Temp Ban</button>
+                    {u.lastIP && (
+                      <button className="admin-btn admin-btn--danger admin-btn--sm" onClick={() => {
+                        setBanIP(u.lastIP); setBanIPDur('permanent'); setBanIPReason('');
+                        setTab('bans');
+                        setStatus(`Pre-filled IP ban for ${u.lastIP} (@${u.username})`);
+                      }}>🌐 Ban IP</button>
+                    )}
+                    <button className="admin-btn admin-btn--ghost admin-btn--sm" onClick={() => deleteUser(u.username)}>
+                      🗑 Delete
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
