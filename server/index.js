@@ -96,17 +96,25 @@ function getToken(req) {
 app.post('/api/accounts/register', (req, res) => {
   const { username, password } = req.body || {};
   const ip = getClientIP(req);
-  // Block registration if this IP already has 3 accounts
+
+  // Check registration log + account store — block if at/over limit
   const ipCheck = us.checkIPAccountLimit(ip, 3);
   if (ipCheck.blocked) {
-    console.log(`[register] BLOCKED: IP ${ip} already has ${ipCheck.count} accounts`);
-    return res.status(429).json({ ok: false, error: 'Too many accounts from this device. Maximum 3 accounts per IP address.' });
+    const msg = ipCheck.reason === 'unknown_ip'
+      ? 'Unable to verify your connection. Please try again or contact support.'
+      : `Too many accounts from this device (${ipCheck.count}/3). Maximum 3 accounts per IP address.`;
+    console.log(`[register] BLOCKED IP ${ip}: ${msg}`);
+    return res.status(429).json({ ok: false, error: msg });
   }
+
   // Pass IP so it's stored as registerIP (permanent) at creation time
   const result = us.register(username, password, ip);
   if (result.ok) {
-    console.log(`[register] New account "${result.username}" from IP ${ip}`);
-    us.recordIP(result.username, ip); // also keeps lastIP in sync
+    // Write to the permanent registration log so this IP is counted
+    // even if the account is later deleted
+    us.logRegistration(ip, result.username);
+    us.recordIP(result.username, ip);
+    console.log(`[register] New account "${result.username}" from IP ${ip} (now ${(ipCheck.count || 0) + 1}/3 for this IP)`);
   }
   res.json(result);
 });

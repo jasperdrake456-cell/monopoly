@@ -9,10 +9,13 @@ const crypto = require('crypto');
 const DATA_DIR      = process.env.DATA_DIR || path.join(__dirname, 'data');
 const USERS_FILE    = path.join(DATA_DIR, 'users.json');
 const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
+// Permanent record of every registration by IP — survives account deletions
+const REG_LOG_FILE  = path.join(DATA_DIR, 'registrationLog.json');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(USERS_FILE))    fs.writeFileSync(USERS_FILE,    '{}', 'utf8');
 if (!fs.existsSync(SESSIONS_FILE)) fs.writeFileSync(SESSIONS_FILE, '{}', 'utf8');
+if (!fs.existsSync(REG_LOG_FILE))  fs.writeFileSync(REG_LOG_FILE,  '[]', 'utf8');
 
 console.log(`[userStore] Data directory: ${DATA_DIR}`);
 
@@ -29,6 +32,28 @@ console.log(`[userStore] Data directory: ${DATA_DIR}`);
   if (changed > 0) {
     writeUsers(users);
     console.log(`[userStore] Migrated registerIP for ${changed} account(s)`);
+  }
+})();
+
+// ── Migration: seed registrationLog from existing accounts ────────────────────
+// Ensures accounts created before the log existed are counted by the new check.
+(function seedRegLog() {
+  const users = readUsers();
+  const log   = readRegLog();
+  // Build a set of usernames already in the log
+  const logged = new Set(log.map(e => e.username));
+  let added = 0;
+  for (const u of Object.values(users)) {
+    if (u.username === ADMIN_USERNAME) continue;
+    if (logged.has(u.username)) continue; // already in log
+    const ip = u.registerIP || u.lastIP;
+    if (!ip) continue; // no IP data — skip
+    log.push({ ip: normalizeIP(ip), username: u.username, createdAt: u.createdAt || Date.now() });
+    added++;
+  }
+  if (added > 0) {
+    writeRegLog(log);
+    console.log(`[userStore] Seeded registrationLog with ${added} existing account(s)`);
   }
 })();
 
@@ -318,27 +343,71 @@ function recordIP(username, ip) {
   writeUsers(users);
 }
 
+// ── Registration log helpers ───────────────────────────────────────────────────
+// The log is a permanent record of every registration, keyed by IP.
+// Accounts can be deleted, but the log entry stays — preventing re-registration.
+
+function readRegLog() {
+  try { return JSON.parse(fs.readFileSync(REG_LOG_FILE, 'utf8')); }
+  catch { return []; }
+}
+
+function writeRegLog(log) {
+  try { fs.writeFileSync(REG_LOG_FILE, JSON.stringify(log, null, 2), 'utf8'); }
+  catch (e) { console.error('[regLog] write error:', e.message); }
+}
+
 /**
- * Check if an IP already has maxAccounts accounts.
- * Uses registerIP (permanent) as the primary signal, falls back to lastIP.
- * Returns { blocked: true, count } if at limit, { blocked: false } otherwise.
+ * Append a registration event to the log.
+ * Called once per successful registration.
+ */
+function logRegistration(ip, username) {
+  const normIP = normalizeIP(ip);
+  const log = readRegLog();
+  log.push({ ip: normIP, username, createdAt: Date.now() });
+  writeRegLog(log);
+  console.log(`[regLog] Logged registration for "${username}" from IP ${normIP} (total entries: ${log.length})`);
+}
+
+/**
+ * Count how many times accounts were registered from this IP.
+ * Combines the registration log (permanent) with the current account store
+ * (catches cases where the log doesn't exist yet for old accounts).
+ * Returns { blocked: true, count } if at/over the limit.
  */
 function checkIPAccountLimit(ip, maxAccounts = 3) {
   const normIP = normalizeIP(ip);
-  if (!normIP || normIP === 'unknown') {
-    console.log(`[ipCheck] Could not determine IP — skipping limit check`);
+
+  // Localhost / dev bypass — ::1 and 127.x.x.x are local machines
+  const isLocalhost = normIP === '::1' || normIP === '127.0.0.1' || normIP.startsWith('127.');
+  if (isLocalhost) {
+    console.log(`[ipCheck] Localhost IP ${normIP} — skipping limit`);
     return { blocked: false };
   }
+
+  if (normIP === 'unknown') {
+    // Can't determine IP — block registration to prevent header-stripping abuse
+    console.log(`[ipCheck] Unknown IP — blocking registration`);
+    return { blocked: true, count: 0, reason: 'unknown_ip' };
+  }
+
+  // ── 1. Check the persistent registration log (most reliable) ──────────────
+  const log = readRegLog();
+  const logCount = log.filter(e => e.ip === normIP || e.ip === ip).length;
+
+  // ── 2. Check the current account store (catches pre-log accounts) ─────────
   const users = readUsers();
-  const count = Object.values(users).filter(u => {
+  const storeCount = Object.values(users).filter(u => {
     if (u.username === ADMIN_USERNAME) return false;
-    // Check registerIP (permanent registration IP) first, then lastIP as fallback
-    // Also check un-normalized variants for backwards compatibility
     return u.registerIP === normIP || u.registerIP === ip ||
            u.lastIP     === normIP || u.lastIP     === ip;
   }).length;
-  console.log(`[ipCheck] IP ${normIP}: found ${count} existing account(s) (limit ${maxAccounts})`);
-  return count >= maxAccounts ? { blocked: true, count } : { blocked: false };
+
+  // Take the higher of the two counts (belt-and-suspenders)
+  const count = Math.max(logCount, storeCount);
+
+  console.log(`[ipCheck] IP ${normIP}: logCount=${logCount} storeCount=${storeCount} effective=${count} (limit ${maxAccounts})`);
+  return count >= maxAccounts ? { blocked: true, count } : { blocked: false, count };
 }
 
 /**
@@ -454,5 +523,5 @@ function kickUser(adminToken, targetUsername) {
 module.exports = {
   register, login, getMe, syncBalance, claimDaily, transfer, logout, userExists,
   deleteUser, adminGiveMoney, adminSetBalance, listUsers, isAdminToken, getTopBalances,
-  recordIP, kickUser, checkIPAccountLimit, addBonus,
+  recordIP, kickUser, checkIPAccountLimit, logRegistration, addBonus,
 };
