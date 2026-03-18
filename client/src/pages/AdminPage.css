@@ -87,6 +87,20 @@
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
+.admin-section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.admin-section-title-row .admin-section-title {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
 .admin-empty {
   color: rgba(255,255,255,0.3);
   font-size: 0.9rem;

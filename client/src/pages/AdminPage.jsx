@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSiteConfig } from '../contexts/SiteConfigContext';
 import { GAME_LIST } from '../utils/gameList';
+import ChatLogModal from '../components/ChatLogModal';
 import './AdminPage.css';
 
 // ── Username moderation helpers ───────────────────────────────────────────────
@@ -96,6 +97,7 @@ export default function AdminPage() {
   const [chatViolations, setChatViolations] = useState([]);
   const [chatMuted,      setChatMuted]      = useState([]);
   const [chatSettings,   setChatSettings]   = useState(null);
+  const [chatLogOpen,    setChatLogOpen]    = useState(false);
   const [chatBanUser,    setChatBanUser]     = useState('');
   const [chatBanReason,  setChatBanReason]   = useState('');
   const [chatBanDur,     setChatBanDur]      = useState('permanent');
@@ -842,8 +844,22 @@ export default function AdminPage() {
       {/* ── Chat Mod ── */}
       {tab === 'chat' && (
         <div className="admin-section">
-          <div className="admin-section-title">💬 Chat Moderation</div>
+          <div className="admin-section-title-row">
+            <div className="admin-section-title">💬 Chat Moderation</div>
+            <button
+              className="admin-btn admin-btn--primary admin-btn--sm"
+              onClick={() => setChatLogOpen(true)}
+            >📋 View Chat Log</button>
+          </div>
           {chatStatus && <div className="admin-status-msg">{chatStatus}</div>}
+
+          {/* ── Chat Log Modal ─────────────────────────────────────────────── */}
+          {chatLogOpen && (
+            <ChatLogModal
+              messages={[...chatMessages].sort((a, b) => a.timestamp - b.timestamp)}
+              onClose={() => setChatLogOpen(false)}
+            />
+          )}
 
           {/* ── Mod Settings ─────────────────────────────────────────────── */}
           {chatSettings && (
