@@ -65,23 +65,6 @@ export default function HomePage() {
 
       <main className="home-main">
         <section className="home-section">
-          <h2 className="home-section-title">Solo Games</h2>
-          <div className="home-grid">
-            {SOLO_GAMES.map(g => (
-              <Link key={g.path} to={g.path} className="game-card">
-                <div className="game-card-icon">{g.icon}</div>
-                <div className="game-card-body">
-                  <div className="game-card-name">{g.name}</div>
-                  <div className="game-card-desc">{g.desc}</div>
-                  <div className="game-card-players">{g.players}</div>
-                </div>
-                <div className="game-card-play">Play</div>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <section className="home-section">
           <h2 className="home-section-title" style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
             <span>🎰 Casino</span>
             <Link to="/casino-leaderboard" className="home-trivia-btn" style={{ fontSize:'0.78rem', padding:'5px 12px' }}>💰 Rich List</Link>
@@ -96,6 +79,23 @@ export default function HomePage() {
                   <div className="game-card-players">{g.players}</div>
                 </div>
                 <div className="game-card-play" style={{ background: 'linear-gradient(135deg,#FFD700,#ff9800)', color: '#1a1a1a' }}>Play</div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="home-section">
+          <h2 className="home-section-title">Solo Games</h2>
+          <div className="home-grid">
+            {SOLO_GAMES.map(g => (
+              <Link key={g.path} to={g.path} className="game-card">
+                <div className="game-card-icon">{g.icon}</div>
+                <div className="game-card-body">
+                  <div className="game-card-name">{g.name}</div>
+                  <div className="game-card-desc">{g.desc}</div>
+                  <div className="game-card-players">{g.players}</div>
+                </div>
+                <div className="game-card-play">Play</div>
               </Link>
             ))}
           </div>
