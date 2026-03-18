@@ -32,6 +32,9 @@ const CASINO_GAMES = [
   { path: '/hilo',          name: 'HiLo',           desc: 'Guess higher or lower each flip — compound your multiplier and cash out!', icon: '🃏', players: '1 player' },
   { path: '/tower',         name: 'Tower',           desc: 'Pick a safe tile each floor — climb higher for bigger multipliers!', icon: '🗼', players: '1 player' },
   { path: '/wheel',         name: 'Wheel',           desc: 'Spin the wheel — pick your colour and risk level to win big!', icon: '🎡', players: '1 player' },
+  { path: '/video-poker',  name: 'Video Poker',     desc: 'Hold your best cards, draw the rest — Jacks or Better pays!', icon: '🂡', players: '1 player' },
+  { path: '/keno',         name: 'Keno',            desc: 'Pick up to 10 numbers — match as many as you can from the draw!', icon: '🎱', players: '1 player' },
+  { path: '/dragon-tiger', name: 'Dragon Tiger',    desc: 'One card each — Dragon vs Tiger. Highest card wins. Simple & fast!', icon: '🐉', players: '1 player' },
 ];
 
 const MULTI_GAMES = [

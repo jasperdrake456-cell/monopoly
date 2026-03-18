@@ -86,7 +86,7 @@ export default function AdminPage() {
   const ALL_GAMES = [
     'crash','plinko','dice','roulette','blackjack','baccarat',
     'mines','ride-the-bus','slots','chicken-cross','texas-holdem',
-    'hilo','tower','wheel',
+    'hilo','tower','wheel','video-poker','keno','dragon-tiger',
   ];
 
   const isAdmin = user?.username === 'jasper';
@@ -227,7 +227,7 @@ export default function AdminPage() {
   const CASINO_GAMES = [
     'crash','plinko','dice','roulette','blackjack','baccarat',
     'mines','ride-the-bus','slots','chicken-cross','texas-holdem',
-    'hilo','tower','wheel',
+    'hilo','tower','wheel','video-poker','keno','dragon-tiger',
   ];
 
   async function submitUserBan() {
@@ -288,7 +288,20 @@ export default function AdminPage() {
       <div className="admin-header">
         <Link to="/" className="admin-back">← Game Vault</Link>
         <div className="admin-title">🛡️ Admin Panel</div>
-        <div className="admin-user">Logged in as <strong>jasper</strong></div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            className="admin-btn admin-btn--ghost admin-btn--sm"
+            title="Reload current tab data"
+            onClick={() => {
+              if (tab === 'reports') { loadReports(); loadUsers(); }
+              if (tab === 'users')   { loadUsers(); loadActivity(); }
+              if (tab === 'bans')    { loadIPBans(); loadUserBans(); }
+              if (tab === 'wins')    { loadBigWins(); }
+              setStatus('↻ Refreshed');
+            }}
+          >↻ Reload</button>
+          <div className="admin-user">Logged in as <strong>jasper</strong></div>
+        </div>
       </div>
 
       <div className="admin-tabs">

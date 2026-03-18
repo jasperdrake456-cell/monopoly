@@ -40,6 +40,9 @@ import ChickenCrossPage from './pages/ChickenCrossPage';
 import HiloPage from './pages/HiloPage';
 import TowerPage from './pages/TowerPage';
 import WheelPage from './pages/WheelPage';
+import VideoPokerPage from './pages/VideoPokerPage';
+import KenoPage from './pages/KenoPage';
+import DragonTigerPage from './pages/DragonTigerPage';
 import RequireAuth from './components/RequireAuth';
 import './App.css';
 
@@ -83,6 +86,9 @@ export default function App() {
         <Route path="/hilo"               element={<RequireAuth><HiloPage /></RequireAuth>} />
         <Route path="/tower"              element={<RequireAuth><TowerPage /></RequireAuth>} />
         <Route path="/wheel"              element={<RequireAuth><WheelPage /></RequireAuth>} />
+        <Route path="/video-poker"        element={<RequireAuth><VideoPokerPage /></RequireAuth>} />
+        <Route path="/keno"               element={<RequireAuth><KenoPage /></RequireAuth>} />
+        <Route path="/dragon-tiger"       element={<RequireAuth><DragonTigerPage /></RequireAuth>} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/transfer" element={<TransferPage />} />
         <Route path="/admin" element={<AdminPage />} />
