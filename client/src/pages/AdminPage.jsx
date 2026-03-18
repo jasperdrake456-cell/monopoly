@@ -659,6 +659,7 @@ export default function AdminPage() {
                   {(u.balance || 0) >= BAL_VERY_HIGH && <span className="admin-user-flag admin-user-flag--red" title="Very high balance">🔴</span>}
                   {(u.balance || 0) >= BAL_HIGH && (u.balance || 0) < BAL_VERY_HIGH && <span className="admin-user-flag admin-user-flag--yellow" title="High balance">🟡</span>}
                   {isSuspectUsername(u.username) && <span className="admin-user-flag" title="Suspicious username">🚩</span>}
+                  {riggedUsers.includes(u.username) && <span className="admin-user-flag" title="Rigged — always loses" style={{color:'#f87171'}}>🎲 RIGGED</span>}
                   {editingBal?.username === u.username ? (
                     <span className="admin-user-bal-edit">
                       <span className="admin-bal-dollar">$</span>
@@ -720,6 +721,21 @@ export default function AdminPage() {
                       ↩ Reset $2k
                     </button>
                     <button className="admin-btn admin-btn--warn admin-btn--sm" onClick={() => kickUser(u.username)}>👢 Kick</button>
+                    {riggedUsers.includes(u.username) ? (
+                      <button className="admin-btn admin-btn--ghost admin-btn--sm" style={{borderColor:'#f87171',color:'#f87171'}} onClick={async () => {
+                        await authFetch(`/api/admin/rigged/${encodeURIComponent(u.username)}`, token, { method: 'DELETE' });
+                        setStatus(`✓ @${u.username} unrigged.`);
+                        loadRiggedUsers();
+                      }}>🎲 Unrig</button>
+                    ) : (
+                      <button className="admin-btn admin-btn--ghost admin-btn--sm" style={{borderColor:'#a855f7',color:'#a855f7'}} onClick={async () => {
+                        const d = await authFetch('/api/admin/rigged', token, {
+                          method: 'POST', body: JSON.stringify({ username: u.username }),
+                        });
+                        setStatus(d.ok ? `🎲 @${u.username} is now rigged — they'll always lose.` : (d.error || 'Failed'));
+                        if (d.ok) loadRiggedUsers();
+                      }}>🎲 Rig</button>
+                    )}
                     <button className="admin-btn admin-btn--ghost admin-btn--sm" onClick={() => deleteUser(u.username)}>🗑 Delete</button>
                   </div>
                 )}
