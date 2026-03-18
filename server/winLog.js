@@ -13,10 +13,12 @@ function readWins() {
 
 /**
  * Append a big-win entry (newest first).
- * Entry shape: { username, game, bet, payout, profit, multiplier, details, timestamp }
+ * Entry shape: { id, username, game, bet, payout, profit, multiplier, details, timestamp }
  */
 function logWin(entry) {
   const wins = readWins();
+  // Unique ID so individual entries can be deleted by the admin
+  entry.id = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
   wins.unshift(entry);
   if (wins.length > MAX_ENTRIES) wins.length = MAX_ENTRIES;
   try { fs.writeFileSync(WIN_LOG_FILE, JSON.stringify(wins, null, 2), 'utf8'); }
@@ -32,4 +34,11 @@ function clearWins() {
   catch { /* non-fatal */ }
 }
 
-module.exports = { logWin, getWins, clearWins };
+/** Delete a single entry by its id string. */
+function deleteWin(id) {
+  const wins = readWins().filter(w => w.id !== id);
+  try { fs.writeFileSync(WIN_LOG_FILE, JSON.stringify(wins, null, 2), 'utf8'); }
+  catch { /* non-fatal */ }
+}
+
+module.exports = { logWin, getWins, clearWins, deleteWin };

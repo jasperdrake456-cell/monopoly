@@ -334,17 +334,19 @@ app.post('/api/accounts/big-win', (req, res) => {
   if (!me.ok) return res.json({ ok: false });
   const { game, bet, payout, profit, multiplier, details } = req.body || {};
   if (!game || bet == null || payout == null) return res.json({ ok: false });
+  const realProfit = Math.floor(profit ?? (payout - bet));
+  if (realProfit < 50_000) return res.json({ ok: false }); // server-side guard
   wl.logWin({
     username:   me.username,
     game,
     bet:        Math.floor(bet),
     payout:     Math.floor(payout),
-    profit:     Math.floor(profit ?? (payout - bet)),
+    profit:     realProfit,
     multiplier: multiplier ?? null,
     details:    details || '',
     timestamp:  Date.now(),
   });
-  console.log(`[winLog] 🏆 ${me.username} won $${Math.floor(profit ?? (payout - bet)).toLocaleString()} on ${game}`);
+  console.log(`[winLog] 🏆 ${me.username} won $${realProfit.toLocaleString()} on ${game}`);
   res.json({ ok: true });
 });
 
@@ -356,6 +358,12 @@ app.get('/api/admin/wins', requireAdmin, (req, res) => {
 // Admin: clear the win log
 app.delete('/api/admin/wins', requireAdmin, (req, res) => {
   wl.clearWins();
+  res.json({ ok: true });
+});
+
+// Admin: delete a single win entry by id
+app.delete('/api/admin/wins/:id', requireAdmin, (req, res) => {
+  wl.deleteWin(req.params.id);
   res.json({ ok: true });
 });
 

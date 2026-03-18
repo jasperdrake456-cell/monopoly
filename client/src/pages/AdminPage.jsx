@@ -642,7 +642,7 @@ export default function AdminPage() {
           </div>
           {bigWins.length === 0 && <div className="admin-empty">No big wins recorded yet.</div>}
           {bigWins.map((w, i) => (
-            <div key={i} className="admin-win-row">
+            <div key={w.id || i} className="admin-win-row">
               <div className="admin-win-top">
                 <span className="admin-win-game">{w.game}</span>
                 <span className="admin-win-user">@{w.username}</span>
@@ -651,6 +651,16 @@ export default function AdminPage() {
                   <span className="admin-win-mult">{w.multiplier}×</span>
                 )}
                 <span className="admin-win-time">{new Date(w.timestamp).toLocaleString()}</span>
+                <button
+                  className="admin-btn admin-btn--ghost admin-btn--sm admin-win-delete"
+                  title="Remove this entry from the log"
+                  onClick={async () => {
+                    if (w.id) {
+                      await authFetch(`/api/admin/wins/${encodeURIComponent(w.id)}`, token, { method: 'DELETE' });
+                    }
+                    setBigWins(prev => prev.filter((_, idx) => idx !== i));
+                  }}
+                >✕</button>
               </div>
               <div className="admin-win-meta">
                 <span className="admin-win-bet">Bet: ${(w.bet || 0).toLocaleString()}</span>
