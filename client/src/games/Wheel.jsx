@@ -326,7 +326,7 @@ export default function Wheel() {
         <div className="wheel-spinning-label">Spinning…</div>
       )}
 
-      <div className="wheel-hint">Pick a segment, spin the wheel • {HOUSE_EDGE * 100}% RTP</div>
+      <div className="wheel-hint">Pick a segment colour, then spin the wheel</div>
     </div>
   );
 }

@@ -450,7 +450,7 @@ app.post('/api/admin/site/testers', requireAdmin, (req, res) => {
 
 // Remove an approved tester
 app.delete('/api/admin/site/testers/:username', requireAdmin, (req, res) => {
-  sc.removeTester(req.params.username);
+  sc.removeTester(req.params.username.toLowerCase());
   res.json({ ok: true, config: sc.getConfig() });
 });
 

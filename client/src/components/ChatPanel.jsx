@@ -35,6 +35,7 @@ export default function ChatPanel() {
   const inputRef  = useRef(null);
   const violTimer = useRef(null);
   const slowTimer = useRef(null);
+  const openRef   = useRef(false); // always reflects current `open` value inside socket handlers
 
   const MAX_LEN = 200;
 
@@ -62,7 +63,7 @@ export default function ChatPanel() {
         const next = [...prev, msg].slice(-MAX_DISPLAY);
         return next;
       });
-      setUnread(prev => (open ? 0 : prev + 1));
+      setUnread(prev => (openRef.current ? 0 : prev + 1));
     });
 
     sock.on('chatBanned', (data) => {
@@ -90,8 +91,9 @@ export default function ChatPanel() {
     return () => { sock.disconnect(); };
   }, [isLoggedIn, user]);
 
-  // Reset unread on open
+  // Keep openRef in sync and clear unread when panel opens
   useEffect(() => {
+    openRef.current = open;
     if (open) setUnread(0);
   }, [open]);
 

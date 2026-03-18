@@ -177,12 +177,15 @@ function filter(text, settings, recentUserMessages = []) {
     return { allowed: false, reason: `Max ${maxEmojis} emojis per message.`, severity: 'warn' };
 
   // ── Repeat spam ───────────────────────────────────────────────────────────
-  if (blockRepeat && recentUserMessages.length >= repeatWindow) {
+  // recentUserMessages holds PAST messages; current hasn't been added yet.
+  // Block when the last (repeatWindow - 1) messages equal the current one,
+  // meaning this message would make repeatWindow identical in a row.
+  if (blockRepeat && recentUserMessages.length >= repeatWindow - 1) {
     const current = text.trim().toLowerCase();
     const sameCount = recentUserMessages
-      .slice(0, repeatWindow)
+      .slice(0, repeatWindow - 1)
       .filter(m => m.trim().toLowerCase() === current).length;
-    if (sameCount >= repeatWindow)
+    if (sameCount >= repeatWindow - 1)
       return { allowed: false, reason: 'Please don\'t repeat the same message.', severity: 'warn' };
   }
 

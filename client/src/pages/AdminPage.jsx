@@ -167,7 +167,7 @@ export default function AdminPage() {
       authFetch('/api/admin/chat/muted',       token),
       authFetch('/api/admin/chat/settings',    token),
     ]).then(([msgs, bans, viols, muted, settings]) => {
-      if (msgs.ok)     setChatMessages(msgs.messages.slice(-200).reverse());
+      if (msgs.ok)     setChatMessages([...msgs.messages].reverse());
       if (bans.ok)     setChatBans(bans.bans);
       if (viols.ok)    setChatViolations(viols.violations);
       if (muted.ok)    setChatMuted(muted.muted);
