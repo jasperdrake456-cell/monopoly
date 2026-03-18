@@ -149,3 +149,86 @@
   .game-card { padding: 0.9rem 0.75rem 0.75rem; }
   .game-card-icon { font-size: 1.8rem; }
 }
+
+/* ── Promo code bar ──────────────────────────────────────────────────────── */
+.home-promo-bar {
+  background: rgba(124,58,237,0.10);
+  border-bottom: 1px solid rgba(124,58,237,0.25);
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.home-promo-toggle {
+  background: transparent;
+  border: 1px solid rgba(192,132,252,0.35);
+  color: #c084fc;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.home-promo-toggle:hover {
+  background: rgba(192,132,252,0.12);
+  border-color: rgba(192,132,252,0.6);
+}
+
+.home-promo-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.home-promo-input {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(192,132,252,0.35);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  outline: none;
+  width: 200px;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+.home-promo-input:focus { border-color: #c084fc; }
+.home-promo-input::placeholder { color: rgba(255,255,255,0.3); letter-spacing: 0; font-weight: 400; }
+
+.home-promo-btn {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: #fff;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.home-promo-btn:disabled { opacity: 0.45; cursor: default; }
+.home-promo-btn:not(:disabled):hover { opacity: 0.88; }
+
+.home-promo-close {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.35);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+.home-promo-close:hover { color: #fff; }
+
+.home-promo-msg {
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+.home-promo-msg--ok  { color: #6ee7b7; background: rgba(52,211,153,0.12); }
+.home-promo-msg--err { color: #fca5a5; background: rgba(239,68,68,0.12); }

@@ -454,9 +454,51 @@ function pruneZeroBalanceAccounts() {
   return toDelete.length;
 }
 
+/**
+ * Server-internal: add chips to a user by username (no token required).
+ * Returns { ok, balance } or { ok: false, error }
+ */
+function addBonusByAdmin(username, amount) {
+  const clean = (username || '').trim().toLowerCase();
+  const amt   = Math.floor(amount);
+  if (!clean || !amt || amt < 1) return { ok: false, error: 'Invalid params' };
+  const users = readUsers();
+  if (!users[clean]) return { ok: false, error: 'User not found' };
+  users[clean].casinoBalance = (users[clean].casinoBalance || 0) + amt;
+  writeUsers(users);
+  return { ok: true, balance: users[clean].casinoBalance };
+}
+
+/**
+ * Admin: aggregate platform statistics.
+ */
+function adminGetStats() {
+  const users  = readUsers();
+  const all    = Object.values(users).filter(u => u.username !== ADMIN_USERNAME);
+  const now    = Date.now();
+  const DAY_MS = 86_400_000;
+  const WEEK_MS = 7 * DAY_MS;
+  const ONLINE_WINDOW_MS = 15 * 60_000; // 15 minutes
+
+  const totalUsers    = all.length;
+  const newToday      = all.filter(u => u.createdAt && (now - u.createdAt) < DAY_MS).length;
+  const newThisWeek   = all.filter(u => u.createdAt && (now - u.createdAt) < WEEK_MS).length;
+  const onlineNow     = all.filter(u => u.lastSeen && (now - u.lastSeen) < ONLINE_WINDOW_MS).length;
+  const totalBalance  = all.reduce((s, u) => s + (u.casinoBalance || 0), 0);
+  const avgBalance    = totalUsers > 0 ? Math.round(totalBalance / totalUsers) : 0;
+  const richest       = all.reduce((best, u) => (!best || (u.casinoBalance || 0) > best.balance)
+    ? { username: u.username, balance: u.casinoBalance || 0 } : best, null);
+  const broke         = all.filter(u => (u.casinoBalance || 0) <= 100).length; // near-broke (≤$100)
+
+  return {
+    totalUsers, newToday, newThisWeek, onlineNow,
+    totalBalance, avgBalance, richest, broke,
+  };
+}
+
 module.exports = {
   register, login, getMe, syncBalance, claimDaily, transfer, logout, userExists,
   deleteUser, adminGiveMoney, adminSetBalance, listUsers, isAdminToken, getTopBalances,
-  recordIP, kickUser, addBonus, pruneZeroBalanceAccounts,
+  recordIP, kickUser, addBonus, pruneZeroBalanceAccounts, adminGetStats, addBonusByAdmin,
   validateToken,
 };

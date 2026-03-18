@@ -70,6 +70,20 @@ function clearMessages() {
   write(data);
 }
 
+function addSystemMessage(text) {
+  const crypto = require('crypto');
+  const msg = {
+    id:        crypto.randomBytes(8).toString('hex'),
+    username:  'system',
+    displayName: '📢 Announcement',
+    text,
+    timestamp: Date.now(),
+    isSystem:  true,
+  };
+  addMessage(msg);
+  return msg;
+}
+
 // ── Chat bans ─────────────────────────────────────────────────────────────────
 
 function isChatBanned(username) {
@@ -135,7 +149,7 @@ function getAllViolations() {
 
 module.exports = {
   getSettings, getMessages, getChatBans,
-  updateSettings, addMessage, clearMessages,
+  updateSettings, addMessage, clearMessages, addSystemMessage,
   isChatBanned, addChatBan, removeChatBan,
   getViolations, addViolation, resetViolations, getAllViolations,
 };

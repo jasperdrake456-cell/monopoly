@@ -44,7 +44,7 @@ export default function AdminPage() {
   const { user, token, isLoggedIn } = useAuth();
   const navigate = useNavigate();
 
-  const [tab, setTab]           = useState('reports'); // 'reports'|'users'|'money'|'bans'|'wins'|'site'|'chat'
+  const [tab, setTab]           = useState('stats'); // 'stats'|'reports'|'users'|'money'|'bans'|'wins'|'site'|'chat'
   const [reports, setReports]   = useState([]);
   const [users, setUsers]       = useState([]);
   const [bigWins, setBigWins]   = useState([]);
@@ -102,6 +102,20 @@ export default function AdminPage() {
   const [chatBanReason,  setChatBanReason]   = useState('');
   const [chatBanDur,     setChatBanDur]      = useState('permanent');
   const [chatStatus,     setChatStatus]      = useState('');
+  const [broadcastText,  setBroadcastText]   = useState('');
+
+  // ── Stats tab ───────────────────────────────────────────────────────────────
+  const [platformStats, setPlatformStats] = useState(null);
+
+  // ── Promo codes ─────────────────────────────────────────────────────────────
+  const [promoCodes,   setPromoCodes]   = useState([]);
+  const [promoCode,    setPromoCode]    = useState('');
+  const [promoAmount,  setPromoAmount]  = useState('');
+  const [promoMaxUses, setPromoMaxUses] = useState('0');
+  const [promoStatus,  setPromoStatus]  = useState('');
+
+  // ── User search ─────────────────────────────────────────────────────────────
+  const [userSearch, setUserSearch] = useState('');
 
   const ALL_GAMES = [
     'crash','plinko','dice','roulette','blackjack','baccarat',
@@ -158,6 +172,20 @@ export default function AdminPage() {
       .catch(() => {});
   }, [token]);
 
+  const loadStats = useCallback(() => {
+    if (!token) return;
+    authFetch('/api/admin/stats', token)
+      .then(d => { if (d.ok) setPlatformStats(d.stats); })
+      .catch(() => {});
+  }, [token]);
+
+  const loadPromoCodes = useCallback(() => {
+    if (!token) return;
+    authFetch('/api/admin/promo-codes', token)
+      .then(d => { if (d.ok) setPromoCodes(d.codes); })
+      .catch(() => {});
+  }, [token]);
+
   const loadChat = useCallback(() => {
     if (!token) return;
     Promise.all([
@@ -176,13 +204,15 @@ export default function AdminPage() {
   }, [token]);
 
   useEffect(() => {
+    if (tab === 'stats')   { loadStats(); loadUsers(); }
     if (tab === 'reports') { loadReports(); loadUsers(); }
     if (tab === 'users')   { loadUsers(); loadActivity(); }
+    if (tab === 'money')   { loadPromoCodes(); }
     if (tab === 'bans')    { loadIPBans(); loadUserBans(); }
     if (tab === 'wins')    { loadBigWins(); }
     if (tab === 'site')    { refreshConfig(); }
     if (tab === 'chat')    { loadChat(); }
-  }, [tab, loadReports, loadUsers, loadIPBans, loadUserBans, loadActivity, loadBigWins, refreshConfig, loadChat]);
+  }, [tab, loadStats, loadReports, loadUsers, loadIPBans, loadUserBans, loadActivity, loadBigWins, refreshConfig, loadChat, loadPromoCodes]);
 
   // Poll activity every 10 seconds while on users tab
   useEffect(() => {
@@ -320,6 +350,17 @@ export default function AdminPage() {
     [users]
   );
 
+  // Filtered by search
+  const filteredUsers = useMemo(() => {
+    const q = userSearch.trim().toLowerCase();
+    if (!q) return sortedUsers;
+    return sortedUsers.filter(u =>
+      u.username.includes(q) ||
+      (u.displayName || '').toLowerCase().includes(q) ||
+      (u.lastIP || '').includes(q)
+    );
+  }, [sortedUsers, userSearch]);
+
   if (!isAdmin) return null;
 
   return (
@@ -332,8 +373,10 @@ export default function AdminPage() {
             className="admin-btn admin-btn--ghost admin-btn--sm"
             title="Reload current tab data"
             onClick={() => {
+              if (tab === 'stats')   { loadStats(); loadUsers(); }
               if (tab === 'reports') { loadReports(); loadUsers(); }
               if (tab === 'users')   { loadUsers(); loadActivity(); }
+              if (tab === 'money')   { loadPromoCodes(); }
               if (tab === 'bans')    { loadIPBans(); loadUserBans(); }
               if (tab === 'wins')    { loadBigWins(); }
               if (tab === 'site')    { refreshConfig(); setSiteStatus('↻ Refreshed'); }
@@ -346,7 +389,7 @@ export default function AdminPage() {
       </div>
 
       <div className="admin-tabs">
-        {[['reports','📋 Reports'],['users','👥 Users'],['money','💰 Give Money'],['bans','🚫 Bans'],['wins','🏆 Big Wins'],['site','⚙️ Site Control'],['chat','💬 Chat Mod']].map(([id, label]) => (
+        {[['stats','📊 Stats'],['reports','📋 Reports'],['users','👥 Users'],['money','💰 Give Money'],['bans','🚫 Bans'],['wins','🏆 Big Wins'],['site','⚙️ Site Control'],['chat','💬 Chat Mod']].map(([id, label]) => (
           <button key={id} className={`admin-tab${tab === id ? ' active' : ''}`} onClick={() => setTab(id)}>
             {label}
           </button>
@@ -355,6 +398,75 @@ export default function AdminPage() {
 
       {status && (
         <div className="admin-status" onClick={() => setStatus('')}>{status} ✕</div>
+      )}
+
+      {/* ── Stats ── */}
+      {tab === 'stats' && (
+        <div className="admin-section">
+          <div className="admin-section-title">📊 Platform Statistics</div>
+          {!platformStats ? (
+            <div className="admin-empty">Loading stats…</div>
+          ) : (
+            <>
+              <div className="admin-stats-grid">
+                <div className="admin-stat-card">
+                  <div className="admin-stat-label">Total Users</div>
+                  <div className="admin-stat-value">{platformStats.totalUsers.toLocaleString()}</div>
+                </div>
+                <div className="admin-stat-card admin-stat-card--green">
+                  <div className="admin-stat-label">New Today</div>
+                  <div className="admin-stat-value">{platformStats.newToday}</div>
+                </div>
+                <div className="admin-stat-card admin-stat-card--blue">
+                  <div className="admin-stat-label">New This Week</div>
+                  <div className="admin-stat-value">{platformStats.newThisWeek}</div>
+                </div>
+                <div className="admin-stat-card admin-stat-card--purple">
+                  <div className="admin-stat-label">Online Now</div>
+                  <div className="admin-stat-sub">(active ≤15 min)</div>
+                  <div className="admin-stat-value">{platformStats.onlineNow}</div>
+                </div>
+                <div className="admin-stat-card">
+                  <div className="admin-stat-label">Total Chips in Circulation</div>
+                  <div className="admin-stat-value">${platformStats.totalBalance.toLocaleString()}</div>
+                </div>
+                <div className="admin-stat-card">
+                  <div className="admin-stat-label">Average Balance</div>
+                  <div className="admin-stat-value">${platformStats.avgBalance.toLocaleString()}</div>
+                </div>
+                <div className="admin-stat-card admin-stat-card--yellow">
+                  <div className="admin-stat-label">Near-Broke (≤$100)</div>
+                  <div className="admin-stat-value">{platformStats.broke}</div>
+                </div>
+                {platformStats.richest && (
+                  <div className="admin-stat-card admin-stat-card--gold">
+                    <div className="admin-stat-label">Richest Player</div>
+                    <div className="admin-stat-value admin-stat-value--sm">@{platformStats.richest.username}</div>
+                    <div className="admin-stat-sub">${platformStats.richest.balance.toLocaleString()}</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Top 10 richest */}
+              <div className="admin-section-title" style={{ marginTop: 28 }}>💰 Top 10 Balances</div>
+              <div className="admin-user-list">
+                {sortedUsers.slice(0, 10).map((u, i) => (
+                  <div key={u.username} className="admin-user-row">
+                    <div className="admin-user-info">
+                      <span className="admin-stat-rank">#{i + 1}</span>
+                      <span className="admin-user-name">{u.displayName}</span>
+                      <span className="admin-user-handle">@{u.username}</span>
+                      <span className="admin-user-bal">${(u.balance || 0).toLocaleString()}</span>
+                      {activity[u.username]
+                        ? <span className="admin-user-online">🟢 {activity[u.username]}</span>
+                        : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       )}
 
       {/* ── Reports ── */}
@@ -468,10 +580,23 @@ export default function AdminPage() {
       {/* ── Users ── */}
       {tab === 'users' && (
         <div className="admin-section">
-          <div className="admin-section-title">All Accounts ({sortedUsers.length})</div>
-          {sortedUsers.length === 0 && <div className="admin-empty">No users found.</div>}
+          <div className="admin-section-title-row">
+            <div className="admin-section-title">All Accounts ({filteredUsers.length}{userSearch ? ` of ${sortedUsers.length}` : ''})</div>
+          </div>
+          <div className="admin-user-search-row">
+            <input
+              className="admin-input admin-user-search"
+              placeholder="🔍 Search by username, display name, or IP…"
+              value={userSearch}
+              onChange={e => setUserSearch(e.target.value)}
+            />
+            {userSearch && (
+              <button className="admin-btn admin-btn--ghost admin-btn--sm" onClick={() => setUserSearch('')}>✕ Clear</button>
+            )}
+          </div>
+          {filteredUsers.length === 0 && <div className="admin-empty">{userSearch ? 'No users match your search.' : 'No users found.'}</div>}
           <div className="admin-user-list">
-            {sortedUsers.map(u => (
+            {filteredUsers.map(u => (
               <div key={u.username} className="admin-user-row admin-user-row--expanded">
                 <div className="admin-user-info">
                   <span className="admin-user-name">{u.displayName}</span>
@@ -565,7 +690,8 @@ export default function AdminPage() {
       {/* ── Give Money ── */}
       {tab === 'money' && (
         <div className="admin-section">
-          <div className="admin-section-title">Give Casino Money</div>
+          {/* Give money form */}
+          <div className="admin-section-title">💰 Give Casino Money</div>
           <div className="admin-give-form">
             <input
               className="admin-input"
@@ -585,6 +711,89 @@ export default function AdminPage() {
               💰 Give Money
             </button>
           </div>
+
+          {/* ── Promo Codes ─────────────────────────────────────────────────── */}
+          <div className="admin-section-title" style={{ marginTop: 32 }}>🎁 Promo Codes</div>
+          {promoStatus && <div className="admin-status-msg">{promoStatus}</div>}
+          <div className="admin-give-form" style={{ marginBottom: 16 }}>
+            <input
+              className="admin-input"
+              placeholder="Code (e.g. WELCOME500)"
+              value={promoCode}
+              onChange={e => setPromoCode(e.target.value.toUpperCase())}
+              style={{ textTransform: 'uppercase' }}
+            />
+            <input
+              className="admin-input"
+              type="number"
+              placeholder="Chips to award"
+              value={promoAmount}
+              onChange={e => setPromoAmount(e.target.value)}
+              min={1}
+            />
+            <select
+              className="admin-input admin-select"
+              value={promoMaxUses}
+              onChange={e => setPromoMaxUses(e.target.value)}
+            >
+              <option value="0">Unlimited uses</option>
+              <option value="1">1 use</option>
+              <option value="5">5 uses</option>
+              <option value="10">10 uses</option>
+              <option value="25">25 uses</option>
+              <option value="50">50 uses</option>
+              <option value="100">100 uses</option>
+            </select>
+            <button
+              className="admin-btn admin-btn--primary"
+              onClick={async () => {
+                const code = promoCode.trim().toUpperCase();
+                const amt  = parseInt(promoAmount, 10);
+                if (!code) return setPromoStatus('Enter a code.');
+                if (!amt || amt < 1) return setPromoStatus('Enter a valid amount.');
+                const d = await authFetch('/api/admin/promo-codes', token, {
+                  method: 'POST',
+                  body: JSON.stringify({ code, amount: amt, maxUses: parseInt(promoMaxUses, 10) || 0 }),
+                });
+                if (d.ok) {
+                  setPromoStatus(`Created code "${code}" — ${amt.toLocaleString()} chips`);
+                  setPromoCode(''); setPromoAmount(''); setPromoMaxUses('0');
+                  loadPromoCodes();
+                } else {
+                  setPromoStatus(d.error || 'Failed');
+                }
+              }}
+            >➕ Create Code</button>
+          </div>
+
+          {promoCodes.length === 0
+            ? <div className="admin-empty">No promo codes yet.</div>
+            : (
+              <div className="admin-promo-list">
+                {promoCodes.map(c => (
+                  <div key={c.code} className={`admin-promo-row${!c.active ? ' admin-promo-row--expired' : ''}`}>
+                    <div className="admin-promo-info">
+                      <span className="admin-promo-code">{c.code}</span>
+                      <span className="admin-promo-amount">+${c.amount.toLocaleString()}</span>
+                      <span className="admin-promo-uses">
+                        {c.uses}/{c.maxUses === 0 ? '∞' : c.maxUses} uses
+                      </span>
+                      {!c.active && <span className="admin-promo-badge admin-promo-badge--expired">EXPIRED</span>}
+                      {c.active && <span className="admin-promo-badge admin-promo-badge--active">ACTIVE</span>}
+                    </div>
+                    <button
+                      className="admin-btn admin-btn--danger admin-btn--sm"
+                      onClick={async () => {
+                        await authFetch(`/api/admin/promo-codes/${encodeURIComponent(c.code)}`, token, { method: 'DELETE' });
+                        setPromoStatus(`Deleted code "${c.code}"`);
+                        loadPromoCodes();
+                      }}
+                    >🗑 Delete</button>
+                  </div>
+                ))}
+              </div>
+            )
+          }
         </div>
       )}
       {/* ── Bans ── */}
@@ -860,6 +1069,40 @@ export default function AdminPage() {
               onClose={() => setChatLogOpen(false)}
             />
           )}
+
+          {/* ── Broadcast ────────────────────────────────────────────────── */}
+          <div className="admin-site-card">
+            <div className="admin-site-card-title">📢 Broadcast Announcement</div>
+            <div className="admin-site-card-sub">Send a system message to everyone in global chat.</div>
+            <div className="admin-broadcast-form">
+              <input
+                className="admin-input"
+                placeholder="Announcement text…"
+                value={broadcastText}
+                onChange={e => setBroadcastText(e.target.value)}
+                onKeyDown={async e => {
+                  if (e.key === 'Enter' && broadcastText.trim()) {
+                    const d = await authFetch('/api/admin/chat/broadcast', token, {
+                      method: 'POST', body: JSON.stringify({ text: broadcastText.trim() }),
+                    });
+                    if (d.ok) { setBroadcastText(''); setChatStatus('📢 Announcement sent!'); }
+                    else setChatStatus(d.error || 'Failed to broadcast');
+                  }
+                }}
+              />
+              <button
+                className="admin-btn admin-btn--primary"
+                disabled={!broadcastText.trim()}
+                onClick={async () => {
+                  const d = await authFetch('/api/admin/chat/broadcast', token, {
+                    method: 'POST', body: JSON.stringify({ text: broadcastText.trim() }),
+                  });
+                  if (d.ok) { setBroadcastText(''); setChatStatus('📢 Announcement sent!'); }
+                  else setChatStatus(d.error || 'Failed to broadcast');
+                }}
+              >📢 Send</button>
+            </div>
+          </div>
 
           {/* ── Mod Settings ─────────────────────────────────────────────── */}
           {chatSettings && (
