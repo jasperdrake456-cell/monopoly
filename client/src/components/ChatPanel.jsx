@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import './ChatPanel.css';
 
 const SERVER_URL  = import.meta.env.VITE_SERVER_URL || '';
@@ -22,6 +23,7 @@ function fmt(ts) {
 
 export default function ChatPanel() {
   const { user, isLoggedIn } = useAuth();
+  const navigate = useNavigate();
   const [open,       setOpen]       = useState(false);
   const [messages,   setMessages]   = useState([]);
   const [input,      setInput]      = useState('');
@@ -125,6 +127,16 @@ export default function ChatPanel() {
 
   return (
     <>
+      {/* ── Suggestions button (above chat) ── */}
+      <button
+        className="chat-toggle suggestions-toggle"
+        onClick={() => navigate('/suggestions')}
+        aria-label="Make a suggestion"
+      >
+        <span className="chat-toggle-icon">💡</span>
+        <span className="chat-toggle-label">Suggest</span>
+      </button>
+
       {/* ── Toggle button ── */}
       <button
         className={`chat-toggle${unread > 0 ? ' chat-toggle--unread' : ''}${open ? ' chat-toggle--open' : ''}`}
