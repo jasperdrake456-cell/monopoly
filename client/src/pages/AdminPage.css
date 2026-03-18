@@ -996,3 +996,181 @@
   flex: 1;
 }
 
+
+/* ── User sort pills ─────────────────────────────────────────────────────── */
+.admin-sort-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.admin-sort-pill {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.55);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.admin-sort-pill:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.admin-sort-pill.active {
+  background: rgba(124,58,237,0.25);
+  border-color: rgba(124,58,237,0.5);
+  color: #c084fc;
+}
+
+/* ── Danger Zone ─────────────────────────────────────────────────────────── */
+.admin-danger-card {
+  border-color: rgba(239,68,68,0.3) !important;
+  background: rgba(239,68,68,0.05) !important;
+}
+
+.admin-danger-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.admin-danger-action {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-danger-action-label {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #f87171;
+}
+
+.admin-danger-action-sub {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.4);
+  flex: 1;
+}
+
+/* ── Leaderboard tab ─────────────────────────────────────────────────────── */
+.admin-lb-board {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.admin-lb-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+.admin-lb-header:hover { background: rgba(255,255,255,0.05); }
+
+.admin-lb-game {
+  font-weight: 700;
+  color: #c084fc;
+  font-size: 0.95rem;
+  flex: 1;
+}
+
+.admin-lb-count {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.4);
+}
+
+.admin-lb-chevron {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.3);
+}
+
+.admin-lb-entries {
+  border-top: 1px solid rgba(255,255,255,0.07);
+  padding: 8px 0;
+}
+
+.admin-lb-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 16px;
+  font-size: 0.85rem;
+  transition: background 0.1s;
+}
+.admin-lb-entry:hover { background: rgba(255,255,255,0.04); }
+
+.admin-lb-rank {
+  color: rgba(255,255,255,0.35);
+  font-size: 0.75rem;
+  min-width: 28px;
+}
+
+.admin-lb-name {
+  flex: 1;
+  font-weight: 600;
+  color: #e0e0e0;
+}
+
+.admin-lb-score {
+  color: #fbbf24;
+  font-weight: 700;
+  min-width: 80px;
+  text-align: right;
+}
+
+.admin-lb-date {
+  color: rgba(255,255,255,0.3);
+  font-size: 0.75rem;
+  min-width: 80px;
+  text-align: right;
+}
+
+/* ── Audit Log tab ───────────────────────────────────────────────────────── */
+.admin-audit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-audit-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+}
+.admin-audit-row:nth-child(even) { background: rgba(255,255,255,0.05); }
+
+.admin-audit-action {
+  font-weight: 700;
+  color: #c084fc;
+  min-width: 170px;
+  flex-shrink: 0;
+}
+
+.admin-audit-details {
+  flex: 1;
+  color: #d1d5db;
+  font-family: monospace;
+  font-size: 0.82rem;
+}
+
+.admin-audit-time {
+  color: rgba(255,255,255,0.3);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}

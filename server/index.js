@@ -14,6 +14,7 @@ const wl = require('./winLog');
 const sc  = require('./siteConfig');
 const chatStore = require('./chat/chatStore');
 const chatNs    = require('./chat/chatNamespace');
+const al        = require('./adminLog');
 
 const app = express();
 const server = http.createServer(app);
@@ -308,24 +309,32 @@ app.get('/api/admin/users', requireAdmin, (req, res) => {
 
 // Delete a user
 app.delete('/api/admin/users/:username', requireAdmin, (req, res) => {
-  res.json(us.deleteUser(getToken(req), req.params.username));
+  const result = us.deleteUser(getToken(req), req.params.username);
+  if (result.ok) al.log('delete_user', { target: req.params.username });
+  res.json(result);
 });
 
 // Give money to a user
 app.post('/api/admin/give-money', requireAdmin, (req, res) => {
   const { username, amount } = req.body || {};
-  res.json(us.adminGiveMoney(getToken(req), username, amount));
+  const result = us.adminGiveMoney(getToken(req), username, amount);
+  if (result.ok) al.log('give_money', { target: username, amount });
+  res.json(result);
 });
 
 // Set a user's balance to an exact value
 app.put('/api/admin/users/:username/balance', requireAdmin, (req, res) => {
   const { amount } = req.body || {};
-  res.json(us.adminSetBalance(getToken(req), req.params.username, amount));
+  const result = us.adminSetBalance(getToken(req), req.params.username, amount);
+  if (result.ok) al.log('set_balance', { target: req.params.username, amount });
+  res.json(result);
 });
 
 // Kick a user (destroy all their sessions — forces logout)
 app.post('/api/admin/kick/:username', requireAdmin, (req, res) => {
-  res.json(us.kickUser(getToken(req), req.params.username));
+  const result = us.kickUser(getToken(req), req.params.username);
+  if (result.ok) al.log('kick_user', { target: req.params.username, sessionsKilled: result.sessionsKilled });
+  res.json(result);
 });
 
 // ── Big Win Log ────────────────────────────────────────────────────────────────
@@ -382,12 +391,15 @@ app.post('/api/admin/bans/ip', requireAdmin, (req, res) => {
   const { ip, reason = '', durationMs = null } = req.body || {};
   if (!ip) return res.status(400).json({ ok: false, error: 'IP required' });
   bn.banIP(ip, reason, durationMs);
+  al.log('ban_ip', { ip, reason, durationMs });
   res.json({ ok: true });
 });
 
 // Unban an IP
 app.delete('/api/admin/bans/ip/:ip', requireAdmin, (req, res) => {
-  bn.unbanIP(decodeURIComponent(req.params.ip));
+  const ip = decodeURIComponent(req.params.ip);
+  bn.unbanIP(ip);
+  al.log('unban_ip', { ip });
   res.json({ ok: true });
 });
 
@@ -400,13 +412,17 @@ app.get('/api/admin/bans/users', requireAdmin, (req, res) => {
 app.post('/api/admin/bans/user', requireAdmin, (req, res) => {
   const { username, games = ['*'], reason = '', durationMs = null } = req.body || {};
   if (!username) return res.status(400).json({ ok: false, error: 'Username required' });
-  bn.banUser(username.trim().toLowerCase(), games, reason, durationMs);
+  const clean = username.trim().toLowerCase();
+  bn.banUser(clean, games, reason, durationMs);
+  al.log('ban_user', { target: clean, games, reason, durationMs });
   res.json({ ok: true });
 });
 
 // Unban a user
 app.delete('/api/admin/bans/user/:username', requireAdmin, (req, res) => {
-  bn.unbanUser(decodeURIComponent(req.params.username));
+  const u = decodeURIComponent(req.params.username);
+  bn.unbanUser(u);
+  al.log('unban_user', { target: u });
   res.json({ ok: true });
 });
 
@@ -546,9 +562,90 @@ app.post('/api/admin/chat/broadcast', requireAdmin, (req, res) => {
   const { text } = req.body || {};
   if (!text || !text.trim()) return res.status(400).json({ ok: false, error: 'Empty message' });
   const msg = chatStore.addSystemMessage(text.trim());
-  // Emit to all chat clients
   io.of('/chat').emit('newMessage', msg);
+  al.log('broadcast', { text: text.trim() });
   res.json({ ok: true });
+});
+
+// ── Admin: audit log ──────────────────────────────────────────────────────────
+
+app.get('/api/admin/audit-log', requireAdmin, (req, res) => {
+  res.json({ ok: true, logs: al.getLogs() });
+});
+
+app.delete('/api/admin/audit-log', requireAdmin, (req, res) => {
+  al.clearLogs();
+  res.json({ ok: true });
+});
+
+// ── Admin: leaderboard browser ────────────────────────────────────────────────
+
+// Get all boards at once (admin overview)
+app.get('/api/admin/leaderboards', requireAdmin, (req, res) => {
+  const GAME_IDS = [
+    'crash','plinko','dice','roulette','blackjack','baccarat',
+    'mines','ride-the-bus','slots','chicken-cross','hilo','tower',
+    'wheel','video-poker','keno','dragon-tiger',
+    '2048','snake','minesweeper','tetris','wordle','sudoku',
+    'space-invaders','flappy-bird','memory-match','typing-speed',
+  ];
+  const boards = {};
+  for (const id of GAME_IDS) {
+    const entries = lb.getLeaderboard(id);
+    if (entries.length > 0) boards[id] = entries;
+  }
+  res.json({ ok: true, boards });
+});
+
+// Clear an entire game's leaderboard
+app.delete('/api/admin/leaderboards/:gameId', requireAdmin, (req, res) => {
+  lb.overwriteLeaderboard(req.params.gameId, []);
+  al.log('clear_leaderboard', { gameId: req.params.gameId });
+  res.json({ ok: true });
+});
+
+// ── Admin: danger zone bulk actions ──────────────────────────────────────────
+
+// Clear all chat violations (unmute everyone too)
+app.post('/api/admin/danger/clear-violations', requireAdmin, (req, res) => {
+  const viols = chatStore.getAllViolations();
+  for (const v of viols) {
+    chatStore.resetViolations(v.username);
+    chatNs.unmuteUser(v.username);
+  }
+  al.log('danger_clear_violations', { count: viols.length });
+  res.json({ ok: true, count: viols.length });
+});
+
+// Unban all IPs
+app.post('/api/admin/danger/unban-all-ips', requireAdmin, (req, res) => {
+  const bans = bn.listIPBans();
+  for (const b of bans) bn.unbanIP(b.ip);
+  al.log('danger_unban_all_ips', { count: bans.length });
+  res.json({ ok: true, count: bans.length });
+});
+
+// Unban all users from games
+app.post('/api/admin/danger/unban-all-users', requireAdmin, (req, res) => {
+  const bans = bn.listUserBans();
+  for (const b of bans) bn.unbanUser(b.username);
+  al.log('danger_unban_all_users', { count: bans.length });
+  res.json({ ok: true, count: bans.length });
+});
+
+// Kick all online users (destroy all sessions except admin)
+app.post('/api/admin/danger/kick-all', requireAdmin, (req, res) => {
+  const users = us.listUsers(getToken(req));
+  let kicked = 0;
+  if (users.ok) {
+    for (const u of users.users) {
+      if (u.username === 'jasper') continue;
+      const r = us.kickUser(getToken(req), u.username);
+      if (r.ok) kicked += r.sessionsKilled;
+    }
+  }
+  al.log('danger_kick_all', { sessionsKilled: kicked });
+  res.json({ ok: true, sessionsKilled: kicked });
 });
 
 // ── Static client ─────────────────────────────────────────────────────────────

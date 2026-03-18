@@ -44,7 +44,7 @@ export default function AdminPage() {
   const { user, token, isLoggedIn } = useAuth();
   const navigate = useNavigate();
 
-  const [tab, setTab]           = useState('stats'); // 'stats'|'reports'|'users'|'money'|'bans'|'wins'|'site'|'chat'
+  const [tab, setTab]           = useState('stats'); // 'stats'|'reports'|'users'|'money'|'bans'|'wins'|'site'|'chat'|'leaderboards'|'audit'
   const [reports, setReports]   = useState([]);
   const [users, setUsers]       = useState([]);
   const [bigWins, setBigWins]   = useState([]);
@@ -107,8 +107,16 @@ export default function AdminPage() {
   // ── Stats tab ───────────────────────────────────────────────────────────────
   const [platformStats, setPlatformStats] = useState(null);
 
-  // ── User search ─────────────────────────────────────────────────────────────
+  // ── User search & sort ──────────────────────────────────────────────────────
   const [userSearch, setUserSearch] = useState('');
+  const [userSort, setUserSort] = useState('balance'); // 'balance'|'newest'|'oldest'|'lastSeen'
+
+  // ── Leaderboards tab ────────────────────────────────────────────────────────
+  const [leaderboards, setLeaderboards] = useState({});
+  const [lbGame, setLbGame] = useState(null); // currently expanded game
+
+  // ── Audit log tab ───────────────────────────────────────────────────────────
+  const [auditLogs, setAuditLogs] = useState([]);
 
   const ALL_GAMES = [
     'crash','plinko','dice','roulette','blackjack','baccarat',
@@ -172,6 +180,20 @@ export default function AdminPage() {
       .catch(() => {});
   }, [token]);
 
+  const loadLeaderboards = useCallback(() => {
+    if (!token) return;
+    authFetch('/api/admin/leaderboards', token)
+      .then(d => { if (d.ok) setLeaderboards(d.boards); })
+      .catch(() => {});
+  }, [token]);
+
+  const loadAuditLog = useCallback(() => {
+    if (!token) return;
+    authFetch('/api/admin/audit-log', token)
+      .then(d => { if (d.ok) setAuditLogs(d.logs); })
+      .catch(() => {});
+  }, [token]);
+
   const loadChat = useCallback(() => {
     if (!token) return;
     Promise.all([
@@ -190,14 +212,16 @@ export default function AdminPage() {
   }, [token]);
 
   useEffect(() => {
-    if (tab === 'stats')   { loadStats(); loadUsers(); }
-    if (tab === 'reports') { loadReports(); loadUsers(); }
-    if (tab === 'users')   { loadUsers(); loadActivity(); }
-    if (tab === 'bans')    { loadIPBans(); loadUserBans(); }
-    if (tab === 'wins')    { loadBigWins(); }
-    if (tab === 'site')    { refreshConfig(); }
-    if (tab === 'chat')    { loadChat(); }
-  }, [tab, loadStats, loadReports, loadUsers, loadIPBans, loadUserBans, loadActivity, loadBigWins, refreshConfig, loadChat]);
+    if (tab === 'stats')        { loadStats(); loadUsers(); }
+    if (tab === 'reports')      { loadReports(); loadUsers(); }
+    if (tab === 'users')        { loadUsers(); loadActivity(); }
+    if (tab === 'bans')         { loadIPBans(); loadUserBans(); }
+    if (tab === 'wins')         { loadBigWins(); }
+    if (tab === 'site')         { refreshConfig(); }
+    if (tab === 'chat')         { loadChat(); }
+    if (tab === 'leaderboards') { loadLeaderboards(); }
+    if (tab === 'audit')        { loadAuditLog(); }
+  }, [tab, loadStats, loadReports, loadUsers, loadIPBans, loadUserBans, loadActivity, loadBigWins, refreshConfig, loadChat, loadLeaderboards, loadAuditLog]);
 
   // Poll activity every 10 seconds while on users tab
   useEffect(() => {
@@ -329,11 +353,15 @@ export default function AdminPage() {
     [flaggedBalances, dismissedBalances]
   );
 
-  // Flat sorted user list (richest first)
-  const sortedUsers = useMemo(
-    () => [...users].filter(u => u.username !== 'jasper').sort((a, b) => (b.balance || 0) - (a.balance || 0)),
-    [users]
-  );
+  // Flat sorted user list (sort controlled by userSort)
+  const sortedUsers = useMemo(() => {
+    const base = [...users].filter(u => u.username !== 'jasper');
+    if (userSort === 'balance')  return base.sort((a, b) => (b.balance || 0) - (a.balance || 0));
+    if (userSort === 'newest')   return base.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    if (userSort === 'oldest')   return base.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    if (userSort === 'lastSeen') return base.sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
+    return base;
+  }, [users, userSort]);
 
   // Filtered by search
   const filteredUsers = useMemo(() => {
@@ -358,13 +386,15 @@ export default function AdminPage() {
             className="admin-btn admin-btn--ghost admin-btn--sm"
             title="Reload current tab data"
             onClick={() => {
-              if (tab === 'stats')   { loadStats(); loadUsers(); }
-              if (tab === 'reports') { loadReports(); loadUsers(); }
-              if (tab === 'users')   { loadUsers(); loadActivity(); }
-              if (tab === 'bans')    { loadIPBans(); loadUserBans(); }
-              if (tab === 'wins')    { loadBigWins(); }
-              if (tab === 'site')    { refreshConfig(); setSiteStatus('↻ Refreshed'); }
-              if (tab === 'chat')    { loadChat(); setChatStatus('↻ Refreshed'); }
+              if (tab === 'stats')        { loadStats(); loadUsers(); }
+              if (tab === 'reports')      { loadReports(); loadUsers(); }
+              if (tab === 'users')        { loadUsers(); loadActivity(); }
+              if (tab === 'bans')         { loadIPBans(); loadUserBans(); }
+              if (tab === 'wins')         { loadBigWins(); }
+              if (tab === 'site')         { refreshConfig(); setSiteStatus('↻ Refreshed'); }
+              if (tab === 'chat')         { loadChat(); setChatStatus('↻ Refreshed'); }
+              if (tab === 'leaderboards') { loadLeaderboards(); }
+              if (tab === 'audit')        { loadAuditLog(); }
               setStatus('↻ Refreshed');
             }}
           >↻ Reload</button>
@@ -373,7 +403,7 @@ export default function AdminPage() {
       </div>
 
       <div className="admin-tabs">
-        {[['stats','📊 Stats'],['reports','📋 Reports'],['users','👥 Users'],['money','💰 Give Money'],['bans','🚫 Bans'],['wins','🏆 Big Wins'],['site','⚙️ Site Control'],['chat','💬 Chat Mod']].map(([id, label]) => (
+        {[['stats','📊 Stats'],['reports','📋 Reports'],['users','👥 Users'],['money','💰 Give Money'],['bans','🚫 Bans'],['wins','🏆 Big Wins'],['leaderboards','🎖 Boards'],['site','⚙️ Site Control'],['chat','💬 Chat Mod'],['audit','📜 Audit Log']].map(([id, label]) => (
           <button key={id} className={`admin-tab${tab === id ? ' active' : ''}`} onClick={() => setTab(id)}>
             {label}
           </button>
@@ -577,6 +607,11 @@ export default function AdminPage() {
             {userSearch && (
               <button className="admin-btn admin-btn--ghost admin-btn--sm" onClick={() => setUserSearch('')}>✕ Clear</button>
             )}
+            <div className="admin-sort-pills">
+              {[['balance','💰 Richest'],['newest','🆕 Newest'],['oldest','🕰 Oldest'],['lastSeen','🟢 Active']].map(([k, label]) => (
+                <button key={k} className={`admin-sort-pill${userSort === k ? ' active' : ''}`} onClick={() => setUserSort(k)}>{label}</button>
+              ))}
+            </div>
           </div>
           {filteredUsers.length === 0 && <div className="admin-empty">{userSearch ? 'No users match your search.' : 'No users found.'}</div>}
           <div className="admin-user-list">
@@ -949,6 +984,53 @@ export default function AdminPage() {
               );
             })}
           </div>
+
+          {/* ── Danger Zone ──────────────────────────────────────────────── */}
+          <div className="admin-site-card admin-danger-card">
+            <div className="admin-site-card-title">⚠️ Danger Zone</div>
+            <div className="admin-site-card-sub">These actions are irreversible. Use with caution.</div>
+            <div className="admin-danger-grid">
+              <div className="admin-danger-action">
+                <div className="admin-danger-action-label">Clear All Chat Violations</div>
+                <div className="admin-danger-action-sub">Resets violation counts and unmutes everyone.</div>
+                <button className="admin-btn admin-btn--warn admin-btn--sm" onClick={async () => {
+                  if (!window.confirm('Clear all chat violations and unmute everyone?')) return;
+                  const d = await authFetch('/api/admin/danger/clear-violations', token, { method: 'POST' });
+                  setStatus(d.ok ? `✓ Cleared violations for ${d.count} user(s)` : d.error);
+                  loadChat();
+                }}>Clear Violations</button>
+              </div>
+              <div className="admin-danger-action">
+                <div className="admin-danger-action-label">Unban All IPs</div>
+                <div className="admin-danger-action-sub">Removes every active IP ban.</div>
+                <button className="admin-btn admin-btn--warn admin-btn--sm" onClick={async () => {
+                  if (!window.confirm('Remove ALL IP bans?')) return;
+                  const d = await authFetch('/api/admin/danger/unban-all-ips', token, { method: 'POST' });
+                  setStatus(d.ok ? `✓ Unbanned ${d.count} IP(s)` : d.error);
+                  loadIPBans();
+                }}>Unban All IPs</button>
+              </div>
+              <div className="admin-danger-action">
+                <div className="admin-danger-action-label">Unban All Users</div>
+                <div className="admin-danger-action-sub">Lifts all user game bans.</div>
+                <button className="admin-btn admin-btn--warn admin-btn--sm" onClick={async () => {
+                  if (!window.confirm('Remove ALL user game bans?')) return;
+                  const d = await authFetch('/api/admin/danger/unban-all-users', token, { method: 'POST' });
+                  setStatus(d.ok ? `✓ Unbanned ${d.count} user(s)` : d.error);
+                  loadUserBans();
+                }}>Unban All Users</button>
+              </div>
+              <div className="admin-danger-action">
+                <div className="admin-danger-action-label">Kick Everyone</div>
+                <div className="admin-danger-action-sub">Destroys all active sessions — forces everyone to log back in.</div>
+                <button className="admin-btn admin-btn--danger admin-btn--sm" onClick={async () => {
+                  if (!window.confirm('Force-logout ALL users (destroy all sessions)?')) return;
+                  const d = await authFetch('/api/admin/danger/kick-all', token, { method: 'POST' });
+                  setStatus(d.ok ? `✓ Killed ${d.sessionsKilled} session(s)` : d.error);
+                }}>Kick Everyone</button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1236,6 +1318,130 @@ export default function AdminPage() {
 
         </div>
       )}
+
+      {/* ── Leaderboards ── */}
+      {tab === 'leaderboards' && (
+        <div className="admin-section">
+          <div className="admin-section-title">🎖 Game Leaderboards</div>
+          {Object.keys(leaderboards).length === 0 && <div className="admin-empty">No leaderboard entries yet.</div>}
+          {Object.entries(leaderboards).map(([gameId, entries]) => (
+            <div key={gameId} className="admin-lb-board">
+              <div className="admin-lb-header" onClick={() => setLbGame(lbGame === gameId ? null : gameId)}>
+                <span className="admin-lb-game">{gameId}</span>
+                <span className="admin-lb-count">{entries.length} entr{entries.length === 1 ? 'y' : 'ies'}</span>
+                <span className="admin-lb-chevron">{lbGame === gameId ? '▲' : '▼'}</span>
+                <button
+                  className="admin-btn admin-btn--danger admin-btn--sm"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (!window.confirm(`Clear all scores for "${gameId}"?`)) return;
+                    await authFetch(`/api/admin/leaderboards/${gameId}`, token, { method: 'DELETE' });
+                    setStatus(`Cleared leaderboard for ${gameId}`);
+                    loadLeaderboards();
+                  }}
+                >🗑 Clear</button>
+              </div>
+              {lbGame === gameId && (
+                <div className="admin-lb-entries">
+                  {entries.map((e, i) => (
+                    <div key={i} className="admin-lb-entry">
+                      <span className="admin-lb-rank">#{i + 1}</span>
+                      <span className="admin-lb-name">{e.name}</span>
+                      <span className="admin-lb-score">{e.score?.toLocaleString()}</span>
+                      <span className="admin-lb-date">{e.date ? new Date(e.date).toLocaleDateString() : ''}</span>
+                      <button
+                        className="admin-btn admin-btn--ghost admin-btn--sm"
+                        onClick={async () => {
+                          await authFetch(`/api/admin/leaderboard/${gameId}/${encodeURIComponent(e.name)}`, token, { method: 'DELETE' });
+                          setStatus(`Removed "${e.name}" from ${gameId}`);
+                          loadLeaderboards();
+                        }}
+                      >✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Audit Log ── */}
+      {tab === 'audit' && (
+        <div className="admin-section">
+          <div className="admin-section-title-row">
+            <div className="admin-section-title">📜 Admin Audit Log ({auditLogs.length})</div>
+            {auditLogs.length > 0 && (
+              <button className="admin-btn admin-btn--danger admin-btn--sm" onClick={async () => {
+                if (!window.confirm('Clear the audit log?')) return;
+                await authFetch('/api/admin/audit-log', token, { method: 'DELETE' });
+                setAuditLogs([]);
+                setStatus('Audit log cleared.');
+              }}>🗑 Clear Log</button>
+            )}
+          </div>
+          <div className="admin-site-card-sub" style={{ marginBottom: 12 }}>
+            Tracks admin actions automatically. Most recent first.
+          </div>
+          {auditLogs.length === 0 && <div className="admin-empty">No actions logged yet. Actions like banning, giving money, and kicking will appear here.</div>}
+          <div className="admin-audit-list">
+            {auditLogs.map(entry => (
+              <div key={entry.id} className="admin-audit-row">
+                <span className="admin-audit-action">{AUDIT_LABELS[entry.action] || entry.action}</span>
+                <span className="admin-audit-details">{formatAuditDetails(entry.action, entry.details)}</span>
+                <span className="admin-audit-time">{new Date(entry.timestamp).toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+// ── Audit log helpers ─────────────────────────────────────────────────────────
+const AUDIT_LABELS = {
+  give_money:              '💰 Give Money',
+  set_balance:             '✏️ Set Balance',
+  delete_user:             '🗑 Delete User',
+  kick_user:               '👢 Kick User',
+  ban_ip:                  '🚫 Ban IP',
+  unban_ip:                '✅ Unban IP',
+  ban_user:                '🚫 Ban User',
+  unban_user:              '✅ Unban User',
+  broadcast:               '📢 Broadcast',
+  clear_leaderboard:       '🏆 Clear Leaderboard',
+  danger_clear_violations: '⚠️ Clear All Violations',
+  danger_unban_all_ips:    '⚠️ Unban All IPs',
+  danger_unban_all_users:  '⚠️ Unban All Users',
+  danger_kick_all:         '⚠️ Kick Everyone',
+};
+
+function formatAuditDetails(action, d) {
+  if (!d) return '';
+  switch (action) {
+    case 'give_money':    return `$${Number(d.amount || 0).toLocaleString()} → @${d.target}`;
+    case 'set_balance':   return `@${d.target} → $${Number(d.amount || 0).toLocaleString()}`;
+    case 'delete_user':   return `@${d.target}`;
+    case 'kick_user':     return `@${d.target} (${d.sessionsKilled} session${d.sessionsKilled !== 1 ? 's' : ''})`;
+    case 'ban_ip':        return `${d.ip}${d.reason ? ` — "${d.reason}"` : ''}${d.durationMs ? ` (${msToHuman(d.durationMs)})` : ' (permanent)'}`;
+    case 'unban_ip':      return d.ip;
+    case 'ban_user':      return `@${d.target} from ${Array.isArray(d.games) ? (d.games.includes('*') ? 'all' : d.games.join(', ')) : d.games}${d.reason ? ` — "${d.reason}"` : ''}`;
+    case 'unban_user':    return `@${d.target}`;
+    case 'broadcast':     return `"${d.text}"`;
+    case 'clear_leaderboard': return d.gameId;
+    case 'danger_clear_violations': return `${d.count} user(s)`;
+    case 'danger_unban_all_ips':    return `${d.count} IP(s)`;
+    case 'danger_unban_all_users':  return `${d.count} user(s)`;
+    case 'danger_kick_all':         return `${d.sessionsKilled} session(s)`;
+    default: return JSON.stringify(d);
+  }
+}
+
+function msToHuman(ms) {
+  if (!ms) return 'permanent';
+  const h = Math.round(ms / 3600000);
+  if (h < 24) return `${h}h`;
+  const d = Math.round(h / 24);
+  return `${d}d`;
 }
