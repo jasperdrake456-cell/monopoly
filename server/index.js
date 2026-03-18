@@ -14,7 +14,6 @@ const wl = require('./winLog');
 const sc  = require('./siteConfig');
 const chatStore = require('./chat/chatStore');
 const chatNs    = require('./chat/chatNamespace');
-const pc        = require('./promoCodes');
 
 const app = express();
 const server = http.createServer(app);
@@ -550,41 +549,6 @@ app.post('/api/admin/chat/broadcast', requireAdmin, (req, res) => {
   // Emit to all chat clients
   io.of('/chat').emit('newMessage', msg);
   res.json({ ok: true });
-});
-
-// ── Promo codes (admin CRUD) ───────────────────────────────────────────────────
-
-app.get('/api/admin/promo-codes', requireAdmin, (req, res) => {
-  res.json({ ok: true, codes: pc.getCodes() });
-});
-
-app.post('/api/admin/promo-codes', requireAdmin, (req, res) => {
-  const { code, amount, maxUses = 0 } = req.body || {};
-  res.json(pc.createCode(code, amount, maxUses));
-});
-
-app.delete('/api/admin/promo-codes/:code', requireAdmin, (req, res) => {
-  res.json(pc.deleteCode(decodeURIComponent(req.params.code)));
-});
-
-// ── Promo code redemption (users) ─────────────────────────────────────────────
-
-app.post('/api/accounts/redeem', (req, res) => {
-  const token = getToken(req);
-  const me    = us.getMe(token);
-  if (!me.ok) return res.status(401).json({ ok: false, error: 'Not logged in' });
-  if (me.username === 'jasper') return res.json({ ok: false, error: 'Admin cannot redeem codes' });
-
-  const { code } = req.body || {};
-  const result = pc.redeemCode(code, me.username);
-  if (!result.ok) return res.json(result);
-
-  // Credit the user (server-internal, no token needed)
-  const addResult = us.addBonusByAdmin(me.username, result.amount);
-  if (!addResult.ok) return res.json({ ok: false, error: 'Failed to credit chips' });
-
-  console.log(`[promo] ${me.username} redeemed code for $${result.amount.toLocaleString()}`);
-  res.json({ ok: true, amount: result.amount, balance: addResult.balance });
 });
 
 // ── Static client ─────────────────────────────────────────────────────────────

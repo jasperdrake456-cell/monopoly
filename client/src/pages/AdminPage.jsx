@@ -107,13 +107,6 @@ export default function AdminPage() {
   // ── Stats tab ───────────────────────────────────────────────────────────────
   const [platformStats, setPlatformStats] = useState(null);
 
-  // ── Promo codes ─────────────────────────────────────────────────────────────
-  const [promoCodes,   setPromoCodes]   = useState([]);
-  const [promoCode,    setPromoCode]    = useState('');
-  const [promoAmount,  setPromoAmount]  = useState('');
-  const [promoMaxUses, setPromoMaxUses] = useState('0');
-  const [promoStatus,  setPromoStatus]  = useState('');
-
   // ── User search ─────────────────────────────────────────────────────────────
   const [userSearch, setUserSearch] = useState('');
 
@@ -179,13 +172,6 @@ export default function AdminPage() {
       .catch(() => {});
   }, [token]);
 
-  const loadPromoCodes = useCallback(() => {
-    if (!token) return;
-    authFetch('/api/admin/promo-codes', token)
-      .then(d => { if (d.ok) setPromoCodes(d.codes); })
-      .catch(() => {});
-  }, [token]);
-
   const loadChat = useCallback(() => {
     if (!token) return;
     Promise.all([
@@ -207,12 +193,11 @@ export default function AdminPage() {
     if (tab === 'stats')   { loadStats(); loadUsers(); }
     if (tab === 'reports') { loadReports(); loadUsers(); }
     if (tab === 'users')   { loadUsers(); loadActivity(); }
-    if (tab === 'money')   { loadPromoCodes(); }
     if (tab === 'bans')    { loadIPBans(); loadUserBans(); }
     if (tab === 'wins')    { loadBigWins(); }
     if (tab === 'site')    { refreshConfig(); }
     if (tab === 'chat')    { loadChat(); }
-  }, [tab, loadStats, loadReports, loadUsers, loadIPBans, loadUserBans, loadActivity, loadBigWins, refreshConfig, loadChat, loadPromoCodes]);
+  }, [tab, loadStats, loadReports, loadUsers, loadIPBans, loadUserBans, loadActivity, loadBigWins, refreshConfig, loadChat]);
 
   // Poll activity every 10 seconds while on users tab
   useEffect(() => {
@@ -376,7 +361,6 @@ export default function AdminPage() {
               if (tab === 'stats')   { loadStats(); loadUsers(); }
               if (tab === 'reports') { loadReports(); loadUsers(); }
               if (tab === 'users')   { loadUsers(); loadActivity(); }
-              if (tab === 'money')   { loadPromoCodes(); }
               if (tab === 'bans')    { loadIPBans(); loadUserBans(); }
               if (tab === 'wins')    { loadBigWins(); }
               if (tab === 'site')    { refreshConfig(); setSiteStatus('↻ Refreshed'); }
@@ -712,88 +696,6 @@ export default function AdminPage() {
             </button>
           </div>
 
-          {/* ── Promo Codes ─────────────────────────────────────────────────── */}
-          <div className="admin-section-title" style={{ marginTop: 32 }}>🎁 Promo Codes</div>
-          {promoStatus && <div className="admin-status-msg">{promoStatus}</div>}
-          <div className="admin-give-form" style={{ marginBottom: 16 }}>
-            <input
-              className="admin-input"
-              placeholder="Code (e.g. WELCOME500)"
-              value={promoCode}
-              onChange={e => setPromoCode(e.target.value.toUpperCase())}
-              style={{ textTransform: 'uppercase' }}
-            />
-            <input
-              className="admin-input"
-              type="number"
-              placeholder="Chips to award"
-              value={promoAmount}
-              onChange={e => setPromoAmount(e.target.value)}
-              min={1}
-            />
-            <select
-              className="admin-input admin-select"
-              value={promoMaxUses}
-              onChange={e => setPromoMaxUses(e.target.value)}
-            >
-              <option value="0">Unlimited uses</option>
-              <option value="1">1 use</option>
-              <option value="5">5 uses</option>
-              <option value="10">10 uses</option>
-              <option value="25">25 uses</option>
-              <option value="50">50 uses</option>
-              <option value="100">100 uses</option>
-            </select>
-            <button
-              className="admin-btn admin-btn--primary"
-              onClick={async () => {
-                const code = promoCode.trim().toUpperCase();
-                const amt  = parseInt(promoAmount, 10);
-                if (!code) return setPromoStatus('Enter a code.');
-                if (!amt || amt < 1) return setPromoStatus('Enter a valid amount.');
-                const d = await authFetch('/api/admin/promo-codes', token, {
-                  method: 'POST',
-                  body: JSON.stringify({ code, amount: amt, maxUses: parseInt(promoMaxUses, 10) || 0 }),
-                });
-                if (d.ok) {
-                  setPromoStatus(`Created code "${code}" — ${amt.toLocaleString()} chips`);
-                  setPromoCode(''); setPromoAmount(''); setPromoMaxUses('0');
-                  loadPromoCodes();
-                } else {
-                  setPromoStatus(d.error || 'Failed');
-                }
-              }}
-            >➕ Create Code</button>
-          </div>
-
-          {promoCodes.length === 0
-            ? <div className="admin-empty">No promo codes yet.</div>
-            : (
-              <div className="admin-promo-list">
-                {promoCodes.map(c => (
-                  <div key={c.code} className={`admin-promo-row${!c.active ? ' admin-promo-row--expired' : ''}`}>
-                    <div className="admin-promo-info">
-                      <span className="admin-promo-code">{c.code}</span>
-                      <span className="admin-promo-amount">+${c.amount.toLocaleString()}</span>
-                      <span className="admin-promo-uses">
-                        {c.uses}/{c.maxUses === 0 ? '∞' : c.maxUses} uses
-                      </span>
-                      {!c.active && <span className="admin-promo-badge admin-promo-badge--expired">EXPIRED</span>}
-                      {c.active && <span className="admin-promo-badge admin-promo-badge--active">ACTIVE</span>}
-                    </div>
-                    <button
-                      className="admin-btn admin-btn--danger admin-btn--sm"
-                      onClick={async () => {
-                        await authFetch(`/api/admin/promo-codes/${encodeURIComponent(c.code)}`, token, { method: 'DELETE' });
-                        setPromoStatus(`Deleted code "${c.code}"`);
-                        loadPromoCodes();
-                      }}
-                    >🗑 Delete</button>
-                  </div>
-                ))}
-              </div>
-            )
-          }
         </div>
       )}
       {/* ── Bans ── */}

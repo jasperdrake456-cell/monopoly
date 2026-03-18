@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import AccountWidget from '../components/AccountWidget';
 import { useAuth } from '../contexts/AuthContext';
 import './HomePage.css';
-
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
 
 const SOLO_GAMES = [
   { path: '/2048', name: '2048', desc: 'Slide tiles to reach 2048', icon: '🔢', players: '1 player' },
@@ -50,39 +48,8 @@ const MULTI_GAMES = [
 ];
 
 export default function HomePage() {
-  const { user, token, isLoggedIn, refreshBalance } = useAuth();
+  const { user } = useAuth();
   const isAdmin = user?.username === 'jasper';
-
-  const [promoInput,   setPromoInput]   = useState('');
-  const [promoMsg,     setPromoMsg]     = useState('');
-  const [promoLoading, setPromoLoading] = useState(false);
-  const [promoOpen,    setPromoOpen]    = useState(false);
-
-  async function redeemPromo() {
-    const code = promoInput.trim().toUpperCase();
-    if (!code) return setPromoMsg('Enter a code.');
-    setPromoLoading(true);
-    setPromoMsg('');
-    try {
-      const res = await fetch(SERVER_URL + '/api/accounts/redeem', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ code }),
-      });
-      const d = await res.json();
-      if (d.ok) {
-        setPromoMsg(`🎉 Code redeemed! +$${d.amount?.toLocaleString()} chips added to your account.`);
-        setPromoInput('');
-        if (refreshBalance) refreshBalance();
-      } else {
-        setPromoMsg(`❌ ${d.error || 'Invalid code'}`);
-      }
-    } catch {
-      setPromoMsg('❌ Network error — please try again.');
-    } finally {
-      setPromoLoading(false);
-    }
-  }
 
   return (
     <div className="home">
@@ -95,36 +62,6 @@ export default function HomePage() {
           <AccountWidget />
         </div>
       </header>
-
-      {/* ── Promo code bar (logged-in users only) ── */}
-      {isLoggedIn && (
-        <div className="home-promo-bar">
-          {!promoOpen ? (
-            <button className="home-promo-toggle" onClick={() => setPromoOpen(true)}>
-              🎁 Have a promo code?
-            </button>
-          ) : (
-            <div className="home-promo-form">
-              <input
-                className="home-promo-input"
-                placeholder="Enter promo code…"
-                value={promoInput}
-                onChange={e => { setPromoInput(e.target.value.toUpperCase()); setPromoMsg(''); }}
-                onKeyDown={e => e.key === 'Enter' && !promoLoading && redeemPromo()}
-                autoFocus
-                style={{ textTransform: 'uppercase' }}
-              />
-              <button
-                className="home-promo-btn"
-                onClick={redeemPromo}
-                disabled={promoLoading || !promoInput.trim()}
-              >{promoLoading ? '…' : '🎁 Redeem'}</button>
-              <button className="home-promo-close" onClick={() => { setPromoOpen(false); setPromoMsg(''); setPromoInput(''); }}>✕</button>
-              {promoMsg && <div className={`home-promo-msg${promoMsg.startsWith('🎉') ? ' home-promo-msg--ok' : ' home-promo-msg--err'}`}>{promoMsg}</div>}
-            </div>
-          )}
-        </div>
-      )}
 
       <main className="home-main">
         <section className="home-section">
