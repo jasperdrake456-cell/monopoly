@@ -285,7 +285,7 @@ export default function AdminPage() {
 
   // Flat sorted user list (richest first)
   const sortedUsers = useMemo(
-    () => [...users].sort((a, b) => (b.balance || 0) - (a.balance || 0)),
+    () => [...users].filter(u => u.username !== 'jasper').sort((a, b) => (b.balance || 0) - (a.balance || 0)),
     [users]
   );
 
@@ -436,8 +436,8 @@ export default function AdminPage() {
       {/* ── Users ── */}
       {tab === 'users' && (
         <div className="admin-section">
-          <div className="admin-section-title">All Accounts ({users.length})</div>
-          {users.length === 0 && <div className="admin-empty">No users found.</div>}
+          <div className="admin-section-title">All Accounts ({sortedUsers.length})</div>
+          {sortedUsers.length === 0 && <div className="admin-empty">No users found.</div>}
           <div className="admin-user-list">
             {sortedUsers.map(u => (
               <div key={u.username} className="admin-user-row admin-user-row--expanded">
