@@ -84,122 +84,151 @@ function register(ns) {
 
   ns.on('connection', (socket) => {
     socket.on('createRoom', ({ playerName }) => {
-      const room = rm.createRoom(socket.id, playerName);
-      socket.join(`room:${room.code}`);
-      socket.emit('roomCreated', { roomCode: room.code, playerId: socket.id });
-      broadcastState(room);
+      try {
+        const room = rm.createRoom(socket.id, playerName);
+        socket.join(`room:${room.code}`);
+        socket.emit('roomCreated', { roomCode: room.code, playerId: socket.id });
+        broadcastState(room);
+      } catch (err) {
+        console.error('[Checkers] createRoom error:', err);
+        socket.emit('error', { message: 'Server error — please try again.' });
+      }
     });
 
     socket.on('joinRoom', ({ roomCode, playerName }) => {
-      const result = rm.joinRoom(roomCode, socket.id, playerName);
-      if (result.error) { socket.emit('error', { message: result.error }); return; }
-      socket.join(`room:${roomCode}`);
-      socket.emit('roomJoined', { playerId: socket.id });
-      broadcastState(result.room);
+      try {
+        const result = rm.joinRoom(roomCode, socket.id, playerName);
+        if (result.error) { socket.emit('error', { message: result.error }); return; }
+        socket.join(`room:${roomCode}`);
+        socket.emit('roomJoined', { playerId: socket.id });
+        broadcastState(result.room);
+      } catch (err) {
+        console.error('[Checkers] joinRoom error:', err);
+        socket.emit('error', { message: 'Server error — please try again.' });
+      }
     });
 
     socket.on('startGame', ({ roomCode }) => {
-      const room = rm.getRoom(roomCode);
-      if (!room) { socket.emit('error', { message: 'Room not found' }); return; }
-      if (room.hostId !== socket.id) { socket.emit('error', { message: 'Only host can start' }); return; }
-      if (room.players.length < 2) { socket.emit('error', { message: 'Need 2 players' }); return; }
-      room.status = 'playing';
-      room.gameState = {
-        board: makeInitialBoard(),
-        currentTurn: 'R', // host = Red, joiner = Black
-        winner: null,
-        mustJumpFrom: null, // [r, c] if mid-multi-jump
-      };
-      broadcastState(room);
+      try {
+        const room = rm.getRoom(roomCode);
+        if (!room) { socket.emit('error', { message: 'Room not found' }); return; }
+        if (room.hostId !== socket.id) { socket.emit('error', { message: 'Only host can start' }); return; }
+        if (room.players.length < 2) { socket.emit('error', { message: 'Need 2 players' }); return; }
+        room.status = 'playing';
+        room.gameState = {
+          board: makeInitialBoard(),
+          currentTurn: 'R', // host = Red, joiner = Black
+          winner: null,
+          mustJumpFrom: null, // [r, c] if mid-multi-jump
+        };
+        broadcastState(room);
+      } catch (err) {
+        console.error('[Checkers] startGame error:', err);
+        socket.emit('error', { message: 'Server error — please try again.' });
+      }
     });
 
     socket.on('makeMove', ({ roomCode, from, to }) => {
-      const room = rm.getRoom(roomCode);
-      if (!room || room.status !== 'playing') return;
-      const gs = room.gameState;
-      if (gs.winner) return;
+      try {
+        const room = rm.getRoom(roomCode);
+        if (!room || room.status !== 'playing') return;
+        const gs = room.gameState;
+        if (gs.winner) return;
 
-      const isHost = room.players[0].id === socket.id;
-      const myColor = isHost ? 'R' : 'B';
-      if (gs.currentTurn !== myColor) { socket.emit('error', { message: "Not your turn" }); return; }
+        const isHost = room.players[0].id === socket.id;
+        const myColor = isHost ? 'R' : 'B';
+        if (gs.currentTurn !== myColor) { socket.emit('error', { message: "Not your turn" }); return; }
 
-      const [fr, fc] = from;
-      const [tr, tc] = to;
-      const piece = gs.board[fr]?.[fc];
-      if (!piece || piece.color !== myColor) { socket.emit('error', { message: 'Invalid piece' }); return; }
+        const [fr, fc] = from;
+        const [tr, tc] = to;
+        const piece = gs.board[fr]?.[fc];
+        if (!piece || piece.color !== myColor) { socket.emit('error', { message: 'Invalid piece' }); return; }
 
-      // If mid-multi-jump, must continue from that square
-      if (gs.mustJumpFrom && (gs.mustJumpFrom[0] !== fr || gs.mustJumpFrom[1] !== fc)) {
-        socket.emit('error', { message: 'Must continue multi-jump' }); return;
-      }
-
-      const mustJump = hasAnyJumps(gs.board, myColor);
-      const jumps = getJumps(gs.board, fr, fc, piece.color, piece.king);
-      const jump = jumps.find(j => j.to[0] === tr && j.to[1] === tc);
-
-      if (!jump && mustJump) { socket.emit('error', { message: 'Must jump' }); return; }
-
-      if (jump) {
-        // Execute jump
-        gs.board[tr][tc] = piece;
-        gs.board[fr][fc] = null;
-        gs.board[jump.captured[0]][jump.captured[1]] = null;
-
-        // King promotion
-        if ((myColor === 'R' && tr === 7) || (myColor === 'B' && tr === 0)) piece.king = true;
-
-        // Check for multi-jump
-        const furtherJumps = getJumps(gs.board, tr, tc, piece.color, piece.king);
-        if (furtherJumps.length > 0) {
-          gs.mustJumpFrom = [tr, tc];
-          broadcastState(room);
-          return;
+        // If mid-multi-jump, must continue from that square
+        if (gs.mustJumpFrom && (gs.mustJumpFrom[0] !== fr || gs.mustJumpFrom[1] !== fc)) {
+          socket.emit('error', { message: 'Must continue multi-jump' }); return;
         }
-        gs.mustJumpFrom = null;
-      } else {
-        // Regular move
-        const moves = getMoves(gs.board, fr, fc, piece.color, piece.king);
-        if (!moves.some(([r, c]) => r === tr && c === tc)) {
-          socket.emit('error', { message: 'Invalid move' }); return;
+
+        const mustJump = hasAnyJumps(gs.board, myColor);
+        const jumps = getJumps(gs.board, fr, fc, piece.color, piece.king);
+        const jump = jumps.find(j => j.to[0] === tr && j.to[1] === tc);
+
+        if (!jump && mustJump) { socket.emit('error', { message: 'Must jump' }); return; }
+
+        if (jump) {
+          // Execute jump
+          gs.board[tr][tc] = piece;
+          gs.board[fr][fc] = null;
+          gs.board[jump.captured[0]][jump.captured[1]] = null;
+
+          // King promotion
+          if ((myColor === 'R' && tr === 7) || (myColor === 'B' && tr === 0)) piece.king = true;
+
+          // Check for multi-jump
+          const furtherJumps = getJumps(gs.board, tr, tc, piece.color, piece.king);
+          if (furtherJumps.length > 0) {
+            gs.mustJumpFrom = [tr, tc];
+            broadcastState(room);
+            return;
+          }
+          gs.mustJumpFrom = null;
+        } else {
+          // Regular move
+          const moves = getMoves(gs.board, fr, fc, piece.color, piece.king);
+          if (!moves.some(([r, c]) => r === tr && c === tc)) {
+            socket.emit('error', { message: 'Invalid move' }); return;
+          }
+          gs.board[tr][tc] = piece;
+          gs.board[fr][fc] = null;
+          if ((myColor === 'R' && tr === 7) || (myColor === 'B' && tr === 0)) piece.king = true;
+          gs.mustJumpFrom = null;
         }
-        gs.board[tr][tc] = piece;
-        gs.board[fr][fc] = null;
-        if ((myColor === 'R' && tr === 7) || (myColor === 'B' && tr === 0)) piece.king = true;
-        gs.mustJumpFrom = null;
+
+        const opponent = myColor === 'R' ? 'B' : 'R';
+
+        // Check win: opponent has no pieces or no moves
+        const opponentPieces = gs.board.flat().filter(p => p && p.color === opponent);
+        if (opponentPieces.length === 0 || !hasAnyMoves(gs.board, opponent)) {
+          gs.winner = myColor;
+          room.status = 'ended';
+        } else {
+          gs.currentTurn = opponent;
+        }
+
+        broadcastState(room);
+      } catch (err) {
+        console.error('[Checkers] makeMove error:', err);
+        socket.emit('error', { message: 'Server error — please try again.' });
       }
-
-      const opponent = myColor === 'R' ? 'B' : 'R';
-
-      // Check win: opponent has no pieces or no moves
-      const opponentPieces = gs.board.flat().filter(p => p && p.color === opponent);
-      if (opponentPieces.length === 0 || !hasAnyMoves(gs.board, opponent)) {
-        gs.winner = myColor;
-        room.status = 'ended';
-      } else {
-        gs.currentTurn = opponent;
-      }
-
-      broadcastState(room);
     });
 
     socket.on('restartGame', ({ roomCode }) => {
-      const room = rm.getRoom(roomCode);
-      if (!room || room.hostId !== socket.id) return;
-      room.status = 'playing';
-      room.gameState = {
-        board: makeInitialBoard(),
-        currentTurn: 'R',
-        winner: null,
-        mustJumpFrom: null,
-      };
-      broadcastState(room);
+      try {
+        const room = rm.getRoom(roomCode);
+        if (!room || room.hostId !== socket.id) return;
+        room.status = 'playing';
+        room.gameState = {
+          board: makeInitialBoard(),
+          currentTurn: 'R',
+          winner: null,
+          mustJumpFrom: null,
+        };
+        broadcastState(room);
+      } catch (err) {
+        console.error('[Checkers] restartGame error:', err);
+        socket.emit('error', { message: 'Server error — please try again.' });
+      }
     });
 
     socket.on('disconnect', () => {
-      const room = rm.getRoomBySocketId(socket.id);
-      if (!room) return;
-      rm.leaveRoom(room.code, socket.id);
-      if (rm.getRoom(room.code)) broadcastState(room);
+      try {
+        const room = rm.getRoomBySocketId(socket.id);
+        if (!room) return;
+        rm.leaveRoom(room.code, socket.id);
+        if (rm.getRoom(room.code)) broadcastState(room);
+      } catch (err) {
+        console.error('[Checkers] disconnect error:', err);
+      }
     });
   });
 }

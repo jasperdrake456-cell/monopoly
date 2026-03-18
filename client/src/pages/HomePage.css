@@ -143,9 +143,70 @@
 }
 
 
+/* Game of the Day banner */
+.gotd-banner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, rgba(124,58,237,0.25) 0%, rgba(234,179,8,0.18) 100%);
+  border: 1px solid rgba(234,179,8,0.45);
+  border-radius: 12px;
+  padding: 0.85rem 1.2rem;
+  margin-bottom: 1.1rem;
+}
+
+.gotd-star {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.gotd-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #fbbf24;
+}
+
+.gotd-name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.gotd-boost {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fde68a;
+  background: rgba(234,179,8,0.15);
+  border: 1px solid rgba(234,179,8,0.3);
+  padding: 0.2rem 0.7rem;
+  border-radius: 20px;
+  margin-left: auto;
+}
+
 @media (max-width: 600px) {
   .home-main { padding: 1.2rem 0.8rem 3rem; }
   .home-grid { grid-template-columns: 1fr 1fr; gap: 0.7rem; }
   .game-card { padding: 0.9rem 0.75rem 0.75rem; }
   .game-card-icon { font-size: 1.8rem; }
 }
+
+/* ── Game of the Day banner ──────────────────────────────────────────────── */
+.gotd-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(124,58,237,0.25), rgba(250,204,21,0.15));
+  border: 1px solid rgba(250,204,21,0.4);
+  border-radius: 10px;
+  padding: 10px 16px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.gotd-star { font-size: 1.3rem; }
+.gotd-label { color: #94a3b8; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.gotd-name { color: #facc15; font-size: 1rem; font-weight: 800; text-transform: capitalize; }
+.gotd-boost { color: #86efac; font-size: 0.85rem; font-weight: 600; margin-left: auto; }
+

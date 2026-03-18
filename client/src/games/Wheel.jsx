@@ -42,11 +42,11 @@ const RISK_MODES = {
     emoji: '🔴',
     color: '#ef4444',
     segments: [
-      { color: '#22c55e', label: 'Green',  mult: 1.6,   weight: 20 },
-      { color: '#3b82f6', label: 'Blue',   mult: 4.0,   weight: 10 },
-      { color: '#a855f7', label: 'Purple', mult: 8.0,   weight: 5  },
-      { color: '#ef4444', label: 'Red',    mult: 16.0,  weight: 2  },
-      { color: '#FFD700', label: 'Gold',   mult: 160.0, weight: 1  },
+      { color: '#22c55e', label: 'Green',  mult: 1.5,   weight: 26 },
+      { color: '#3b82f6', label: 'Blue',   mult: 3.5,   weight: 11 },
+      { color: '#a855f7', label: 'Purple', mult: 7.0,   weight: 5  },
+      { color: '#ef4444', label: 'Red',    mult: 12.0,  weight: 2  },
+      { color: '#FFD700', label: 'Gold',   mult: 50.0,  weight: 1  },
     ],
   },
 };

@@ -7,7 +7,7 @@ export default function TransferPage() {
   const { isLoggedIn, balance, transfer } = useAuth();
   const navigate = useNavigate();
 
-  const TRANSFER_CAP = 750;
+  const TRANSFER_CAP = 5000;
   const [toUsername, setToUsername] = useState('');
   const [amount, setAmount]         = useState('');
   const [status, setStatus]         = useState(null); // null | { ok, msg }
@@ -78,7 +78,7 @@ export default function TransferPage() {
               value={amount}
               onChange={e => setAmount(e.target.value)}
             />
-            <span className="transfer-cap-hint">Max $750 per transfer</span>
+            <span className="transfer-cap-hint">Max $5,000 per transfer</span>
           </label>
 
           {status && (

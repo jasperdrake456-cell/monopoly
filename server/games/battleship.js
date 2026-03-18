@@ -125,124 +125,158 @@ function register(ns) {
 
   ns.on('connection', (socket) => {
     socket.on('createRoom', ({ playerName }) => {
-      const room = rm.createRoom(socket.id, playerName);
-      socket.join(`room:${room.code}`);
-      socket.emit('roomCreated', { roomCode: room.code, playerId: socket.id });
-      broadcastState(room);
+      try {
+        const room = rm.createRoom(socket.id, playerName);
+        socket.join(`room:${room.code}`);
+        socket.emit('roomCreated', { roomCode: room.code, playerId: socket.id });
+        broadcastState(room);
+      } catch (err) {
+        console.error('[Battleship] createRoom error:', err);
+        socket.emit('error', { message: 'Server error — please try again.' });
+      }
     });
 
     socket.on('joinRoom', ({ roomCode, playerName }) => {
-      const result = rm.joinRoom(roomCode, socket.id, playerName);
-      if (result.error) { socket.emit('error', { message: result.error }); return; }
-      socket.join(`room:${roomCode}`);
-      socket.emit('roomJoined', { playerId: socket.id });
-      broadcastState(result.room);
+      try {
+        const result = rm.joinRoom(roomCode, socket.id, playerName);
+        if (result.error) { socket.emit('error', { message: result.error }); return; }
+        socket.join(`room:${roomCode}`);
+        socket.emit('roomJoined', { playerId: socket.id });
+        broadcastState(result.room);
+      } catch (err) {
+        console.error('[Battleship] joinRoom error:', err);
+        socket.emit('error', { message: 'Server error — please try again.' });
+      }
     });
 
     socket.on('startGame', ({ roomCode }) => {
-      const room = rm.getRoom(roomCode);
-      if (!room) { socket.emit('error', { message: 'Room not found' }); return; }
-      if (room.hostId !== socket.id) { socket.emit('error', { message: 'Only host can start' }); return; }
-      if (room.players.length < 2) { socket.emit('error', { message: 'Need 2 players' }); return; }
-      room.status = 'playing';
-      room.gameState = {
-        phase: 'placement',
-        currentTurn: null,
-        winner: null,
-        fleets: [
-          { placed: false, ships: null, shipGrid: emptyGrid(), hits: emptyGrid() },
-          { placed: false, ships: null, shipGrid: emptyGrid(), hits: emptyGrid() },
-        ],
-      };
-      broadcastState(room);
+      try {
+        const room = rm.getRoom(roomCode);
+        if (!room) { socket.emit('error', { message: 'Room not found' }); return; }
+        if (room.hostId !== socket.id) { socket.emit('error', { message: 'Only host can start' }); return; }
+        if (room.players.length < 2) { socket.emit('error', { message: 'Need 2 players' }); return; }
+        room.status = 'playing';
+        room.gameState = {
+          phase: 'placement',
+          currentTurn: null,
+          winner: null,
+          fleets: [
+            { placed: false, ships: null, shipGrid: emptyGrid(), hits: emptyGrid() },
+            { placed: false, ships: null, shipGrid: emptyGrid(), hits: emptyGrid() },
+          ],
+        };
+        broadcastState(room);
+      } catch (err) {
+        console.error('[Battleship] startGame error:', err);
+        socket.emit('error', { message: 'Server error — please try again.' });
+      }
     });
 
     socket.on('placeShips', ({ roomCode, ships }) => {
-      const room = rm.getRoom(roomCode);
-      if (!room || room.status !== 'playing') return;
-      const gs = room.gameState;
-      if (gs.phase !== 'placement') { socket.emit('error', { message: 'Not placement phase' }); return; }
+      try {
+        const room = rm.getRoom(roomCode);
+        if (!room || room.status !== 'playing') return;
+        const gs = room.gameState;
+        if (gs.phase !== 'placement') { socket.emit('error', { message: 'Not placement phase' }); return; }
 
-      if (!validateShips(ships)) { socket.emit('error', { message: 'Invalid ship placement' }); return; }
+        if (!validateShips(ships)) { socket.emit('error', { message: 'Invalid ship placement' }); return; }
 
-      const isHost = room.players[0].id === socket.id;
-      const idx = isHost ? 0 : 1;
-      gs.fleets[idx].ships = ships;
-      gs.fleets[idx].shipGrid = buildShipGrid(ships);
-      gs.fleets[idx].placed = true;
+        const isHost = room.players[0].id === socket.id;
+        const idx = isHost ? 0 : 1;
+        gs.fleets[idx].ships = ships;
+        gs.fleets[idx].shipGrid = buildShipGrid(ships);
+        gs.fleets[idx].placed = true;
 
-      // Both placed → start battle
-      if (gs.fleets[0].placed && gs.fleets[1].placed) {
-        gs.phase = 'battle';
-        gs.currentTurn = room.players[0].id; // host goes first
+        // Both placed → start battle
+        if (gs.fleets[0].placed && gs.fleets[1].placed) {
+          gs.phase = 'battle';
+          gs.currentTurn = room.players[0].id; // host goes first
+        }
+
+        broadcastState(room);
+      } catch (err) {
+        console.error('[Battleship] placeShips error:', err);
+        socket.emit('error', { message: 'Server error — please try again.' });
       }
-
-      broadcastState(room);
     });
 
     socket.on('attack', ({ roomCode, r, c }) => {
-      const room = rm.getRoom(roomCode);
-      if (!room || room.status !== 'playing') return;
-      const gs = room.gameState;
-      if (gs.phase !== 'battle') { socket.emit('error', { message: 'Not battle phase' }); return; }
-      if (gs.currentTurn !== socket.id) { socket.emit('error', { message: 'Not your turn' }); return; }
+      try {
+        const room = rm.getRoom(roomCode);
+        if (!room || room.status !== 'playing') return;
+        const gs = room.gameState;
+        if (gs.phase !== 'battle') { socket.emit('error', { message: 'Not battle phase' }); return; }
+        if (gs.currentTurn !== socket.id) { socket.emit('error', { message: 'Not your turn' }); return; }
 
-      const isHost = room.players[0].id === socket.id;
-      const oppIdx = isHost ? 1 : 0;
-      const oppFleet = gs.fleets[oppIdx];
+        const isHost = room.players[0].id === socket.id;
+        const oppIdx = isHost ? 1 : 0;
+        const oppFleet = gs.fleets[oppIdx];
 
-      if (r < 0 || r >= 10 || c < 0 || c >= 10) { socket.emit('error', { message: 'Invalid coordinates' }); return; }
-      if (oppFleet.hits[r][c] !== null) { socket.emit('error', { message: 'Already attacked there' }); return; }
+        if (r < 0 || r >= 10 || c < 0 || c >= 10) { socket.emit('error', { message: 'Invalid coordinates' }); return; }
+        if (oppFleet.hits[r][c] !== null) { socket.emit('error', { message: 'Already attacked there' }); return; }
 
-      const hit = oppFleet.shipGrid[r][c] !== null;
-      oppFleet.hits[r][c] = hit ? 'hit' : 'miss';
+        const hit = oppFleet.shipGrid[r][c] !== null;
+        oppFleet.hits[r][c] = hit ? 'hit' : 'miss';
 
-      // Check if all opponent ships sunk
-      let allSunk = true;
-      for (const ship of oppFleet.ships) {
-        const { r: sr, c: sc, horizontal, length } = ship;
-        for (let j = 0; j < length; j++) {
-          const rr = horizontal ? sr : sr + j;
-          const cc = horizontal ? sc + j : sc;
-          if (oppFleet.hits[rr][cc] !== 'hit') { allSunk = false; break; }
+        // Check if all opponent ships sunk
+        let allSunk = true;
+        for (const ship of oppFleet.ships) {
+          const { r: sr, c: sc, horizontal, length } = ship;
+          for (let j = 0; j < length; j++) {
+            const rr = horizontal ? sr : sr + j;
+            const cc = horizontal ? sc + j : sc;
+            if (oppFleet.hits[rr][cc] !== 'hit') { allSunk = false; break; }
+          }
+          if (!allSunk) break;
         }
-        if (!allSunk) break;
-      }
 
-      if (allSunk) {
-        gs.winner = socket.id;
-        gs.phase = 'ended';
-        room.status = 'ended';
-      } else if (!hit) {
-        // Miss: switch turn
-        gs.currentTurn = room.players[isHost ? 1 : 0].id;
-      }
-      // Hit: same player attacks again
+        if (allSunk) {
+          gs.winner = socket.id;
+          gs.phase = 'ended';
+          room.status = 'ended';
+        } else if (!hit) {
+          // Miss: switch turn
+          gs.currentTurn = room.players[isHost ? 1 : 0].id;
+        }
+        // Hit: same player attacks again
 
-      broadcastState(room);
+        broadcastState(room);
+      } catch (err) {
+        console.error('[Battleship] attack error:', err);
+        socket.emit('error', { message: 'Server error — please try again.' });
+      }
     });
 
     socket.on('restartGame', ({ roomCode }) => {
-      const room = rm.getRoom(roomCode);
-      if (!room || room.hostId !== socket.id) return;
-      room.status = 'playing';
-      room.gameState = {
-        phase: 'placement',
-        currentTurn: null,
-        winner: null,
-        fleets: [
-          { placed: false, ships: null, shipGrid: emptyGrid(), hits: emptyGrid() },
-          { placed: false, ships: null, shipGrid: emptyGrid(), hits: emptyGrid() },
-        ],
-      };
-      broadcastState(room);
+      try {
+        const room = rm.getRoom(roomCode);
+        if (!room || room.hostId !== socket.id) return;
+        room.status = 'playing';
+        room.gameState = {
+          phase: 'placement',
+          currentTurn: null,
+          winner: null,
+          fleets: [
+            { placed: false, ships: null, shipGrid: emptyGrid(), hits: emptyGrid() },
+            { placed: false, ships: null, shipGrid: emptyGrid(), hits: emptyGrid() },
+          ],
+        };
+        broadcastState(room);
+      } catch (err) {
+        console.error('[Battleship] restartGame error:', err);
+        socket.emit('error', { message: 'Server error — please try again.' });
+      }
     });
 
     socket.on('disconnect', () => {
-      const room = rm.getRoomBySocketId(socket.id);
-      if (!room) return;
-      rm.leaveRoom(room.code, socket.id);
-      if (rm.getRoom(room.code)) broadcastState(room);
+      try {
+        const room = rm.getRoomBySocketId(socket.id);
+        if (!room) return;
+        rm.leaveRoom(room.code, socket.id);
+        if (rm.getRoom(room.code)) broadcastState(room);
+      } catch (err) {
+        console.error('[Battleship] disconnect error:', err);
+      }
     });
   });
 }

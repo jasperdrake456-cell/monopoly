@@ -251,7 +251,7 @@ function transfer(token, toUsername, amount) {
 
   if (!from) return { ok: false, error: 'Sender not found' };
   if (!to)   return { ok: false, error: `User "${toClean}" not found` };
-  if (!isAdmin && amt > 750) return { ok: false, error: 'Maximum transfer is $750 per transaction' };
+  if (!isAdmin && amt > 5000) return { ok: false, error: 'Maximum transfer is $5,000 per transaction' };
   if (!isAdmin && from.casinoBalance < amt) return { ok: false, error: `Insufficient balance ($${from.casinoBalance})` };
 
   if (!isAdmin) from.casinoBalance -= amt;
@@ -496,9 +496,26 @@ function adminGetStats() {
   };
 }
 
+/**
+ * Reset ALL users' balances to a specific amount (for weekly resets).
+ * Returns count of users affected.
+ */
+function bulkResetBalances(amount) {
+  const val   = Math.max(0, Math.floor(amount));
+  const users = readUsers();
+  let count   = 0;
+  for (const key of Object.keys(users)) {
+    if (users[key].username === ADMIN_USERNAME) continue;
+    users[key].casinoBalance = val;
+    count++;
+  }
+  writeUsers(users);
+  return count;
+}
+
 module.exports = {
   register, login, getMe, syncBalance, claimDaily, transfer, logout, userExists,
   deleteUser, adminGiveMoney, adminSetBalance, listUsers, isAdminToken, getTopBalances,
   recordIP, kickUser, addBonus, pruneZeroBalanceAccounts, adminGetStats, addBonusByAdmin,
-  validateToken,
+  validateToken, bulkResetBalances,
 };

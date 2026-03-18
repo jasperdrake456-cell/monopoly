@@ -200,7 +200,7 @@ export default function Slots() {
         Balance: <span className="slots-balance-amount">${balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
       </div>
 
-      {broke ? (
+      {broke && !anySpinning ? (
         <div className="slots-broke">
           <div className="slots-broke-title">You're broke! 💸</div>
           <div className="slots-broke-sub">Next hourly $1,000 in:</div>

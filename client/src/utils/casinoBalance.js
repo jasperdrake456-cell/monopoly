@@ -18,6 +18,17 @@ export function setAuthToken(token) {
   _authToken = token;
 }
 
+// ── Rigged-user gate (set by useBalance hook after fetching game-config) ──────
+let _rigged = false;
+
+export function setRiggedMode(val) {
+  _rigged = !!val;
+}
+
+export function isRiggedMode() {
+  return _rigged;
+}
+
 // Debounced server sync — fires 800ms after last balance change
 function scheduleSync() {
   if (!_authToken) return;
@@ -53,6 +64,8 @@ export function setBalance(amount) {
 }
 
 export function addBalance(amount) {
+  // Rigged users never receive winnings — the call is silently dropped.
+  if (_rigged) return;
   setBalance(getBalance() + amount);
 }
 

@@ -15,6 +15,9 @@ const sc  = require('./siteConfig');
 const chatStore = require('./chat/chatStore');
 const chatNs    = require('./chat/chatNamespace');
 const al        = require('./adminLog');
+const sg        = require('./suggestions');
+const ru        = require('./riggedUsers');
+const go        = require('./gameOdds');
 
 const app = express();
 const server = http.createServer(app);
@@ -175,15 +178,9 @@ const ACTIVITY_TTL_MS = 90_000; // treat as offline after 90 seconds of no heart
 // token → pending bonus chips to deliver on next heartbeat
 const pendingBonuses = new Map();
 
-// Prune zero-balance accounts on startup and every 5 minutes
-(function runPrune() {
-  const n = us.pruneZeroBalanceAccounts();
-  if (n > 0) console.log(`[prune] Deleted ${n} zero-balance account(s)`);
-})();
-setInterval(() => {
-  const n = us.pruneZeroBalanceAccounts();
-  if (n > 0) console.log(`[prune] Deleted ${n} zero-balance account(s)`);
-}, 5 * 60 * 1000);
+// NOTE: Auto-pruning of zero-balance accounts has been DISABLED.
+// Previously this deleted anyone who hit $0, causing unexpected account loss.
+// Accounts are now kept indefinitely (admin can manually delete if needed).
 
 // Every 5 minutes: give all active online players $5,000
 setInterval(() => {
@@ -274,6 +271,13 @@ app.post('/api/reports', (req, res) => {
 
 function requireAdmin(req, res, next) {
   if (!us.isAdminToken(getToken(req))) return res.status(403).json({ error: 'Forbidden' });
+  next();
+}
+
+function requireAuth(req, res, next) {
+  const me = us.getMe(getToken(req));
+  if (!me.ok) return res.status(401).json({ ok: false, error: 'Not authenticated' });
+  req.user = me;
   next();
 }
 
@@ -563,6 +567,8 @@ app.post('/api/admin/chat/broadcast', requireAdmin, (req, res) => {
   if (!text || !text.trim()) return res.status(400).json({ ok: false, error: 'Empty message' });
   const msg = chatStore.addSystemMessage(text.trim());
   io.of('/chat').emit('newMessage', msg);
+  // Also fire a dedicated event so clients can show a full-screen popup
+  io.of('/chat').emit('announcement', { text: text.trim(), timestamp: Date.now() });
   al.log('broadcast', { text: text.trim() });
   res.json({ ok: true });
 });
@@ -648,6 +654,118 @@ app.post('/api/admin/danger/kick-all', requireAdmin, (req, res) => {
   res.json({ ok: true, sessionsKilled: kicked });
 });
 
+// ── Suggestions ───────────────────────────────────────────────────────────────
+
+// Public: submit a suggestion (auth required, 1 pending at a time)
+app.post('/api/suggestions', requireAuth, (req, res) => {
+  const { text } = req.body || {};
+  if (!text || !String(text).trim()) return res.status(400).json({ ok: false, error: 'Empty suggestion' });
+  const result = sg.addSuggestion(req.user.username, req.user.displayName, String(text).trim());
+  if (result.error) return res.status(409).json({ ok: false, error: result.error });
+  res.json(result);
+});
+
+// Public: get own suggestion status
+app.get('/api/suggestions/mine', requireAuth, (req, res) => {
+  res.json({ ok: true, suggestion: sg.getUserSuggestion(req.user.username) });
+});
+
+// Admin: get all suggestions
+app.get('/api/admin/suggestions', requireAdmin, (req, res) => {
+  res.json({ ok: true, suggestions: sg.getSuggestions() });
+});
+
+// Admin: accept or deny a suggestion
+app.post('/api/admin/suggestions/:id/review', requireAdmin, (req, res) => {
+  const { status } = req.body || {};
+  if (!['accepted','denied'].includes(status)) return res.status(400).json({ ok: false, error: 'Invalid status' });
+  const result = sg.reviewSuggestion(req.params.id, status);
+  al.log('review_suggestion', { id: req.params.id, status });
+  res.json(result);
+});
+
+// Admin: delete a suggestion
+app.delete('/api/admin/suggestions/:id', requireAdmin, (req, res) => {
+  sg.deleteSuggestion(req.params.id);
+  res.json({ ok: true });
+});
+
+// ── Rigged Users ──────────────────────────────────────────────────────────────
+
+// Public: check if current user is rigged (returns obfuscated response)
+app.get('/api/user/game-config', requireAuth, (req, res) => {
+  const rigged = ru.isRigged(req.user.username);
+  // Obfuscated: never directly say "rigged"; client checks the flag
+  res.json({ ok: true, luckyMode: !rigged });
+});
+
+// Admin: list rigged users
+app.get('/api/admin/rigged', requireAdmin, (req, res) => {
+  res.json({ ok: true, users: ru.getRiggedList() });
+});
+
+// Admin: add rigged user
+app.post('/api/admin/rigged', requireAdmin, (req, res) => {
+  const { username } = req.body || {};
+  if (!username) return res.status(400).json({ ok: false, error: 'Missing username' });
+  al.log('rig_user', { target: username });
+  res.json(ru.addRigged(username.toLowerCase()));
+});
+
+// Admin: remove rigged user
+app.delete('/api/admin/rigged/:username', requireAdmin, (req, res) => {
+  al.log('unrig_user', { target: req.params.username });
+  res.json(ru.removeRigged(req.params.username));
+});
+
+// ── Game Odds / Wildcard ──────────────────────────────────────────────────────
+
+// Public: get game boost for a specific game (and whether it's the wildcard)
+app.get('/api/game-config/:slug', (req, res) => {
+  const slug     = req.params.slug;
+  const wildcard = go.getDailyWildcard();
+  const boost    = go.getGameBoost(slug);
+  res.json({ ok: true, slug, wildcard, isWildcard: slug === wildcard, boost, wildcardBoost: go.getWildcardBoost() });
+});
+
+// Public: get today's wildcard
+app.get('/api/game-config', (req, res) => {
+  res.json({ ok: true, ...go.getAllBoosts() });
+});
+
+// Admin: set per-game boost
+app.post('/api/admin/game-odds/:slug', requireAdmin, (req, res) => {
+  const { multiplier } = req.body || {};
+  al.log('set_game_odds', { slug: req.params.slug, multiplier });
+  res.json(go.setGameBoost(req.params.slug, multiplier));
+});
+
+// Admin: reset per-game boost to default
+app.delete('/api/admin/game-odds/:slug', requireAdmin, (req, res) => {
+  al.log('reset_game_odds', { slug: req.params.slug });
+  res.json(go.resetGameBoost(req.params.slug));
+});
+
+// Admin: set wildcard override
+app.post('/api/admin/game-odds/wildcard/override', requireAdmin, (req, res) => {
+  const { slug, boost } = req.body || {};
+  if (slug !== undefined) go.setWildcardOverride(slug || null);
+  if (boost !== undefined) go.setWildcardBoost(boost);
+  al.log('set_wildcard', { slug, boost });
+  res.json({ ok: true });
+});
+
+// ── Weekly Reset ──────────────────────────────────────────────────────────────
+
+// Admin: manually trigger weekly reset (also called by scheduled task)
+app.post('/api/admin/weekly-reset', requireAdmin, (req, res) => {
+  const { amount } = req.body || {};
+  const RESET_AMOUNT = Number(amount) > 0 ? Math.floor(Number(amount)) : 5000;
+  const count = us.bulkResetBalances(RESET_AMOUNT);
+  al.log('weekly_reset', { count, amount: RESET_AMOUNT });
+  res.json({ ok: true, count, amount: RESET_AMOUNT });
+});
+
 // ── Static client ─────────────────────────────────────────────────────────────
 
 const clientDist = path.join(__dirname, '..', 'client', 'dist');
@@ -668,3 +786,11 @@ require('./games/texasholdem').register(io.of('/texasholdem'));
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => console.log(`Game platform server running on port ${PORT}`));
+
+// ── Global error handlers to prevent server crashes ───────────────────────────
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason);
+});

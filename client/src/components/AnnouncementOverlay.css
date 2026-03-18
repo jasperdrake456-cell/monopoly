@@ -1,0 +1,110 @@
+.ann-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  animation: ann-fadein 0.25s ease;
+}
+
+@keyframes ann-fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.ann-box {
+  background: linear-gradient(145deg, #1a1a2e, #16213e);
+  border: 2px solid #FFD700;
+  border-radius: 20px;
+  padding: 36px 40px 28px;
+  max-width: 480px;
+  width: 90%;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 0 60px rgba(255, 215, 0, 0.3), 0 20px 60px rgba(0,0,0,0.6);
+  animation: ann-slidein 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+}
+
+@keyframes ann-slidein {
+  from { transform: scale(0.8) translateY(-20px); opacity: 0; }
+  to   { transform: scale(1) translateY(0);       opacity: 1; }
+}
+
+.ann-icon {
+  font-size: 3rem;
+  margin-bottom: 8px;
+  animation: ann-pulse 1s ease infinite alternate;
+}
+
+@keyframes ann-pulse {
+  from { transform: scale(1); }
+  to   { transform: scale(1.15); }
+}
+
+.ann-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #FFD700;
+  margin-bottom: 16px;
+}
+
+.ann-text {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.5;
+  margin-bottom: 20px;
+  word-break: break-word;
+}
+
+.ann-more {
+  font-size: 0.8rem;
+  color: rgba(255,215,0,0.6);
+  margin-bottom: 12px;
+}
+
+.ann-close {
+  background: rgba(255,215,0,0.15);
+  border: 1px solid rgba(255,215,0,0.4);
+  color: #FFD700;
+  border-radius: 10px;
+  padding: 8px 24px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ann-close:hover {
+  background: rgba(255,215,0,0.3);
+  transform: scale(1.03);
+}
+
+.ann-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 0 0 20px 20px;
+  overflow: hidden;
+}
+
+.ann-progress-bar {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #FFD700, #f59e0b);
+  transform-origin: left;
+  animation: ann-shrink linear forwards;
+}
+
+@keyframes ann-shrink {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}

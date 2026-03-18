@@ -485,109 +485,162 @@ function register(ns) {
     socket.emit('roomList', getRoomList());
 
     socket.on('createRoom', ({ playerName, buyIn }) => {
-      const name   = (playerName || '').trim().slice(0, 16);
-      const buyin  = Math.max(100, Math.min(10000, parseInt(buyIn) || DEFAULT_BUYIN));
-      if (!name) { socket.emit('error', { message: 'Name required' }); return; }
+      try {
+        const name   = (playerName || '').trim().slice(0, 16);
+        const buyin  = Math.max(100, Math.min(10000, parseInt(buyIn) || DEFAULT_BUYIN));
+        if (!name) { socket.emit('error', { message: 'Name required' }); return; }
 
-      let code;
-      do { code = genCode(); } while (rooms.has(code));
+        let code;
+        do { code = genCode(); } while (rooms.has(code));
 
-      const room = {
-        code, hostId: socket.id,
-        players: [{ id: socket.id, name, buyIn: buyin }],
-        buyIn: buyin,
-        status: 'lobby', gameState: null, dealerIdx: -1,
-      };
-      rooms.set(code, room);
-      socket.join(`room:${code}`);
-      socket.emit('roomCreated', { roomCode: code, playerId: socket.id, buyIn: buyin });
-      broadcastState(room);
-      pushRoomList();
+        const room = {
+          code, hostId: socket.id,
+          players: [{ id: socket.id, name, buyIn: buyin }],
+          buyIn: buyin,
+          status: 'lobby', gameState: null, dealerIdx: -1,
+        };
+        rooms.set(code, room);
+        socket.join(`room:${code}`);
+        socket.emit('roomCreated', { roomCode: code, playerId: socket.id, buyIn: buyin });
+        broadcastState(room);
+        pushRoomList();
+      } catch (err) {
+        console.error('[TexasHoldem] createRoom error:', err);
+        socket.emit('error', { message: 'Server error — please try again.' });
+      }
     });
 
     socket.on('joinRoom', ({ roomCode, playerName }) => {
-      const room = rooms.get(roomCode);
-      if (!room)                           { socket.emit('error', { message: 'Room not found' });          return; }
-      if (room.status !== 'lobby')         { socket.emit('error', { message: 'Game already started' });    return; }
-      if (room.players.length >= MAX_PLAYERS) { socket.emit('error', { message: 'Room full (max 6)' });   return; }
+      try {
+        const room = rooms.get(roomCode);
+        if (!room)                           { socket.emit('error', { message: 'Room not found' });          return; }
+        if (room.status !== 'lobby')         { socket.emit('error', { message: 'Game already started' });    return; }
+        if (room.players.length >= MAX_PLAYERS) { socket.emit('error', { message: 'Room full (max 6)' });   return; }
 
-      const name = (playerName || '').trim().slice(0, 16);
-      if (!name) { socket.emit('error', { message: 'Name required' }); return; }
+        const name = (playerName || '').trim().slice(0, 16);
+        if (!name) { socket.emit('error', { message: 'Name required' }); return; }
 
-      if (room.players.map(p => p.name.toLowerCase()).includes(name.toLowerCase())) {
-        socket.emit('error', { message: 'Name taken in this room' }); return;
+        if (room.players.map(p => p.name.toLowerCase()).includes(name.toLowerCase())) {
+          socket.emit('error', { message: 'Name taken in this room' }); return;
+        }
+
+        room.players.push({ id: socket.id, name, buyIn: room.buyIn });
+        socket.join(`room:${roomCode}`);
+        socket.emit('roomJoined', { playerId: socket.id, buyIn: room.buyIn });
+        broadcastState(room);
+        pushRoomList();
+      } catch (err) {
+        console.error('[TexasHoldem] joinRoom error:', err);
+        socket.emit('error', { message: 'Server error — please try again.' });
       }
-
-      room.players.push({ id: socket.id, name, buyIn: room.buyIn });
-      socket.join(`room:${roomCode}`);
-      socket.emit('roomJoined', { playerId: socket.id, buyIn: room.buyIn });
-      broadcastState(room);
-      pushRoomList();
     });
 
     socket.on('startGame', ({ roomCode }) => {
-      const room = rooms.get(roomCode);
-      if (!room || room.hostId !== socket.id) return;
-      if (room.players.length < 2) { socket.emit('error', { message: 'Need at least 2 players' }); return; }
+      try {
+        const room = rooms.get(roomCode);
+        if (!room || room.hostId !== socket.id) return;
+        if (room.players.length < 2) { socket.emit('error', { message: 'Need at least 2 players' }); return; }
 
-      room.status = 'playing';
-      initHand(room);
-      broadcastState(room);
-      pushRoomList();
+        room.status = 'playing';
+        initHand(room);
+        broadcastState(room);
+        pushRoomList();
+      } catch (err) {
+        console.error('[TexasHoldem] startGame error:', err);
+        socket.emit('error', { message: 'Server error — please try again.' });
+      }
     });
 
     socket.on('playerAction', ({ roomCode, action }) => {
-      const room = rooms.get(roomCode);
-      if (!room || !room.gameState || !room.gameState.handInProgress) return;
-      const result = processAction(room.gameState, socket.id, action);
-      if (result.error) { socket.emit('error', { message: result.error }); return; }
-      broadcastState(room);
+      try {
+        const room = rooms.get(roomCode);
+        if (!room || !room.gameState || !room.gameState.handInProgress) return;
+        const result = processAction(room.gameState, socket.id, action);
+        if (result.error) { socket.emit('error', { message: result.error }); return; }
+        broadcastState(room);
+      } catch (err) {
+        console.error('[TexasHoldem] playerAction error:', err);
+        socket.emit('error', { message: 'Server error — please try again.' });
+      }
     });
 
     socket.on('nextHand', ({ roomCode }) => {
-      const room = rooms.get(roomCode);
-      if (!room || room.status !== 'playing') return;
-      if (room.gameState?.handInProgress) return;
-      // Any remaining player can trigger next hand (not just host)
+      try {
+        const room = rooms.get(roomCode);
+        if (!room || room.status !== 'playing') return;
+        if (room.gameState?.handInProgress) return;
+        // Any remaining player can trigger next hand (not just host)
 
-      // Remove busted players and cash them out (they get 0 back — lost their buy-in)
-      if (room.gameState) {
-        const busted = room.gameState.players.filter(p => p.chips <= 0);
-        for (const p of busted) {
-          emitCashOut(p.id, 0);
-          ns.to(p.id).emit('bustedOut');
-        }
-        const active = room.gameState.players.filter(p => p.chips > 0);
-        room.players = room.players.filter(p => active.some(a => a.id === p.id));
-      }
-
-      if (room.players.length < 2) {
-        room.status = 'ended';
-        // Cash out all remaining players (the winner gets all their chips)
+        // Remove busted players and cash them out (they get 0 back — lost their buy-in)
         if (room.gameState) {
-          for (const p of room.gameState.players) {
-            if (p.chips > 0) emitCashOut(p.id, p.chips);
+          const busted = room.gameState.players.filter(p => p.chips <= 0);
+          for (const p of busted) {
+            emitCashOut(p.id, 0);
+            ns.to(p.id).emit('bustedOut');
           }
+          const active = room.gameState.players.filter(p => p.chips > 0);
+          room.players = room.players.filter(p => active.some(a => a.id === p.id));
         }
-        broadcastState(room);
-        return;
-      }
 
-      initHand(room);
-      broadcastState(room);
+        if (room.players.length < 2) {
+          room.status = 'ended';
+          // Cash out all remaining players (the winner gets all their chips)
+          if (room.gameState) {
+            for (const p of room.gameState.players) {
+              if (p.chips > 0) emitCashOut(p.id, p.chips);
+            }
+          }
+          broadcastState(room);
+          return;
+        }
+
+        initHand(room);
+        broadcastState(room);
+      } catch (err) {
+        console.error('[TexasHoldem] nextHand error:', err);
+        socket.emit('error', { message: 'Server error — please try again.' });
+      }
     });
 
     socket.on('leaveRoom', ({ roomCode }) => {
-      socket.leave(`room:${roomCode}`);
-      handleLeave(socket.id, roomCode);
+      try {
+        socket.leave(`room:${roomCode}`);
+        handleLeave(socket.id, roomCode);
+      } catch (err) {
+        console.error('[TexasHoldem] leaveRoom error:', err);
+        socket.emit('error', { message: 'Server error — please try again.' });
+      }
+    });
+
+    socket.on('reloadChips', ({ roomCode, amount }) => {
+      try {
+        const room = rooms.get(roomCode);
+        if (!room || !room.gameState) return;
+        const amt = Math.max(100, Math.min(100000, Math.floor(Number(amount) || 0)));
+        if (amt <= 0) return;
+        const gp = room.gameState.players.find(p => p.id === socket.id);
+        if (!gp) return;
+        gp.chips += amt;
+        // Tell the reloading player how much was deducted from casino balance
+        socket.emit('chipsReloaded', { amount: amt });
+        // Broadcast updated game state to all in room
+        broadcastState(room);
+      } catch (err) {
+        console.error('[TexasHoldem] reloadChips error:', err);
+        socket.emit('error', { message: 'Server error — please try again.' });
+      }
     });
 
     socket.on('disconnect', () => {
-      for (const [code, room] of rooms.entries()) {
-        if (room.players.some(p => p.id === socket.id)) {
-          handleLeave(socket.id, code);
-          break;
+      try {
+        for (const [code, room] of rooms.entries()) {
+          if (room.players.some(p => p.id === socket.id)) {
+            handleLeave(socket.id, code);
+            break;
+          }
         }
+      } catch (err) {
+        console.error('[TexasHoldem] disconnect error:', err);
       }
     });
   });

@@ -5,6 +5,7 @@ import { SiteConfigProvider } from './contexts/SiteConfigContext';
 import GameGuard from './components/GameGuard';
 import ChatPanel from './components/ChatPanel';
 import PasswordGate from './components/PasswordGate';
+import AnnouncementOverlay from './components/AnnouncementOverlay';
 import HomePage from './pages/HomePage';
 import AuthPage from './pages/AuthPage';
 import TransferPage from './pages/TransferPage';
@@ -47,6 +48,7 @@ import VideoPokerPage from './pages/VideoPokerPage';
 import KenoPage from './pages/KenoPage';
 import DragonTigerPage from './pages/DragonTigerPage';
 import RequireAuth from './components/RequireAuth';
+import SuggestionsPage from './pages/SuggestionsPage';
 import './App.css';
 
 // Convenience wrapper: RequireAuth + GameGuard for a given slug
@@ -63,6 +65,7 @@ export default function App() {
     <AuthProvider>
       <SiteConfigProvider>
         <ChatPanel />
+        <AnnouncementOverlay />
         <PasswordGate>
           <Routes>
             <Route path="/" element={<HomePage />} />
@@ -111,10 +114,11 @@ export default function App() {
             {/* Non-game pages */}
             <Route path="/leaderboard"        element={<LeaderboardPage />} />
             <Route path="/casino-leaderboard" element={<CasinoLeaderboardPage />} />
-            <Route path="/auth"     element={<AuthPage />} />
-            <Route path="/transfer" element={<TransferPage />} />
-            <Route path="/admin"    element={<AdminPage />} />
-            <Route path="*"         element={<Navigate to="/" replace />} />
+            <Route path="/auth"        element={<AuthPage />} />
+            <Route path="/transfer"    element={<TransferPage />} />
+            <Route path="/admin"       element={<AdminPage />} />
+            <Route path="/suggestions" element={<SuggestionsPage />} />
+            <Route path="*"            element={<Navigate to="/" replace />} />
           </Routes>
         </PasswordGate>
       </SiteConfigProvider>

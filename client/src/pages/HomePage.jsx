@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AccountWidget from '../components/AccountWidget';
 import { useAuth } from '../contexts/AuthContext';
 import './HomePage.css';
+
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
 
 const SOLO_GAMES = [
   { path: '/2048', name: '2048', desc: 'Slide tiles to reach 2048', icon: '🔢', players: '1 player' },
@@ -51,6 +53,16 @@ export default function HomePage() {
   const { user } = useAuth();
   const isAdmin = user?.username === 'jasper';
 
+  const [wildcard, setWildcard] = useState(null);
+  useEffect(() => {
+    fetch(`${SERVER_URL}/api/game-config`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.wildcard) setWildcard(data);
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="home">
       <header className="home-header">
@@ -69,6 +81,14 @@ export default function HomePage() {
             <span>🎰 Casino</span>
             <Link to="/casino-leaderboard" className="home-trivia-btn" style={{ fontSize:'0.78rem', padding:'5px 12px' }}>💰 Rich List</Link>
           </h2>
+          {wildcard && (
+            <div className="gotd-banner">
+              <span className="gotd-star">⭐</span>
+              <span className="gotd-label">Game of the Day:</span>
+              <span className="gotd-name">{wildcard.wildcardOverride || wildcard.wildcard}</span>
+              <span className="gotd-boost">{wildcard.wildcardBoost}× better odds today!</span>
+            </div>
+          )}
           <div className="home-grid">
             {CASINO_GAMES.map(g => (
               <Link key={g.path} to={g.path} className="game-card game-card--casino">

@@ -26,7 +26,14 @@ function broadcastState(ns, room) {
 function handleAction(ns, socket, roomCode, fn) {
   const room = rm.getRoom(roomCode);
   if (!room) { socket.emit('error', { message: 'Room not found' }); return; }
-  const result = fn(room);
+  let result;
+  try {
+    result = fn(room);
+  } catch (err) {
+    console.error('[Monopoly] handleAction threw:', err);
+    socket.emit('error', { message: 'Server error — please try again.' });
+    return;
+  }
   if (result && result.error) { socket.emit('error', { message: result.error }); return; }
   broadcastState(ns, room);
 }
@@ -212,10 +219,14 @@ function register(ns) {
     });
 
     socket.on('disconnect', () => {
-      const room = rm.getRoomBySocketId(socket.id);
-      if (room) {
-        rm.leaveRoom(room.code, socket.id);
-        broadcastState(ns, room);
+      try {
+        const room = rm.getRoomBySocketId(socket.id);
+        if (room) {
+          rm.leaveRoom(room.code, socket.id);
+          broadcastState(ns, room);
+        }
+      } catch (err) {
+        console.error('[Monopoly] disconnect handler error:', err);
       }
     });
   });

@@ -924,7 +924,7 @@
 /* ── Stats Tab ────────────────────────────────────────────────────────────── */
 .admin-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 16px;
   margin-bottom: 8px;
 }
@@ -937,6 +937,10 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  /* Let card grow to fit content — no fixed height */
+  min-height: 0;
+  height: auto;
+  overflow: visible;
 }
 .admin-stat-card--green  { border-color: rgba(52,211,153,0.3); background: rgba(52,211,153,0.08); }
 .admin-stat-card--blue   { border-color: rgba(96,165,250,0.3); background: rgba(96,165,250,0.08); }
@@ -950,15 +954,21 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  word-break: break-word;
 }
 
 .admin-stat-value {
-  font-size: 2rem;
+  font-size: clamp(1.1rem, 2.5vw, 2rem);
   font-weight: 800;
   color: #fff;
-  line-height: 1.1;
+  line-height: 1.2;
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
-.admin-stat-value--sm { font-size: 1.3rem; }
+.admin-stat-value--sm {
+  font-size: clamp(0.95rem, 2vw, 1.35rem);
+  word-break: break-word;
+}
 
 .admin-stat-sub {
   font-size: 0.78rem;
@@ -1174,3 +1184,70 @@
   font-size: 0.75rem;
   flex-shrink: 0;
 }
+
+/* ── Collapsible sections (bans in Users tab) ────────────────────────────── */
+.admin-collapsible {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.admin-collapsible-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: rgba(255,255,255,0.04);
+  border: none;
+  color: #e0e0e0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s;
+}
+.admin-collapsible-header:hover { background: rgba(255,255,255,0.07); }
+
+.admin-collapsible-count {
+  font-weight: 400;
+  color: rgba(255,255,255,0.4);
+  font-size: 0.82rem;
+}
+
+.admin-collapsible-body {
+  padding: 16px 18px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+/* ── Overview two-column layout ──────────────────────────────────────────── */
+.admin-overview-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+@media (max-width: 680px) {
+  .admin-overview-cols { grid-template-columns: 1fr; }
+}
+
+/* ── Give money card (compact) ───────────────────────────────────────────── */
+.admin-give-card {
+  margin-bottom: 20px;
+}
+.admin-give-card .admin-give-form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.admin-give-card .admin-give-form .admin-input {
+  max-width: 180px;
+}
+
+/* ── Big wins summary line ───────────────────────────────────────────────── */
+.admin-wins-summary {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 4px;
+}
+.admin-wins-summary strong { color: #fbbf24; }

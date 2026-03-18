@@ -6,9 +6,9 @@ import useGameActivity from '../hooks/useGameActivity';
 
 // Multiplier tables — 8 rows, 9 buckets (indexed 0–8)
 const MULTIPLIERS = {
-  low:    [3.0, 1.4, 0.7, 0.5, 0.3, 0.5, 0.7, 1.4, 3.0],
-  medium: [7,   1.8, 0.8, 0.3, 0.2, 0.3, 0.8, 1.8, 7  ],
-  high:   [14,  2.5, 0.7, 0.1, 0.1, 0.1, 0.7, 2.5, 14 ],
+  low:    [5.0, 2.0, 1.0, 0.5, 0.3, 0.5, 1.0, 2.0, 5.0],
+  medium: [12,  3.0, 1.2, 0.4, 0.2, 0.4, 1.2, 3.0, 12 ],
+  high:   [25,  5.0, 1.0, 0.1, 0.1, 0.1, 1.0, 5.0, 25 ],
 };
 
 const ROWS = 8;

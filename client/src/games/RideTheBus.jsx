@@ -12,8 +12,8 @@ const IS_RED   = { hearts: true, diamonds: true, clubs: false, spades: false };
 const VALUES   = [2,3,4,5,6,7,8,9,10,11,12,13,14];
 const VAL_LBL  = { 2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A' };
 
-// Schedule 1 multipliers: round 1=1.5x, 2=2x, 3=3x, 4=12x
-const MULTIPLIERS = [0, 1.5, 2, 3, 12];
+// Schedule 1 multipliers: round 1=2x, 2=3x, 3=4x, 4=20x
+const MULTIPLIERS = [0, 2, 3, 4, 20];
 
 function createDeck() {
   const cards = [];

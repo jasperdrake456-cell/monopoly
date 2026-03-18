@@ -74,12 +74,37 @@ export default function MonopolyPage() {
     emit(event, data);
   }, [emit]);
 
+  const handleLeave = useCallback(() => {
+    if (roomState?.roomCode) {
+      emit('leaveRoom', { roomCode: roomState.roomCode });
+    }
+    localStorage.removeItem(SESSION_KEY);
+    setRoomState(null);
+    setMyId(null);
+    setSessionId(null);
+    setSavedSession(null);
+    navigate('/');
+  }, [emit, navigate, roomState]);
+
   const inGame = roomState?.status === 'playing' || roomState?.status === 'ended';
 
   return (
     <div className="app">
       {!connected && <div className="conn-banner">Connecting to server…</div>}
       {errorMsg && <div className="error-toast">{errorMsg}</div>}
+      {roomState !== null && (
+        <button
+          onClick={handleLeave}
+          style={{
+            position: 'fixed', top: 16, right: 16, zIndex: 1000,
+            background: '#7f1d1d', color: '#fca5a5', border: '1px solid #991b1b',
+            borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontWeight: 600,
+            fontSize: '0.85rem'
+          }}
+        >
+          🚪 Leave Game
+        </button>
+      )}
       {inGame ? (
         <Game
           roomState={roomState}

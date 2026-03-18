@@ -46,11 +46,33 @@ const BUYIN_OPTIONS = [100, 250, 500, 1000, 2500];
 
 // ── Lobby (room browser) ───────────────────────────────────────────────────────
 function Lobby({ emit, roomList, errorMsg, casinoBalance }) {
-  const [name, setName]       = useState(() => localStorage.getItem('th_name') || '');
-  const [buyIn, setBuyIn]     = useState(1000);
-  const [joiningCode, setJC]  = useState(null);
+  const [name, setName]         = useState(() => localStorage.getItem('th_name') || '');
+  const [buyIn, setBuyIn]       = useState(1000);
+  const [customInput, setCustomInput] = useState('1000');
+  const [joiningCode, setJC]    = useState(null);
 
   function saveName(v) { setName(v); localStorage.setItem('th_name', v); }
+
+  // Keep the number input in sync when a preset is clicked
+  function pickPreset(v) {
+    setBuyIn(v);
+    setCustomInput(String(v));
+  }
+
+  // Parse the custom input and clamp to [100, casinoBalance]
+  function handleCustomChange(raw) {
+    setCustomInput(raw);
+    const parsed = Math.floor(Number(raw));
+    if (!isNaN(parsed) && parsed >= 100) {
+      setBuyIn(Math.min(parsed, casinoBalance));
+    }
+  }
+
+  function handleCustomBlur() {
+    const clamped = Math.max(100, Math.min(Math.floor(Number(customInput) || 100), casinoBalance));
+    setBuyIn(clamped);
+    setCustomInput(String(clamped));
+  }
 
   function create() {
     if (!name.trim() || casinoBalance < buyIn) return;
@@ -90,14 +112,27 @@ function Lobby({ emit, roomList, errorMsg, casinoBalance }) {
             <button
               key={v}
               className={`th-buyin-btn ${buyIn === v ? 'selected' : ''} ${casinoBalance < v ? 'disabled' : ''}`}
-              onClick={() => setBuyIn(v)}
+              onClick={() => pickPreset(v)}
               disabled={casinoBalance < v}
             >
               ${v.toLocaleString()}
             </button>
           ))}
         </div>
-        <button className="th-btn th-btn--create" onClick={create} disabled={!name.trim() || casinoBalance < buyIn}>
+        <div className="th-buyin-custom-row">
+          <label className="th-buyin-custom-label">Custom amount:</label>
+          <input
+            type="number"
+            className="th-buyin-custom-input"
+            min={100}
+            max={casinoBalance}
+            step={50}
+            value={customInput}
+            onChange={e => handleCustomChange(e.target.value)}
+            onBlur={handleCustomBlur}
+          />
+        </div>
+        <button className="th-btn th-btn--create" onClick={create} disabled={!name.trim() || casinoBalance < buyIn || buyIn < 100}>
           + Create Room (${buyIn.toLocaleString()} buy-in)
         </button>
       </div>
@@ -164,7 +199,7 @@ function WaitingRoom({ roomState, myId, emit, onLeave }) {
 }
 
 // ── Main game table ────────────────────────────────────────────────────────────
-function GameTable({ roomState, myId, emit }) {
+function GameTable({ roomState, myId, emit, casinoBalance }) {
   const gs        = roomState;
   const myPIdx    = gs.players.findIndex(p => p.id === myId);
   const me        = gs.players[myPIdx] ?? {};
@@ -176,7 +211,9 @@ function GameTable({ roomState, myId, emit }) {
   const minRaiseTo = (gs.currentBet ?? 0) + (gs.minRaise ?? 20);
   const maxRaiseTo = (me.chips ?? 0) + (me.bet ?? 0);
 
-  const [raiseAmt, setRaiseAmt] = useState(minRaiseTo);
+  const [raiseAmt, setRaiseAmt]       = useState(minRaiseTo);
+  const [showReload, setShowReload]   = useState(false);
+  const [reloadInput, setReloadInput] = useState('500');
 
   // Update raise default when game state changes
   useEffect(() => {
@@ -185,6 +222,18 @@ function GameTable({ roomState, myId, emit }) {
 
   function act(type, extra = {}) {
     emit('playerAction', { roomCode: gs.roomCode, action: { type, ...extra } });
+  }
+
+  const isBusted      = (me.chips ?? 0) === 0;
+  const reloadMax     = casinoBalance ?? 0;
+  const reloadAmt     = Math.max(100, Math.min(Math.floor(Number(reloadInput) || 100), reloadMax));
+  const canReload     = reloadMax >= 100;
+
+  function submitReload() {
+    if (!canReload || reloadAmt < 100) return;
+    emit('reloadChips', { roomCode: gs.roomCode, amount: reloadAmt });
+    setShowReload(false);
+    setReloadInput('500');
   }
 
   return (
@@ -315,6 +364,52 @@ function GameTable({ roomState, myId, emit }) {
       {!gs.handInProgress && !gs.winners && (
         <div className="th-waiting-turn">Waiting for next hand…</div>
       )}
+
+      {/* Reload chips when busted */}
+      {isBusted && !gs.handInProgress && (
+        <div className="th-reload-wrap">
+          {!showReload ? (
+            <button
+              className="th-btn th-btn--reload"
+              onClick={() => setShowReload(true)}
+              disabled={!canReload}
+              title={!canReload ? 'Not enough casino balance (min $100)' : ''}
+            >
+              💰 Reload Chips
+            </button>
+          ) : (
+            <div className="th-reload-form">
+              <div className="th-reload-label">
+                Reload amount <span className="th-reload-hint">(min $100, max ${reloadMax.toLocaleString()} available)</span>:
+              </div>
+              <div className="th-reload-row">
+                <input
+                  type="number"
+                  className="th-reload-input"
+                  min={100}
+                  max={reloadMax}
+                  step={50}
+                  value={reloadInput}
+                  onChange={e => setReloadInput(e.target.value)}
+                />
+                <button
+                  className="th-btn th-btn--reload-confirm"
+                  onClick={submitReload}
+                  disabled={reloadAmt < 100 || reloadAmt > reloadMax}
+                >
+                  Confirm (${reloadAmt.toLocaleString()})
+                </button>
+                <button
+                  className="th-btn th-btn--reload-cancel"
+                  onClick={() => setShowReload(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -378,6 +473,10 @@ export default function TexasHoldem() {
         setRoomState(null);
         setMyId(null);
         roomCodeRef.current = null;
+      }),
+      on('chipsReloaded', ({ amount }) => {
+        subtractBalance(amount);
+        syncBalance();
       }),
       on('error', ({ message }) => {
         setErrorMsg(message);
@@ -454,7 +553,7 @@ export default function TexasHoldem() {
               <span className="th-casino-bal"> | Bank: ${casinoBalance.toLocaleString()}</span>
             </span>
           </div>
-          <GameTable roomState={roomState} myId={myId} emit={doEmit} />
+          <GameTable roomState={roomState} myId={myId} emit={doEmit} casinoBalance={casinoBalance} />
         </>
       )}
     </div>
