@@ -208,8 +208,10 @@ function doShowdown(gs) {
     for (const e of elig) if (cmpScore(e.best.score, topScore) > 0) topScore = e.best.score;
 
     const potWinners = elig.filter(e => cmpScore(e.best.score, topScore) === 0);
-    const share      = Math.floor(pot.amount / potWinners.length);
-    const rem        = pot.amount - share * potWinners.length;
+    // 5% rake (house takes 5% of every pot)
+    const raked      = Math.floor(pot.amount * 0.95);
+    const share      = Math.floor(raked / potWinners.length);
+    const rem        = raked - share * potWinners.length;
 
     potWinners.forEach((e, i) => {
       const amt = share + (i === 0 ? rem : 0);

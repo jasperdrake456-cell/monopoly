@@ -10,6 +10,7 @@ const lb = require('./leaderboard');
 const us = require('./userStore');
 const rp = require('./reportStore');
 const bn = require('./banStore');
+const wl = require('./winLog');
 
 const app = express();
 const server = http.createServer(app);
@@ -322,6 +323,40 @@ app.put('/api/admin/users/:username/balance', requireAdmin, (req, res) => {
 // Kick a user (destroy all their sessions — forces logout)
 app.post('/api/admin/kick/:username', requireAdmin, (req, res) => {
   res.json(us.kickUser(getToken(req), req.params.username));
+});
+
+// ── Big Win Log ────────────────────────────────────────────────────────────────
+
+// Client reports a big win (profit >= $50k) — fire-and-forget, auth required
+app.post('/api/accounts/big-win', (req, res) => {
+  const token = getToken(req);
+  const me = us.getMe(token);
+  if (!me.ok) return res.json({ ok: false });
+  const { game, bet, payout, profit, multiplier, details } = req.body || {};
+  if (!game || bet == null || payout == null) return res.json({ ok: false });
+  wl.logWin({
+    username:   me.username,
+    game,
+    bet:        Math.floor(bet),
+    payout:     Math.floor(payout),
+    profit:     Math.floor(profit ?? (payout - bet)),
+    multiplier: multiplier ?? null,
+    details:    details || '',
+    timestamp:  Date.now(),
+  });
+  console.log(`[winLog] 🏆 ${me.username} won $${Math.floor(profit ?? (payout - bet)).toLocaleString()} on ${game}`);
+  res.json({ ok: true });
+});
+
+// Admin: view all big wins
+app.get('/api/admin/wins', requireAdmin, (req, res) => {
+  res.json({ ok: true, wins: wl.getWins() });
+});
+
+// Admin: clear the win log
+app.delete('/api/admin/wins', requireAdmin, (req, res) => {
+  wl.clearWins();
+  res.json({ ok: true });
 });
 
 // ── Ban admin API ──────────────────────────────────────────────────────────────

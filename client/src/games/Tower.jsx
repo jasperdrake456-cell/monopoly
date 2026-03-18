@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
 import './Tower.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -14,14 +14,14 @@ import useGameActivity from '../hooks/useGameActivity';
 const ROWS = 9;  // 9 floors (bottom = floor 0, top = floor 8)
 const COLS = 3;  // 3 tiles per floor
 
-const HOUSE_EDGE = 0.99;
+const HOUSE_EDGE = 0.85;
 
 // DIFF_CONFIG: Easy=1 bomb (66% safe), Medium=2 bombs (33% safe),
-// Hard=2 bombs (33% safe) with 1.5× multiplier boost per floor for higher risk/reward.
+// Hard=2 bombs (33% safe) with 1.1× multiplier boost per floor for higher risk/reward.
 const DIFF_CONFIG = {
   easy:   { bombs: 1, label: 'Easy',   emoji: '😌', color: '#22c55e', multBoost: 1.0 },
   medium: { bombs: 2, label: 'Medium', emoji: '😰', color: '#eab308', multBoost: 1.0 },
-  hard:   { bombs: 2, label: 'Hard',   emoji: '💀', color: '#ef4444', multBoost: 1.5 },
+  hard:   { bombs: 2, label: 'Hard',   emoji: '💀', color: '#ef4444', multBoost: 1.1 },
 };
 
 // Row multiplier: (total / safe) * HOUSE_EDGE, with an optional boost for Hard mode
@@ -144,6 +144,7 @@ export default function Tower() {
     const payout = Math.floor(bet * mult);
     addBalance(payout);
     syncBalance();
+    reportBigWin('tower', bet, payout, mult, `${difficulty} · all ${ROWS} floors cleared · ${mult.toFixed(2)}×`);
     setPhase('won');
     setHistory(h => [{ win: true, floors: ROWS, mult }, ...h].slice(0, MAX_HISTORY));
   }
@@ -153,6 +154,7 @@ export default function Tower() {
     const payout = Math.floor(bet * currentMult);
     addBalance(payout);
     syncBalance();
+    reportBigWin('tower', bet, payout, currentMult, `${difficulty} · ${currentFloor} floor(s) cleared · ${currentMult.toFixed(2)}×`);
     // Reveal safe tiles on remaining floors
     const newStates = cellStates.map(r => [...r]);
     setPhase('won');

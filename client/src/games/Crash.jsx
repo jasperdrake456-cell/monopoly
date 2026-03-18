@@ -1,15 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
 import './Crash.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 
-// Crash point: 0.99 / (1 - random) with 1% house edge
-// Minimum 1.00x (instant crash ~1% of time)
+// Crash point: 0.90 / (1 - random) with 10% house edge
+// Minimum 1.00x (instant crash ~8% of time)
 function generateCrashPoint() {
   const r = Math.random();
-  if (r >= 0.99) return 1.00;
-  return Math.max(1.00, parseFloat((0.99 / (1 - r)).toFixed(2)));
+  if (r >= 0.92) return 1.00;
+  return Math.max(1.00, parseFloat((0.90 / (1 - r)).toFixed(2)));
 }
 
 const MAX_HISTORY = 10;
@@ -100,6 +100,7 @@ export default function Crash() {
     const payout = Math.floor(betRef.current * mult);
     addBalance(payout);
     syncBalance();
+    reportBigWin('crash', betRef.current, payout, mult, `Auto cashout at ${mult}×`);
     setCashedOut(true);
     setCashoutMult(mult);
     setHistory(h => [{ mult, win: true }, ...h].slice(0, MAX_HISTORY));
@@ -112,6 +113,7 @@ export default function Crash() {
     const payout = Math.floor(betRef.current * mult);
     addBalance(payout);
     syncBalance();
+    reportBigWin('crash', betRef.current, payout, mult, `Cashed out at ${mult}×`);
     setCashedOut(true);
     setCashoutMult(mult);
     setHistory(h => [{ mult, win: true }, ...h].slice(0, MAX_HISTORY));

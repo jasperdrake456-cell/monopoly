@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
 import './Wheel.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -8,7 +8,7 @@ import useGameActivity from '../hooks/useGameActivity';
 // Segments are weighted by risk mode. Player bets on a color zone.
 // House edge: payouts are slightly under fair odds.
 
-const HOUSE_EDGE = 0.99;
+const HOUSE_EDGE = 0.80;
 
 // Risk modes: each has a different segment distribution
 // Segments: array of { color, label, mult, weight }
@@ -19,10 +19,10 @@ const RISK_MODES = {
     emoji: '🟢',
     color: '#22c55e',
     segments: [
-      { color: '#22c55e', label: 'Green',  mult: 1.98,  weight: 49 },
-      { color: '#3b82f6', label: 'Blue',   mult: 3.96,  weight: 24 },
-      { color: '#a855f7', label: 'Purple', mult: 9.9,   weight: 9  },
-      { color: '#FFD700', label: 'Gold',   mult: 49.5,  weight: 1  },
+      { color: '#22c55e', label: 'Green',  mult: 1.6,   weight: 49 },
+      { color: '#3b82f6', label: 'Blue',   mult: 3.2,   weight: 24 },
+      { color: '#a855f7', label: 'Purple', mult: 8.0,   weight: 9  },
+      { color: '#FFD700', label: 'Gold',   mult: 40.0,  weight: 1  },
     ],
   },
   medium: {
@@ -30,11 +30,11 @@ const RISK_MODES = {
     emoji: '🟡',
     color: '#eab308',
     segments: [
-      { color: '#22c55e', label: 'Green',  mult: 1.98,  weight: 35 },
-      { color: '#3b82f6', label: 'Blue',   mult: 3.96,  weight: 18 },
-      { color: '#a855f7', label: 'Purple', mult: 9.9,   weight: 8  },
-      { color: '#ef4444', label: 'Red',    mult: 29.7,  weight: 3  },
-      { color: '#FFD700', label: 'Gold',   mult: 99.0,  weight: 1  },
+      { color: '#22c55e', label: 'Green',  mult: 1.6,   weight: 35 },
+      { color: '#3b82f6', label: 'Blue',   mult: 3.2,   weight: 18 },
+      { color: '#a855f7', label: 'Purple', mult: 8.0,   weight: 8  },
+      { color: '#ef4444', label: 'Red',    mult: 24.0,  weight: 3  },
+      { color: '#FFD700', label: 'Gold',   mult: 80.0,  weight: 1  },
     ],
   },
   high: {
@@ -42,11 +42,11 @@ const RISK_MODES = {
     emoji: '🔴',
     color: '#ef4444',
     segments: [
-      { color: '#22c55e', label: 'Green',  mult: 1.98,  weight: 20 },
-      { color: '#3b82f6', label: 'Blue',   mult: 4.95,  weight: 10 },
-      { color: '#a855f7', label: 'Purple', mult: 9.9,   weight: 5  },
-      { color: '#ef4444', label: 'Red',    mult: 19.8,  weight: 2  },
-      { color: '#FFD700', label: 'Gold',   mult: 198.0, weight: 1  },
+      { color: '#22c55e', label: 'Green',  mult: 1.6,   weight: 20 },
+      { color: '#3b82f6', label: 'Blue',   mult: 4.0,   weight: 10 },
+      { color: '#a855f7', label: 'Purple', mult: 8.0,   weight: 5  },
+      { color: '#ef4444', label: 'Red',    mult: 16.0,  weight: 2  },
+      { color: '#FFD700', label: 'Gold',   mult: 160.0, weight: 1  },
     ],
   },
 };
@@ -140,7 +140,10 @@ export default function Wheel() {
 
       const won = landedSeg.color === selectedColor;
       const payout = won ? Math.floor(bet * landedSeg.mult) : 0;
-      if (won) addBalance(payout);
+      if (won) {
+        addBalance(payout);
+        reportBigWin('wheel', bet, payout, landedSeg.mult, `${risk} risk · bet ${selectedColor} · landed ${landedSeg.label} · ${landedSeg.mult}×`);
+      }
       syncBalance();
       setResult({ seg: landedSeg, won, payout });
       setPhase('result');

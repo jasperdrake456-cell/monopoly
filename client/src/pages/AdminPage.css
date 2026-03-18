@@ -357,3 +357,103 @@
   font-size: 0.75rem;
   color: #4b5563;
 }
+
+/* ── Big Wins Tab ── */
+.admin-wins-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.admin-wins-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-wins-subtext {
+  font-size: 0.82rem;
+  color: #6b7280;
+  margin-bottom: 16px;
+}
+
+.admin-win-row {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-left: 3px solid #f59e0b;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-win-top {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.admin-win-game {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(99,102,241,0.2);
+  border: 1px solid rgba(99,102,241,0.35);
+  color: #a78bfa;
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+.admin-win-user {
+  font-size: 0.85rem;
+  color: #d1d5db;
+  font-weight: 600;
+}
+
+.admin-win-profit {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #4ade80;
+}
+
+.admin-win-mult {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fbbf24;
+  background: rgba(251,191,36,0.1);
+  border: 1px solid rgba(251,191,36,0.25);
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+
+.admin-win-time {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-left: auto;
+}
+
+.admin-win-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.admin-win-bet { color: #ef4444; }
+.admin-win-payout { color: #60a5fa; }
+.admin-win-details {
+  color: #9ca3af;
+  font-style: italic;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

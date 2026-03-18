@@ -1,14 +1,14 @@
 import React, { useState, useRef } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
 import './Plinko.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 
 // Multiplier tables — 8 rows, 9 buckets (indexed 0–8)
 const MULTIPLIERS = {
-  low:    [5.6, 2.1, 1.1, 1.0, 0.5, 1.0, 1.1, 2.1, 5.6],
-  medium: [13,  3,   1.3, 0.7, 0.4, 0.7, 1.3, 3,   13  ],
-  high:   [29,  4,   1.5, 0.3, 0.2, 0.3, 1.5, 4,   29  ],
+  low:    [3.0, 1.4, 0.7, 0.5, 0.3, 0.5, 0.7, 1.4, 3.0],
+  medium: [7,   1.8, 0.8, 0.3, 0.2, 0.3, 0.8, 1.8, 7  ],
+  high:   [14,  2.5, 0.7, 0.1, 0.1, 0.1, 0.7, 2.5, 14 ],
 };
 
 const ROWS = 8;
@@ -96,6 +96,7 @@ export default function Plinko() {
         );
         addBalance(totalPayout);
         syncBalance();
+        reportBigWin('plinko', totalBet, totalPayout, parseFloat((totalPayout / totalBet).toFixed(2)), `${numBalls} ball(s) · ${risk} risk · buckets: [${buckets.join(', ')}]`);
         setFinalBuckets(buckets);
         setLastPayout(totalPayout);
         setLastTotalBet(totalBet);

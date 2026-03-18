@@ -1,28 +1,29 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
 import './Slots.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 
-// Larger pool — more cherries & lemons means wins feel much more frequent.
-// New distribution: 💎×1, 7️⃣×1, ⭐×2, 🔔×2, 🍇×2, 🍊×2, 🍋×4, 🍒×6 (20 total)
-// Approx RTP: ~90% — lemons hit ~0.8% of spins, 3-cherries ~2.7%, single cherry ~21%
+// Tighter pool — more blanks/lemons to make wins rare.
+// Distribution: 💎×1, 7️⃣×1, ⭐×1, 🔔×2, 🍇×2, 🍊×2, 🍋×5, 🍒×4, 🔲×6 (24 total)
+// Approx RTP: ~55% — most spins lose; big wins are rare
 const REEL_POOL = [
-  '💎','7️⃣','⭐','⭐','🔔','🔔','🍇','🍇','🍊','🍊',
-  '🍋','🍋','🍋','🍋','🍒','🍒','🍒','🍒','🍒','🍒'
+  '💎','7️⃣','⭐','🔔','🔔','🍇','🍇','🍊','🍊',
+  '🍋','🍋','🍋','🍋','🍋','🍒','🍒','🍒','🍒',
+  '🔲','🔲','🔲','🔲','🔲','🔲'
 ];
 
 const PAYTABLE = [
-  { symbols: ['💎','💎','💎'], label: '💎 💎 💎', mult: 1000 },
-  { symbols: ['7️⃣','7️⃣','7️⃣'], label: '7️⃣ 7️⃣ 7️⃣', mult: 500 },
-  { symbols: ['⭐','⭐','⭐'], label: '⭐ ⭐ ⭐', mult: 50 },
-  { symbols: ['🔔','🔔','🔔'], label: '🔔 🔔 🔔', mult: 30 },
-  { symbols: ['🍇','🍇','🍇'], label: '🍇 🍇 🍇', mult: 20 },
-  { symbols: ['🍊','🍊','🍊'], label: '🍊 🍊 🍊', mult: 15 },
-  { symbols: ['🍋','🍋','🍋'], label: '🍋 🍋 🍋', mult: 10 },
-  { symbols: ['🍒','🍒','🍒'], label: '🍒 🍒 🍒', mult: 6 },
-  { symbols: ['🍒','🍒','*'], label: '🍒 🍒 any', mult: 2.5 },
-  { symbols: ['🍒','*','*'], label: '🍒 any any', mult: 1.5 },
+  { symbols: ['💎','💎','💎'], label: '💎 💎 💎', mult: 500 },
+  { symbols: ['7️⃣','7️⃣','7️⃣'], label: '7️⃣ 7️⃣ 7️⃣', mult: 250 },
+  { symbols: ['⭐','⭐','⭐'], label: '⭐ ⭐ ⭐', mult: 40 },
+  { symbols: ['🔔','🔔','🔔'], label: '🔔 🔔 🔔', mult: 20 },
+  { symbols: ['🍇','🍇','🍇'], label: '🍇 🍇 🍇', mult: 12 },
+  { symbols: ['🍊','🍊','🍊'], label: '🍊 🍊 🍊', mult: 8 },
+  { symbols: ['🍋','🍋','🍋'], label: '🍋 🍋 🍋', mult: 4 },
+  { symbols: ['🍒','🍒','🍒'], label: '🍒 🍒 🍒', mult: 2.5 },
+  { symbols: ['🍒','🍒','*'], label: '🍒 🍒 any', mult: 1.2 },
+  { symbols: ['🍒','*','*'], label: '🍒 any any', mult: 0.6 },
 ];
 
 function rand() {
@@ -41,16 +42,16 @@ function initReelDisplays() {
 function evaluate(mids) {
   const [r0, r1, r2] = mids;
 
-  if (r0 === '💎' && r1 === '💎' && r2 === '💎') return { mult: 1000, label: '💎 💎 💎 JACKPOT!' };
-  if (r0 === '7️⃣' && r1 === '7️⃣' && r2 === '7️⃣') return { mult: 500, label: '7️⃣ 7️⃣ 7️⃣ LUCKY SEVENS!' };
-  if (r0 === '⭐' && r1 === '⭐' && r2 === '⭐') return { mult: 50, label: '⭐ ⭐ ⭐ STARS!' };
-  if (r0 === '🔔' && r1 === '🔔' && r2 === '🔔') return { mult: 30, label: '🔔 🔔 🔔 BELLS!' };
-  if (r0 === '🍇' && r1 === '🍇' && r2 === '🍇') return { mult: 20, label: '🍇 🍇 🍇 GRAPES!' };
-  if (r0 === '🍊' && r1 === '🍊' && r2 === '🍊') return { mult: 15, label: '🍊 🍊 🍊 ORANGES!' };
-  if (r0 === '🍋' && r1 === '🍋' && r2 === '🍋') return { mult: 10, label: '🍋 🍋 🍋 LEMONS!' };
-  if (r0 === '🍒' && r1 === '🍒' && r2 === '🍒') return { mult: 6, label: '🍒 🍒 🍒 CHERRIES!' };
-  if (r0 === '🍒' && r1 === '🍒' && r2 !== '🍒') return { mult: 2.5, label: '🍒 🍒 — Double Cherry!' };
-  if (r0 === '🍒' && r1 !== '🍒') return { mult: 1.5, label: '🍒 — Single Cherry!' };
+  if (r0 === '💎' && r1 === '💎' && r2 === '💎') return { mult: 500, label: '💎 💎 💎 JACKPOT!' };
+  if (r0 === '7️⃣' && r1 === '7️⃣' && r2 === '7️⃣') return { mult: 250, label: '7️⃣ 7️⃣ 7️⃣ LUCKY SEVENS!' };
+  if (r0 === '⭐' && r1 === '⭐' && r2 === '⭐') return { mult: 40, label: '⭐ ⭐ ⭐ STARS!' };
+  if (r0 === '🔔' && r1 === '🔔' && r2 === '🔔') return { mult: 20, label: '🔔 🔔 🔔 BELLS!' };
+  if (r0 === '🍇' && r1 === '🍇' && r2 === '🍇') return { mult: 12, label: '🍇 🍇 🍇 GRAPES!' };
+  if (r0 === '🍊' && r1 === '🍊' && r2 === '🍊') return { mult: 8, label: '🍊 🍊 🍊 ORANGES!' };
+  if (r0 === '🍋' && r1 === '🍋' && r2 === '🍋') return { mult: 4, label: '🍋 🍋 🍋 LEMONS!' };
+  if (r0 === '🍒' && r1 === '🍒' && r2 === '🍒') return { mult: 2.5, label: '🍒 🍒 🍒 CHERRIES!' };
+  if (r0 === '🍒' && r1 === '🍒' && r2 !== '🍒') return { mult: 1.2, label: '🍒 🍒 — Double Cherry!' };
+  if (r0 === '🍒' && r1 !== '🍒') return { mult: 0.6, label: '🍒 — Single Cherry' };
 
   return { mult: 0, label: 'No match. Better luck next time!' };
 }
@@ -161,6 +162,7 @@ export default function Slots() {
           if (outcome.mult > 0) {
             payout = Math.floor(betSnapshot * outcome.mult);
             addBalance(payout);
+            reportBigWin('slots', betSnapshot, payout, outcome.mult, `${outcome.label} · ${outcome.mult}×`);
           }
           setBalance(getBalance());
           setResult({ ...outcome, payout, win: outcome.mult > 0 });

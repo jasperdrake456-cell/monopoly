@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
 import './Hilo.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -10,7 +10,7 @@ const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 const RANK_VALUES = { '2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'J':11,'Q':12,'K':13,'A':14 };
 
 // House edge per pick
-const HOUSE_EDGE = 0.99;
+const HOUSE_EDGE = 0.85;
 
 function buildDeck() {
   const deck = [];
@@ -169,6 +169,7 @@ export default function Hilo() {
     const payout = Math.floor(bet * mult);
     addBalance(payout);
     syncBalance();
+    reportBigWin('hilo', bet, payout, mult, `${streak}-streak · ${revealedCards.length - 1} correct guess(es) · ${mult}×`);
     setProfit(payout - bet);
     setPhase('won');
     setHistory(h => [{ win: true, mult }, ...h].slice(0, MAX_HISTORY));

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
 import './Mines.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -15,13 +15,13 @@ const GRID_SIZE = 25;
 function calcMultiplier(mines, revealed) {
   // Probability of hitting N safe tiles in a row given M mines in 25 tiles
   // = product(i=0..N-1) of (25 - mines - i) / (25 - i)
-  // Payout = 1 / probability * 0.97 (3% house edge)
+  // Payout = 1 / probability * 0.85 (15% house edge)
   let prob = 1;
   for (let i = 0; i < revealed; i++) {
     prob *= (GRID_SIZE - mines - i) / (GRID_SIZE - i);
   }
   if (prob <= 0) return 0;
-  return parseFloat((0.97 / prob).toFixed(2));
+  return parseFloat((0.85 / prob).toFixed(2));
 }
 
 function generateMines(count) {
@@ -130,6 +130,7 @@ export default function Mines() {
         const payout = Math.floor(bet * mult);
         addBalance(payout);
         syncBalance();
+        reportBigWin('mines', bet, payout, mult, `${mineCount} mines · all ${newCount} safe tiles revealed · ${mult}×`);
         setAllMines(activeMines);
         setResult({ win: true, payout, msg: `🏆 All safe tiles! Won $${payout}` });
         setPhase('result');
@@ -144,6 +145,7 @@ export default function Mines() {
     const payout = Math.floor(bet * mult);
     addBalance(payout);
     syncBalance();
+    reportBigWin('mines', bet, payout, mult, `${mineCount} mines · ${revCountRef.current} safe tiles revealed · ${mult}×`);
     setAllMines(minesRef.current);
     setResult({ win: true, payout, msg: `💎 Cashed out $${payout} (${mult}×)` });
     setPhase('result');

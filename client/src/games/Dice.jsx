@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
 import './Dice.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 
-// 1% house edge: multiplier = 0.99 / winChance
+// 8% house edge: multiplier = 0.92 / winChance
 function calcMultiplier(target, direction) {
   const winChance = direction === 'over' ? (100 - target) / 100 : target / 100;
   if (winChance <= 0 || winChance >= 1) return 0;
-  return parseFloat((0.99 / winChance).toFixed(4));
+  return parseFloat((0.92 / winChance).toFixed(4));
 }
 
 function calcWinChance(target, direction) {
@@ -64,6 +64,7 @@ export default function Dice() {
       if (win) {
         addBalance(payout);
         syncBalance();
+        reportBigWin('dice', bet, payout, mult, `Rolled ${rolled} · ${direction} ${target} · ${winChance.toFixed(1)}% odds · ${mult.toFixed(2)}×`);
       }
 
       setRoll(rolled);
@@ -212,7 +213,7 @@ export default function Dice() {
         </>
       )}
 
-      <div className="dice-hint">Roll 0.00 – 100.00 • 1% house edge</div>
+      <div className="dice-hint">Roll 0.00 – 100.00 • 8% house edge</div>
     </div>
   );
 }

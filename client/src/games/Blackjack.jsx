@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
 import './Blackjack.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -177,10 +177,10 @@ export default function Blackjack() {
         setResults([{ msg: '🤝 Push — Both Blackjack!', net: 0 }]);
         setTotalNet(0);
       } else {
-        const profit = Math.floor(bet * 1.5);
+        const profit = Math.floor(bet * 1.2);
         addBalance(bet + profit);
         syncBalance();
-        setResults([{ msg: '🃏 Blackjack! 3:2 Payout!', net: profit }]);
+        setResults([{ msg: '🃏 Blackjack! 6:5 Payout!', net: profit }]);
         setTotalNet(profit);
       }
       setPhase('result');
@@ -224,9 +224,9 @@ export default function Blackjack() {
       if (insAmount > 0) setInsLost(true);
 
       if (playerBJ) {
-        const profit = Math.floor(bet * 1.5);
+        const profit = Math.floor(bet * 1.2);
         addBalance(bet + profit); syncBalance();
-        setResults([{ msg: `🃏 Blackjack! 3:2 Payout!`, net: profit - insAmount }]);
+        setResults([{ msg: `🃏 Blackjack! 6:5 Payout!`, net: profit - insAmount }]);
         setTotalNet(profit - insAmount);
         setPhase('result');
       } else {
@@ -381,6 +381,10 @@ export default function Blackjack() {
     });
 
     syncBalance();
+    if (netTotal > 0) {
+      const totalPayout = netTotal + currentHands.reduce((s, h) => s + (h.doubled ? h.bet * 2 : h.bet), 0);
+      reportBigWin('blackjack', bet, totalPayout, null, `${currentHands.length} hand(s) · dealer ${dTotal} · net +$${netTotal}`);
+    }
     setResults(handResults);
     setTotalNet(netTotal);
     setPhase('result');
@@ -558,7 +562,7 @@ export default function Blackjack() {
       )}
 
       <div className="bj-hint">
-        Dealer hits soft 17 • BJ pays 3:2 • Double on any 2 cards • Split up to 4 hands • Insurance • Surrender
+        Dealer hits soft 17 • BJ pays 6:5 • Double on any 2 cards • Split up to 4 hands • Insurance • Surrender
       </div>
     </div>
   );

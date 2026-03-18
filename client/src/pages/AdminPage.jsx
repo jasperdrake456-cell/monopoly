@@ -41,9 +41,10 @@ export default function AdminPage() {
   const { user, token, isLoggedIn } = useAuth();
   const navigate = useNavigate();
 
-  const [tab, setTab]           = useState('reports'); // 'reports' | 'users' | 'money' | 'bans'
+  const [tab, setTab]           = useState('reports'); // 'reports' | 'users' | 'money' | 'bans' | 'wins'
   const [reports, setReports]   = useState([]);
   const [users, setUsers]       = useState([]);
+  const [bigWins, setBigWins]   = useState([]);
   const [status, setStatus]     = useState('');
   const [giveTarget, setGiveTarget] = useState('');
   const [giveAmount, setGiveAmount] = useState('');
@@ -130,11 +131,19 @@ export default function AdminPage() {
       }).catch(() => {});
   }, [token]);
 
+  const loadBigWins = useCallback(() => {
+    if (!token) return;
+    authFetch('/api/admin/wins', token)
+      .then(d => { if (d.ok) setBigWins(d.wins); })
+      .catch(() => {});
+  }, [token]);
+
   useEffect(() => {
     if (tab === 'reports') { loadReports(); loadUsers(); }
     if (tab === 'users')   { loadUsers(); loadActivity(); }
-    if (tab === 'bans')  { loadIPBans(); loadUserBans(); }
-  }, [tab, loadReports, loadUsers, loadIPBans, loadUserBans, loadActivity]);
+    if (tab === 'bans')    { loadIPBans(); loadUserBans(); }
+    if (tab === 'wins')    { loadBigWins(); }
+  }, [tab, loadReports, loadUsers, loadIPBans, loadUserBans, loadActivity, loadBigWins]);
 
   // Poll activity every 10 seconds while on users tab
   useEffect(() => {
@@ -283,7 +292,7 @@ export default function AdminPage() {
       </div>
 
       <div className="admin-tabs">
-        {[['reports','📋 Reports'],['users','👥 Users'],['money','💰 Give Money'],['bans','🚫 Bans']].map(([id, label]) => (
+        {[['reports','📋 Reports'],['users','👥 Users'],['money','💰 Give Money'],['bans','🚫 Bans'],['wins','🏆 Big Wins']].map(([id, label]) => (
           <button key={id} className={`admin-tab${tab === id ? ' active' : ''}`} onClick={() => setTab(id)}>
             {label}
           </button>
@@ -593,6 +602,48 @@ export default function AdminPage() {
                 </span>
               </div>
               <button className="admin-btn admin-btn--ghost" onClick={() => removeUserBan(b.username)}>Unban</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Big Wins ── */}
+      {tab === 'wins' && (
+        <div className="admin-section">
+          <div className="admin-wins-header">
+            <div className="admin-section-title">🏆 Big Wins ({bigWins.length})</div>
+            <div className="admin-wins-header-actions">
+              <button className="admin-btn admin-btn--ghost admin-btn--sm" onClick={loadBigWins}>↻ Refresh</button>
+              {bigWins.length > 0 && (
+                <button className="admin-btn admin-btn--danger admin-btn--sm" onClick={async () => {
+                  if (!window.confirm('Clear all big win logs? This cannot be undone.')) return;
+                  await authFetch('/api/admin/wins', token, { method: 'DELETE' });
+                  setBigWins([]);
+                  setStatus('Win log cleared.');
+                }}>🗑 Clear Log</button>
+              )}
+            </div>
+          </div>
+          <div className="admin-wins-subtext">
+            Logs wins where profit exceeds $50,000 in a single round.
+          </div>
+          {bigWins.length === 0 && <div className="admin-empty">No big wins recorded yet.</div>}
+          {bigWins.map((w, i) => (
+            <div key={i} className="admin-win-row">
+              <div className="admin-win-top">
+                <span className="admin-win-game">{w.game}</span>
+                <span className="admin-win-user">@{w.username}</span>
+                <span className="admin-win-profit">+${(w.profit || 0).toLocaleString()}</span>
+                {w.multiplier != null && (
+                  <span className="admin-win-mult">{w.multiplier}×</span>
+                )}
+                <span className="admin-win-time">{new Date(w.timestamp).toLocaleString()}</span>
+              </div>
+              <div className="admin-win-meta">
+                <span className="admin-win-bet">Bet: ${(w.bet || 0).toLocaleString()}</span>
+                <span className="admin-win-payout">Payout: ${(w.payout || 0).toLocaleString()}</span>
+                {w.details && <span className="admin-win-details">{w.details}</span>}
+              </div>
             </div>
           ))}
         </div>

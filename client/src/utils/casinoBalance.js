@@ -80,3 +80,24 @@ export function msUntilNextDaily() {
   const next = lastClaim + HOURLY_MS;
   return Math.max(0, next - Date.now());
 }
+
+// ── Big win reporting ─────────────────────────────────────────────────────────
+// Silently fires to the server when profit >= $50,000 in a single round.
+// game     — slug e.g. 'crash', 'mines', 'slots'
+// bet      — amount wagered
+// payout   — total returned (bet + profit)
+// multiplier — final multiplier (can be null for games without one)
+// details  — human-readable string e.g. "24 mines · 1 safe tile · 97×"
+const BIG_WIN_THRESHOLD = 50_000;
+export function reportBigWin(game, bet, payout, multiplier, details) {
+  const profit = payout - bet;
+  if (profit < BIG_WIN_THRESHOLD || !_authToken) return;
+  fetch(SERVER_URL + '/api/accounts/big-win', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${_authToken}`,
+    },
+    body: JSON.stringify({ game, bet, payout, profit, multiplier, details }),
+  }).catch(() => { /* non-fatal */ });
+}

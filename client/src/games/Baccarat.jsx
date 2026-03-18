@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
 import './Baccarat.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -151,16 +151,18 @@ export default function Baccarat() {
       let net = 0;
       let msg = '';
       if (winner === 'tie' && side === 'tie') {
-        const payout = bet * 8;
+        const payout = bet * 6;
         addBalance(payout + bet);
         net = payout;
-        msg = `🎉 Tie! You win $${payout} (8:1)!`;
+        msg = `🎉 Tie! You win $${payout} (6:1)!`;
+        reportBigWin('baccarat', bet, payout + bet, 6, `Bet Tie · result Tie · player ${fp} banker ${fb} · 6:1`);
       } else if (winner === side && side !== 'tie') {
-        const mult = side === 'banker' ? 0.95 : 1;
+        const mult = side === 'banker' ? 0.88 : 0.95;
         const payout = Math.floor(bet * mult);
         addBalance(bet + payout);
         net = payout;
         msg = `✅ ${winner === 'player' ? 'Player' : 'Banker'} wins! +$${payout}`;
+        reportBigWin('baccarat', bet, bet + payout, mult, `Bet ${side} · ${winner} wins · player ${fp} banker ${fb}`);
       } else if (winner === 'tie') {
         // Push on tie when not betting tie
         addBalance(bet);
@@ -181,9 +183,9 @@ export default function Baccarat() {
   const quickBets = [5, 10, 25, 50, 100, 250].filter(v => v <= balance_);
 
   const PAYOUTS = {
-    player: '1:1',
-    banker: '0.95:1 (5% commission)',
-    tie:    '8:1',
+    player: '0.95:1',
+    banker: '0.88:1',
+    tie:    '6:1',
   };
 
   if (loading) return null;

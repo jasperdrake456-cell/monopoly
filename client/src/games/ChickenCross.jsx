@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
 import './ChickenCross.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -9,9 +9,9 @@ const COLS = 5;
 const HOUSE_EDGE = 0.99;
 
 const DIFFICULTIES = {
-  easy:   { cars: 1, rowMult: 1.10, label: 'Easy',   emoji: '😌', color: '#22c55e' },
-  medium: { cars: 2, rowMult: 1.20, label: 'Medium', emoji: '😰', color: '#eab308' },
-  hard:   { cars: 3, rowMult: 1.45, label: 'Hard',   emoji: '💀', color: '#ef4444' },
+  easy:   { cars: 1, rowMult: 1.05, label: 'Easy',   emoji: '😌', color: '#22c55e' },
+  medium: { cars: 2, rowMult: 1.10, label: 'Medium', emoji: '😰', color: '#eab308' },
+  hard:   { cars: 3, rowMult: 1.20, label: 'Hard',   emoji: '💀', color: '#ef4444' },
 };
 
 function generateGrid(difficulty) {
@@ -121,6 +121,7 @@ export default function ChickenCross() {
         const payout = Math.floor(betRef.current * newMult);
         addBalance(payout);
         syncBalance();
+        reportBigWin('chicken-cross', betRef.current, payout, newMult, `${difficulty} · all ${ROWS} rows crossed · ${newMult.toFixed(2)}×`);
         setPhase('won');
         setHistory(h => [{ win: true, mult: newMult }, ...h].slice(0, 10));
       } else {
@@ -134,6 +135,7 @@ export default function ChickenCross() {
     const payout = Math.floor(betRef.current * multRef.current);
     addBalance(payout);
     syncBalance();
+    reportBigWin('chicken-cross', betRef.current, payout, multRef.current, `${difficulty} · ${currentRow} row(s) crossed · ${multRef.current.toFixed(2)}×`);
     setPhase('won');
     setHistory(h => [{ win: true, mult: multRef.current }, ...h].slice(0, 10));
   }
