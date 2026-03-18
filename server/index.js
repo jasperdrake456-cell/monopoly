@@ -96,25 +96,10 @@ function getToken(req) {
 app.post('/api/accounts/register', (req, res) => {
   const { username, password } = req.body || {};
   const ip = getClientIP(req);
-
-  // Check registration log + account store — block if at/over limit
-  const ipCheck = us.checkIPAccountLimit(ip, 3);
-  if (ipCheck.blocked) {
-    const msg = ipCheck.reason === 'unknown_ip'
-      ? 'Unable to verify your connection. Please try again or contact support.'
-      : `Too many accounts from this device (${ipCheck.count}/3). Maximum 3 accounts per IP address.`;
-    console.log(`[register] BLOCKED IP ${ip}: ${msg}`);
-    return res.status(429).json({ ok: false, error: msg });
-  }
-
-  // Pass IP so it's stored as registerIP (permanent) at creation time
   const result = us.register(username, password, ip);
   if (result.ok) {
-    // Write to the permanent registration log so this IP is counted
-    // even if the account is later deleted
-    us.logRegistration(ip, result.username);
     us.recordIP(result.username, ip);
-    console.log(`[register] New account "${result.username}" from IP ${ip} (now ${(ipCheck.count || 0) + 1}/3 for this IP)`);
+    console.log(`[register] New account "${result.username}" from IP ${ip}`);
   }
   res.json(result);
 });
@@ -375,15 +360,6 @@ app.get('/api/admin/bans/lookup-ip', requireAdmin, (req, res) => {
   res.json({ ok: true, yourIP: getClientIP(req) });
 });
 
-// Set a custom account limit for an IP (admin: allow extra accounts)
-app.put('/api/admin/ip-limit', requireAdmin, (req, res) => {
-  const { ip, limit } = req.body || {};
-  if (!ip) return res.status(400).json({ ok: false, error: 'IP required' });
-  const n = parseInt(limit, 10);
-  if (isNaN(n) || n < 1) return res.status(400).json({ ok: false, error: 'Invalid limit' });
-  us.setIPLimit(ip, n);
-  res.json({ ok: true, ip, limit: n });
-});
 
 // ── Static client ─────────────────────────────────────────────────────────────
 

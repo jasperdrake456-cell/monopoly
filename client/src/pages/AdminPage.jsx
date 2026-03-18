@@ -44,7 +44,6 @@ export default function AdminPage() {
   const [tab, setTab]           = useState('reports'); // 'reports' | 'users' | 'money' | 'bans'
   const [reports, setReports]   = useState([]);
   const [users, setUsers]       = useState([]);
-  const [ipLimits, setIpLimits] = useState({}); // ip → custom limit
   const [status, setStatus]     = useState('');
   const [giveTarget, setGiveTarget] = useState('');
   const [giveAmount, setGiveAmount] = useState('');
@@ -105,12 +104,7 @@ export default function AdminPage() {
   const loadUsers = useCallback(() => {
     if (!token) return;
     authFetch('/api/admin/users', token)
-      .then(d => {
-        if (d.ok) {
-          setUsers(d.users);
-          setIpLimits(d.ipLimits || {});
-        }
-      })
+      .then(d => { if (d.ok) setUsers(d.users); })
       .catch(() => {});
   }, [token]);
 
@@ -245,21 +239,6 @@ export default function AdminPage() {
     loadUserBans();
   }
 
-  async function allowExtraAccount(ip, currentLimit) {
-    const newLimit = currentLimit + 1;
-    const d = await authFetch('/api/admin/ip-limit', token, {
-      method: 'PUT',
-      body: JSON.stringify({ ip, limit: newLimit }),
-    });
-    if (d.ok) {
-      setIpLimits(prev => ({ ...prev, [ip]: newLimit }));
-      setStatus(`Allowed ${newLimit} accounts for IP ${ip}`);
-      loadUsers();
-    } else {
-      setStatus(d.error || 'Failed to update limit');
-    }
-  }
-
   async function giveMoney() {
     const amt = parseInt(giveAmount, 10);
     if (!giveTarget.trim() || !amt || amt < 1) return setStatus('Enter a valid username and amount.');
@@ -287,39 +266,11 @@ export default function AdminPage() {
     [flaggedBalances, dismissedBalances]
   );
 
-  // IP grouping: richest account per IP is primary, others are sub-accounts
-  const ipGroups = useMemo(() => {
-    const byIP = {};
-    const noIP = [];
-    for (const u of users) {
-      const key = u.registerIP || u.lastIP;
-      if (!key) { noIP.push(u); }
-      else {
-        if (!byIP[key]) byIP[key] = [];
-        byIP[key].push(u);
-      }
-    }
-    for (const ip in byIP) byIP[ip].sort((a, b) => (b.balance || 0) - (a.balance || 0));
-    noIP.sort((a, b) => (b.balance || 0) - (a.balance || 0));
-    const result = [];
-    const groups = Object.values(byIP).sort((a, b) => (b[0].balance || 0) - (a[0].balance || 0));
-    for (const group of groups) {
-      const groupIP = group[0].registerIP || group[0].lastIP;
-      // ipCount from server; ipLimit from server or local ipLimits override
-      const ipCount = group[0].ipCount ?? group.length;
-      const ipLimit = ipLimits[groupIP] ?? group[0].ipLimit ?? 3;
-      group.forEach((u, idx) => result.push({
-        user: u,
-        isSubAccount: idx > 0,
-        groupSize: group.length,
-        groupIP,
-        ipCount,
-        ipLimit,
-      }));
-    }
-    for (const u of noIP) result.push({ user: u, isSubAccount: false, groupSize: 1, groupIP: null, ipCount: 1, ipLimit: 3 });
-    return result;
-  }, [users, ipLimits]);
+  // Flat sorted user list (richest first)
+  const sortedUsers = useMemo(
+    () => [...users].sort((a, b) => (b.balance || 0) - (a.balance || 0)),
+    [users]
+  );
 
   if (!isAdmin) return null;
 
@@ -457,20 +408,11 @@ export default function AdminPage() {
           <div className="admin-section-title">All Accounts ({users.length})</div>
           {users.length === 0 && <div className="admin-empty">No users found.</div>}
           <div className="admin-user-list">
-            {ipGroups.map(({ user: u, isSubAccount, groupSize, groupIP, ipCount, ipLimit }) => (
-              <div key={u.username} className={`admin-user-row admin-user-row--expanded${isSubAccount ? ' admin-user-row--sub' : ''}`}>
+            {sortedUsers.map(u => (
+              <div key={u.username} className="admin-user-row admin-user-row--expanded">
                 <div className="admin-user-info">
                   <span className="admin-user-name">{u.displayName}</span>
                   <span className="admin-user-handle">@{u.username}</span>
-                  {/* IP account count badge — only on the richest (primary) account of a group */}
-                  {!isSubAccount && groupIP && groupSize >= 1 && u.username !== 'jasper' && (
-                    <span
-                      className={`admin-ip-count-badge${ipCount >= ipLimit ? ' admin-ip-count-badge--full' : ''}`}
-                      title={`${ipCount} account${ipCount !== 1 ? 's' : ''} registered from this IP (limit: ${ipLimit})`}
-                    >
-                      {ipCount}/{ipLimit} accounts
-                    </span>
-                  )}
                   {(u.balance || 0) >= BAL_VERY_HIGH && <span className="admin-user-flag admin-user-flag--red" title="Very high balance — possible cheating">🔴</span>}
                   {(u.balance || 0) >= BAL_HIGH && (u.balance || 0) < BAL_VERY_HIGH && <span className="admin-user-flag admin-user-flag--yellow" title="High balance">🟡</span>}
                   {isSuspectUsername(u.username) && <span className="admin-user-flag" title="Suspicious username">🚩</span>}
@@ -511,16 +453,6 @@ export default function AdminPage() {
                 </div>
                 {u.username !== 'jasper' && (
                   <div className="admin-user-actions">
-                    {/* Allow extra account slot for this IP */}
-                    {!isSubAccount && groupIP && (
-                      <button
-                        className="admin-btn admin-btn--allow-extra admin-btn--sm"
-                        title={`Currently ${ipCount}/${ipLimit} — click to allow one more account from this IP`}
-                        onClick={() => allowExtraAccount(groupIP, ipLimit)}
-                      >
-                        +1 account slot ({ipCount}/{ipLimit})
-                      </button>
-                    )}
                     {activity[u.username] && (
                       <button className="admin-btn admin-btn--danger admin-btn--sm" onClick={() => {
                         setBanUser_(u.username); setBanUserGames(activity[u.username]); setBanUserDur('permanent');
