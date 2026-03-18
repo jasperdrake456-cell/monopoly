@@ -79,6 +79,26 @@ function formatAuditDetails(action, d) {
   }
 }
 
+const GAME_DISPLAY_NAMES = {
+  'crash':       '💥 Crash',
+  'plinko':      '🔴 Plinko',
+  'dice':        '🎲 Dice',
+  'roulette':    '🎡 Roulette',
+  'blackjack':   '♠️ Blackjack',
+  'baccarat':    '🃏 Baccarat',
+  'mines':       '💣 Mines',
+  'ride-the-bus':'🚌 Ride the Bus',
+  'slots':       '🎰 Slots',
+  'chicken-cross':'🐔 Chicken Cross',
+  'texas-holdem':'🤠 Texas Hold\'em',
+  'hilo':        '🃏 HiLo',
+  'tower':       '🏰 Tower',
+  'wheel':       '🎡 Wheel',
+  'video-poker': '🃏 Video Poker',
+  'keno':        '🎱 Keno',
+  'dragon-tiger':'🐉 Dragon Tiger',
+};
+
 function msToHuman(ms) {
   if (!ms) return 'permanent';
   const h = Math.round(ms / 3600000);
@@ -179,6 +199,7 @@ export default function AdminPage() {
   const [suggestions, setSuggestions]   = useState([]);
   const [riggedUsers, setRiggedUsers]   = useState([]);
   const [gameOddsData, setGameOddsData] = useState(null);
+  const [gameBoostEdits, setGameBoostEdits] = useState({}); // slug → string input value
   const [rigTarget, setRigTarget]       = useState('');
   const [weeklyResetAmt, setWeeklyResetAmt] = useState('5000');
 
@@ -257,7 +278,21 @@ export default function AdminPage() {
   }, [token]);
 
   const loadGameOdds = useCallback(() => {
-    authFetch('/api/game-config', token).then(d => { if (d.ok) setGameOddsData(d); }).catch(() => {});
+    authFetch('/api/game-config', token).then(d => {
+      if (d.ok) {
+        setGameOddsData(d);
+        // Sync edit inputs to saved values
+        const edits = {};
+        for (const slug of [
+          'crash','plinko','dice','roulette','blackjack','baccarat',
+          'mines','ride-the-bus','slots','chicken-cross','texas-holdem',
+          'hilo','tower','wheel','video-poker','keno','dragon-tiger',
+        ]) {
+          edits[slug] = String(d.overrides?.[slug] ?? 1.0);
+        }
+        setGameBoostEdits(edits);
+      }
+    }).catch(() => {});
   }, [token]);
 
   const loadChat = useCallback(() => {
@@ -939,39 +974,80 @@ export default function AdminPage() {
           </div>
           <div className="admin-site-card">
             <div className="admin-site-card-title">🎮 Per-Game Boost Multipliers</div>
-            <div className="admin-site-card-sub">Set per-game payout boost (1.0 = normal). Applied on top of wildcard boost.</div>
+            <div className="admin-site-card-sub">
+              1.0× = normal odds &nbsp;·&nbsp; 1.5× = 50% better payouts &nbsp;·&nbsp; 0.5× = nerfed.
+              Changes take effect immediately.
+            </div>
             {!gameOddsData ? (
               <div className="admin-empty">Loading…</div>
             ) : (
-              <div className="admin-game-grid" style={{ marginTop:10 }}>
+              <div style={{ display:'flex', flexDirection:'column', gap:6, marginTop:12 }}>
                 {ALL_GAMES.map(slug => {
-                  const boost = gameOddsData.overrides?.[slug] ?? 1.0;
-                  const isWild = slug === (gameOddsData.wildcardOverride || gameOddsData.wildcard);
+                  const savedBoost = gameOddsData.overrides?.[slug] ?? 1.0;
+                  const editVal    = gameBoostEdits[slug] ?? String(savedBoost);
+                  const isWild     = slug === (gameOddsData.wildcardOverride || gameOddsData.wildcard);
+                  const isModified = savedBoost !== 1.0;
+                  const isDirty    = parseFloat(editVal) !== savedBoost;
                   return (
-                    <div key={slug} className={`admin-game-tile${isWild ? ' admin-game-tile--testing' : ''}`}
-                      style={{ padding:'8px 10px' }}>
-                      <span className="admin-game-tile-name" style={{ marginBottom:6 }}>
-                        {isWild && '⭐ '}{slug}
-                      </span>
-                      <div style={{ display:'flex', gap:4, alignItems:'center' }}>
-                        <input type="number" className="admin-input" min={0.1} max={5} step={0.1}
-                          defaultValue={boost} style={{ width:70, padding:'3px 6px', fontSize:'0.8rem' }}
-                          onBlur={async e => {
-                            const val = parseFloat(e.target.value);
-                            if (isNaN(val)) return;
-                            const d = await authFetch(`/api/admin/game-odds/${slug}`, token, {
-                              method: 'POST', body: JSON.stringify({ multiplier: val }),
-                            });
-                            if (d.ok) { loadGameOdds(); setStatus(`${slug} boost → ${val}×`); }
-                          }} />
-                        {boost !== 1.0 && (
-                          <button className="admin-btn admin-btn--ghost admin-btn--sm" title="Reset to 1×"
-                            onClick={async () => {
-                              await authFetch(`/api/admin/game-odds/${slug}`, token, { method: 'DELETE' });
-                              loadGameOdds(); setStatus(`${slug} reset to 1×`);
-                            }}>↩</button>
-                        )}
+                    <div key={slug} style={{
+                      display:'flex', alignItems:'center', gap:10,
+                      padding:'8px 12px', borderRadius:8,
+                      background: isWild ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.04)',
+                      border: `1px solid ${isWild ? 'rgba(192,132,252,0.35)' : 'rgba(255,255,255,0.07)'}`,
+                    }}>
+                      {/* Game name */}
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <span style={{ fontWeight:600, fontSize:'0.92rem', color: isWild ? '#c084fc' : '#e2e8f0' }}>
+                          {isWild && '⭐ '}{GAME_DISPLAY_NAMES[slug] || slug}
+                        </span>
+                        {isWild && <span style={{ fontSize:'0.72rem', color:'#a78bfa', marginLeft:8 }}>Wildcard</span>}
                       </div>
+                      {/* Current saved boost badge */}
+                      <span style={{
+                        fontSize:'0.78rem', fontWeight:700, minWidth:38, textAlign:'center',
+                        color: isModified ? '#86efac' : '#6b7280',
+                        background: isModified ? 'rgba(134,239,172,0.12)' : 'transparent',
+                        borderRadius:4, padding:'2px 6px',
+                      }}>
+                        {savedBoost}×
+                      </span>
+                      {/* Input */}
+                      <input
+                        type="number" min={0.1} max={10} step={0.1}
+                        value={editVal}
+                        onChange={e => setGameBoostEdits(prev => ({ ...prev, [slug]: e.target.value }))}
+                        style={{
+                          width:80, padding:'5px 8px', fontSize:'0.88rem', textAlign:'center',
+                          background:'#1e1e2e', border:`1px solid ${isDirty ? '#c084fc' : '#374151'}`,
+                          borderRadius:6, color:'#e2e8f0', outline:'none',
+                        }}
+                      />
+                      {/* Set button */}
+                      <button
+                        className="admin-btn admin-btn--primary admin-btn--sm"
+                        disabled={!isDirty || isNaN(parseFloat(editVal))}
+                        onClick={async () => {
+                          const val = parseFloat(editVal);
+                          if (isNaN(val)) return;
+                          const d = await authFetch(`/api/admin/game-odds/${slug}`, token, {
+                            method: 'POST', body: JSON.stringify({ multiplier: val }),
+                          });
+                          if (d.ok) { loadGameOdds(); setStatus(`${GAME_DISPLAY_NAMES[slug] || slug} → ${val}×`); }
+                        }}
+                        style={{ minWidth:48 }}
+                      >Set</button>
+                      {/* Reset button — only when not default */}
+                      {isModified && (
+                        <button
+                          className="admin-btn admin-btn--ghost admin-btn--sm"
+                          title="Reset to 1×"
+                          onClick={async () => {
+                            await authFetch(`/api/admin/game-odds/${slug}`, token, { method: 'DELETE' });
+                            loadGameOdds(); setStatus(`${GAME_DISPLAY_NAMES[slug] || slug} reset to 1×`);
+                          }}
+                          style={{ minWidth:46 }}
+                        >↩ 1×</button>
+                      )}
                     </div>
                   );
                 })}
