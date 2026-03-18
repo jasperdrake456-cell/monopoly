@@ -430,8 +430,32 @@ function kickUser(adminToken, targetUsername) {
   return { ok: true, sessionsKilled: killed };
 }
 
+/**
+ * Scan all accounts and delete any with balance <= 0 (excluding admin).
+ * Returns the number of accounts deleted.
+ */
+function pruneZeroBalanceAccounts() {
+  const users = readUsers();
+  const toDelete = Object.values(users).filter(
+    u => u.username !== ADMIN_USERNAME && (u.casinoBalance || 0) <= 0
+  );
+  if (toDelete.length === 0) return 0;
+
+  for (const u of toDelete) {
+    delete users[u.username];
+    // Kill all sessions for this user
+    for (const [t, data] of sessions) {
+      if (data.username === u.username) sessions.delete(t);
+    }
+    console.log(`[userStore] Pruned "${u.username}" — zero balance`);
+  }
+  writeUsers(users);
+  writeSessionsToDisk();
+  return toDelete.length;
+}
+
 module.exports = {
   register, login, getMe, syncBalance, claimDaily, transfer, logout, userExists,
   deleteUser, adminGiveMoney, adminSetBalance, listUsers, isAdminToken, getTopBalances,
-  recordIP, kickUser, addBonus,
+  recordIP, kickUser, addBonus, pruneZeroBalanceAccounts,
 };

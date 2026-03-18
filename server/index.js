@@ -170,6 +170,16 @@ const ACTIVITY_TTL_MS = 90_000; // treat as offline after 90 seconds of no heart
 // token → pending bonus chips to deliver on next heartbeat
 const pendingBonuses = new Map();
 
+// Prune zero-balance accounts on startup and every 5 minutes
+(function runPrune() {
+  const n = us.pruneZeroBalanceAccounts();
+  if (n > 0) console.log(`[prune] Deleted ${n} zero-balance account(s)`);
+})();
+setInterval(() => {
+  const n = us.pruneZeroBalanceAccounts();
+  if (n > 0) console.log(`[prune] Deleted ${n} zero-balance account(s)`);
+}, 5 * 60 * 1000);
+
 // Every 5 minutes: give all active online players $5,000
 setInterval(() => {
   const now = Date.now();
