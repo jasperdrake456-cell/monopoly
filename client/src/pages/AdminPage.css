@@ -675,3 +675,234 @@
   gap: 4px;
   flex-shrink: 0;
 }
+
+/* ── Chat Mod tab ────────────────────────────────────────────────────────── */
+.admin-chat-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.admin-chat-setting {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-chat-setting-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-chat-setting input[type="number"],
+.admin-chat-setting select {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  color: #e2e8f0;
+  padding: 5px 8px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  width: 100%;
+}
+
+.admin-chat-setting input[type="number"]:focus,
+.admin-chat-setting select:focus {
+  outline: none;
+  border-color: rgba(99,102,241,0.5);
+}
+
+.admin-chat-setting--toggle {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-chat-setting--toggle .admin-chat-setting-label {
+  flex: 1;
+  text-transform: none;
+  font-size: 0.82rem;
+  color: #cbd5e1;
+}
+
+/* Ban form */
+.admin-chat-ban-form {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  padding: 12px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+}
+
+.admin-chat-ban-form input,
+.admin-chat-ban-form select {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  color: #e2e8f0;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  font-family: inherit;
+}
+
+.admin-chat-ban-form input:focus,
+.admin-chat-ban-form select:focus {
+  outline: none;
+  border-color: rgba(239,68,68,0.5);
+}
+
+/* Ban list rows */
+.admin-chat-ban-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: rgba(239,68,68,0.05);
+  border: 1px solid rgba(239,68,68,0.15);
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.admin-chat-ban-user {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fca5a5;
+  min-width: 100px;
+}
+
+.admin-chat-ban-reason {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  flex: 1;
+}
+
+.admin-chat-ban-meta {
+  font-size: 0.72rem;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+/* Muted / violations */
+.admin-chat-muted-badge {
+  display: inline-block;
+  background: rgba(168,85,247,0.15);
+  border: 1px solid rgba(168,85,247,0.3);
+  color: #c084fc;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+
+.admin-chat-viols {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.admin-chat-viol-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 0.78rem;
+}
+
+.admin-chat-viol-name { color: #e2e8f0; font-weight: 600; }
+.admin-chat-viol-count {
+  background: rgba(239,68,68,0.18);
+  color: #fca5a5;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* Message feed */
+.admin-chat-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+.admin-chat-feed::-webkit-scrollbar { width: 4px; }
+.admin-chat-feed::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+.admin-chat-msg {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.78rem;
+}
+
+.admin-chat-msg--filtered {
+  background: rgba(239,68,68,0.06);
+  border-color: rgba(239,68,68,0.15);
+}
+
+.admin-chat-msg--shadow {
+  background: rgba(168,85,247,0.06);
+  border-color: rgba(168,85,247,0.15);
+}
+
+.admin-chat-msg-time {
+  color: #4b5563;
+  font-size: 0.68rem;
+  flex-shrink: 0;
+}
+
+.admin-chat-msg-user {
+  font-weight: 700;
+  color: #818cf8;
+  flex-shrink: 0;
+}
+
+.admin-chat-msg-text {
+  color: #d1d5db;
+  flex: 1;
+  word-break: break-word;
+}
+
+.admin-chat-msg-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.admin-chat-msg--filtered .admin-chat-msg-tag {
+  background: rgba(239,68,68,0.2);
+  color: #fca5a5;
+}
+
+.admin-chat-msg--shadow .admin-chat-msg-tag {
+  background: rgba(168,85,247,0.2);
+  color: #c084fc;
+}

@@ -11,7 +11,9 @@ const us = require('./userStore');
 const rp = require('./reportStore');
 const bn = require('./banStore');
 const wl = require('./winLog');
-const sc = require('./siteConfig');
+const sc  = require('./siteConfig');
+const chatStore = require('./chat/chatStore');
+const chatNs    = require('./chat/chatNamespace');
 
 const app = express();
 const server = http.createServer(app);
@@ -452,6 +454,86 @@ app.delete('/api/admin/site/testers/:username', requireAdmin, (req, res) => {
   res.json({ ok: true, config: sc.getConfig() });
 });
 
+// ── Chat admin API ────────────────────────────────────────────────────────────
+
+// All messages (including filtered & shadow-muted) — admin only
+app.get('/api/admin/chat/messages', requireAdmin, (req, res) => {
+  res.json({ ok: true, messages: chatStore.getMessages() });
+});
+
+// Clear all chat messages
+app.delete('/api/admin/chat/messages', requireAdmin, (req, res) => {
+  chatStore.clearMessages();
+  res.json({ ok: true });
+});
+
+// Get chat ban list
+app.get('/api/admin/chat/bans', requireAdmin, (req, res) => {
+  res.json({ ok: true, bans: chatStore.getChatBans() });
+});
+
+// Ban a user from chat
+app.post('/api/admin/chat/ban', requireAdmin, (req, res) => {
+  const { username, reason, duration } = req.body || {};
+  if (!username) return res.status(400).json({ ok: false, error: 'Missing username' });
+
+  let expiresAt = null;
+  if (duration && duration !== 'permanent') {
+    const map = { '1h': 3600, '6h': 21600, '24h': 86400, '7d': 604800 };
+    const secs = map[duration];
+    if (secs) expiresAt = Date.now() + secs * 1000;
+  }
+
+  chatStore.addChatBan(username, reason, expiresAt, 'jasper');
+  res.json({ ok: true });
+});
+
+// Unban from chat
+app.delete('/api/admin/chat/ban/:username', requireAdmin, (req, res) => {
+  chatStore.removeChatBan(req.params.username);
+  res.json({ ok: true });
+});
+
+// Get moderation settings
+app.get('/api/admin/chat/settings', requireAdmin, (req, res) => {
+  res.json({ ok: true, settings: chatStore.getSettings() });
+});
+
+// Update moderation settings
+app.post('/api/admin/chat/settings', requireAdmin, (req, res) => {
+  const patch = req.body || {};
+  const updated = chatStore.updateSettings(patch);
+  res.json({ ok: true, settings: updated });
+});
+
+// Get violation counts
+app.get('/api/admin/chat/violations', requireAdmin, (req, res) => {
+  res.json({ ok: true, violations: chatStore.getAllViolations() });
+});
+
+// Reset a user's violations (and unmute)
+app.delete('/api/admin/chat/violations/:username', requireAdmin, (req, res) => {
+  chatNs.unmuteUser(req.params.username);
+  res.json({ ok: true });
+});
+
+// Mute a user (shadow-mute)
+app.post('/api/admin/chat/mute/:username', requireAdmin, (req, res) => {
+  chatNs.muteUser(req.params.username);
+  res.json({ ok: true });
+});
+
+// Unmute a user
+app.delete('/api/admin/chat/mute/:username', requireAdmin, (req, res) => {
+  chatNs.unmuteUser(req.params.username);
+  res.json({ ok: true });
+});
+
+// Get currently muted users
+app.get('/api/admin/chat/muted', requireAdmin, (req, res) => {
+  res.json({ ok: true, muted: chatNs.getMutedUsers() });
+});
+
 // ── Static client ─────────────────────────────────────────────────────────────
 
 const clientDist = path.join(__dirname, '..', 'client', 'dist');
@@ -462,6 +544,7 @@ app.get('*', (req, res) => {
 
 // ── Game namespaces ───────────────────────────────────────────────────────────
 
+chatNs.register(io.of('/chat'));
 require('./games/monopoly').register(io.of('/monopoly'));
 require('./games/chess').register(io.of('/chess'));
 require('./games/connect4').register(io.of('/connect4'));

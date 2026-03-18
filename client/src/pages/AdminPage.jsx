@@ -43,7 +43,7 @@ export default function AdminPage() {
   const { user, token, isLoggedIn } = useAuth();
   const navigate = useNavigate();
 
-  const [tab, setTab]           = useState('reports'); // 'reports'|'users'|'money'|'bans'|'wins'|'site'
+  const [tab, setTab]           = useState('reports'); // 'reports'|'users'|'money'|'bans'|'wins'|'site'|'chat'
   const [reports, setReports]   = useState([]);
   const [users, setUsers]       = useState([]);
   const [bigWins, setBigWins]   = useState([]);
@@ -89,6 +89,17 @@ export default function AdminPage() {
   const { closedGames, testingGames, approvedTesters, refreshConfig } = useSiteConfig();
   const [testerInput, setTesterInput]   = useState('');
   const [siteStatus, setSiteStatus]     = useState('');
+
+  // ── Chat mod ────────────────────────────────────────────────────────────────
+  const [chatMessages,   setChatMessages]   = useState([]);
+  const [chatBans,       setChatBans]       = useState([]);
+  const [chatViolations, setChatViolations] = useState([]);
+  const [chatMuted,      setChatMuted]      = useState([]);
+  const [chatSettings,   setChatSettings]   = useState(null);
+  const [chatBanUser,    setChatBanUser]     = useState('');
+  const [chatBanReason,  setChatBanReason]   = useState('');
+  const [chatBanDur,     setChatBanDur]      = useState('permanent');
+  const [chatStatus,     setChatStatus]      = useState('');
 
   const ALL_GAMES = [
     'crash','plinko','dice','roulette','blackjack','baccarat',
@@ -145,13 +156,31 @@ export default function AdminPage() {
       .catch(() => {});
   }, [token]);
 
+  const loadChat = useCallback(() => {
+    if (!token) return;
+    Promise.all([
+      authFetch('/api/admin/chat/messages',   token),
+      authFetch('/api/admin/chat/bans',        token),
+      authFetch('/api/admin/chat/violations',  token),
+      authFetch('/api/admin/chat/muted',       token),
+      authFetch('/api/admin/chat/settings',    token),
+    ]).then(([msgs, bans, viols, muted, settings]) => {
+      if (msgs.ok)     setChatMessages(msgs.messages.slice(-200).reverse());
+      if (bans.ok)     setChatBans(bans.bans);
+      if (viols.ok)    setChatViolations(viols.violations);
+      if (muted.ok)    setChatMuted(muted.muted);
+      if (settings.ok) setChatSettings(settings.settings);
+    }).catch(() => {});
+  }, [token]);
+
   useEffect(() => {
     if (tab === 'reports') { loadReports(); loadUsers(); }
     if (tab === 'users')   { loadUsers(); loadActivity(); }
     if (tab === 'bans')    { loadIPBans(); loadUserBans(); }
     if (tab === 'wins')    { loadBigWins(); }
     if (tab === 'site')    { refreshConfig(); }
-  }, [tab, loadReports, loadUsers, loadIPBans, loadUserBans, loadActivity, loadBigWins, refreshConfig]);
+    if (tab === 'chat')    { loadChat(); }
+  }, [tab, loadReports, loadUsers, loadIPBans, loadUserBans, loadActivity, loadBigWins, refreshConfig, loadChat]);
 
   // Poll activity every 10 seconds while on users tab
   useEffect(() => {
@@ -306,6 +335,7 @@ export default function AdminPage() {
               if (tab === 'bans')    { loadIPBans(); loadUserBans(); }
               if (tab === 'wins')    { loadBigWins(); }
               if (tab === 'site')    { refreshConfig(); setSiteStatus('↻ Refreshed'); }
+              if (tab === 'chat')    { loadChat(); setChatStatus('↻ Refreshed'); }
               setStatus('↻ Refreshed');
             }}
           >↻ Reload</button>
@@ -314,7 +344,7 @@ export default function AdminPage() {
       </div>
 
       <div className="admin-tabs">
-        {[['reports','📋 Reports'],['users','👥 Users'],['money','💰 Give Money'],['bans','🚫 Bans'],['wins','🏆 Big Wins'],['site','⚙️ Site Control']].map(([id, label]) => (
+        {[['reports','📋 Reports'],['users','👥 Users'],['money','💰 Give Money'],['bans','🚫 Bans'],['wins','🏆 Big Wins'],['site','⚙️ Site Control'],['chat','💬 Chat Mod']].map(([id, label]) => (
           <button key={id} className={`admin-tab${tab === id ? ' active' : ''}`} onClick={() => setTab(id)}>
             {label}
           </button>
@@ -806,6 +836,243 @@ export default function AdminPage() {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* ── Chat Mod ── */}
+      {tab === 'chat' && (
+        <div className="admin-section">
+          <div className="admin-section-title">💬 Chat Moderation</div>
+          {chatStatus && <div className="admin-status-msg">{chatStatus}</div>}
+
+          {/* ── Mod Settings ─────────────────────────────────────────────── */}
+          {chatSettings && (
+            <div className="admin-site-card">
+              <div className="admin-site-card-title">⚙️ Moderation Settings</div>
+              <div className="admin-chat-settings-grid">
+
+                {/* Strictness */}
+                <div className="admin-chat-setting">
+                  <label className="admin-chat-setting-label">Strictness</label>
+                  <select className="admin-input admin-select" value={chatSettings.strictness}
+                    onChange={async e => {
+                      const s = await authFetch('/api/admin/chat/settings', token, { method: 'POST', body: JSON.stringify({ strictness: e.target.value }) });
+                      if (s.ok) { setChatSettings(s.settings); setChatStatus(`Strictness → ${e.target.value}`); }
+                    }}>
+                    <option value="strict">🔴 Strict — all profanity blocked</option>
+                    <option value="moderate">🟡 Moderate — heavy profanity blocked</option>
+                    <option value="relaxed">🟢 Relaxed — slurs/threats only</option>
+                  </select>
+                </div>
+
+                {/* Slow mode */}
+                <div className="admin-chat-setting">
+                  <label className="admin-chat-setting-label">Slow Mode</label>
+                  <select className="admin-input admin-select" value={chatSettings.slowMode}
+                    onChange={async e => {
+                      const s = await authFetch('/api/admin/chat/settings', token, { method: 'POST', body: JSON.stringify({ slowMode: Number(e.target.value) }) });
+                      if (s.ok) { setChatSettings(s.settings); setChatStatus(`Slow mode → ${e.target.value}s`); }
+                    }}>
+                    <option value={0}>Off</option>
+                    <option value={3}>3 seconds</option>
+                    <option value={5}>5 seconds</option>
+                    <option value={10}>10 seconds</option>
+                    <option value={30}>30 seconds</option>
+                    <option value={60}>60 seconds</option>
+                  </select>
+                </div>
+
+                {/* Max length */}
+                <div className="admin-chat-setting">
+                  <label className="admin-chat-setting-label">Max Message Length</label>
+                  <select className="admin-input admin-select" value={chatSettings.maxLength}
+                    onChange={async e => {
+                      const s = await authFetch('/api/admin/chat/settings', token, { method: 'POST', body: JSON.stringify({ maxLength: Number(e.target.value) }) });
+                      if (s.ok) { setChatSettings(s.settings); setChatStatus(`Max length → ${e.target.value}`); }
+                    }}>
+                    <option value={50}>50 chars</option>
+                    <option value={100}>100 chars</option>
+                    <option value={200}>200 chars</option>
+                    <option value={400}>400 chars</option>
+                  </select>
+                </div>
+
+                {/* Max emojis */}
+                <div className="admin-chat-setting">
+                  <label className="admin-chat-setting-label">Max Emojis per Message</label>
+                  <select className="admin-input admin-select" value={chatSettings.maxEmojis}
+                    onChange={async e => {
+                      const s = await authFetch('/api/admin/chat/settings', token, { method: 'POST', body: JSON.stringify({ maxEmojis: Number(e.target.value) }) });
+                      if (s.ok) { setChatSettings(s.settings); setChatStatus(`Max emojis → ${e.target.value}`); }
+                    }}>
+                    <option value={0}>Unlimited</option>
+                    <option value={3}>3</option>
+                    <option value={6}>6</option>
+                    <option value={10}>10</option>
+                  </select>
+                </div>
+
+                {/* Auto-mute after N violations */}
+                <div className="admin-chat-setting">
+                  <label className="admin-chat-setting-label">Auto-mute after violations</label>
+                  <select className="admin-input admin-select" value={chatSettings.autoMuteAfter}
+                    onChange={async e => {
+                      const val = Number(e.target.value);
+                      const s = await authFetch('/api/admin/chat/settings', token, { method: 'POST', body: JSON.stringify({ autoMuteAfter: val, muteEnabled: val > 0 }) });
+                      if (s.ok) { setChatSettings(s.settings); setChatStatus(`Auto-mute after ${val || 'disabled'}`); }
+                    }}>
+                    <option value={0}>Disabled</option>
+                    <option value={2}>2 violations</option>
+                    <option value={3}>3 violations</option>
+                    <option value={5}>5 violations</option>
+                    <option value={10}>10 violations</option>
+                  </select>
+                </div>
+
+                {/* Repeat window */}
+                <div className="admin-chat-setting">
+                  <label className="admin-chat-setting-label">Repeat spam window</label>
+                  <select className="admin-input admin-select" value={chatSettings.repeatWindow}
+                    onChange={async e => {
+                      const s = await authFetch('/api/admin/chat/settings', token, { method: 'POST', body: JSON.stringify({ repeatWindow: Number(e.target.value) }) });
+                      if (s.ok) { setChatSettings(s.settings); }
+                    }}>
+                    <option value={2}>2 identical messages</option>
+                    <option value={3}>3 identical messages</option>
+                    <option value={5}>5 identical messages</option>
+                  </select>
+                </div>
+
+                {/* Toggle: block links */}
+                {[
+                  ['blockLinks',    'Block Links/URLs'],
+                  ['blockAllCaps',  'Block ALL CAPS'],
+                  ['blockCharSpam', 'Block Character Spam'],
+                  ['blockRepeat',   'Block Repeat Messages'],
+                  ['shadowMute',    'Shadow-mute (silent block)'],
+                ].map(([key, label]) => (
+                  <div key={key} className="admin-chat-setting admin-chat-setting--toggle">
+                    <label className="admin-chat-setting-label">{label}</label>
+                    <button
+                      className={`admin-toggle-btn admin-toggle-btn--sm${chatSettings[key] ? ' admin-toggle-btn--on' : ''}`}
+                      onClick={async () => {
+                        const patch = { [key]: !chatSettings[key] };
+                        const s = await authFetch('/api/admin/chat/settings', token, { method: 'POST', body: JSON.stringify(patch) });
+                        if (s.ok) { setChatSettings(s.settings); setChatStatus(`${label}: ${!chatSettings[key] ? 'ON' : 'OFF'}`); }
+                      }}
+                    >{chatSettings[key] ? 'ON' : 'OFF'}</button>
+                  </div>
+                ))}
+
+              </div>
+            </div>
+          )}
+
+          {/* ── Chat Bans ────────────────────────────────────────────────── */}
+          <div className="admin-site-card">
+            <div className="admin-site-card-title">🚫 Chat Bans ({chatBans.length})</div>
+            <div className="admin-chat-ban-form">
+              <input className="admin-input" placeholder="Username" value={chatBanUser} onChange={e => setChatBanUser(e.target.value)} />
+              <input className="admin-input" placeholder="Reason" value={chatBanReason} onChange={e => setChatBanReason(e.target.value)} />
+              <select className="admin-input admin-select" value={chatBanDur} onChange={e => setChatBanDur(e.target.value)}>
+                <option value="permanent">Permanent</option>
+                <option value="1h">1 hour</option>
+                <option value="6h">6 hours</option>
+                <option value="24h">24 hours</option>
+                <option value="7d">7 days</option>
+              </select>
+              <button className="admin-btn admin-btn--danger admin-btn--sm" onClick={async () => {
+                if (!chatBanUser.trim()) return;
+                await authFetch('/api/admin/chat/ban', token, { method: 'POST', body: JSON.stringify({ username: chatBanUser.trim(), reason: chatBanReason, duration: chatBanDur }) });
+                setChatBanUser(''); setChatBanReason(''); loadChat(); setChatStatus(`Banned @${chatBanUser.trim()} from chat.`);
+              }}>🚫 Ban</button>
+            </div>
+            {chatBans.length === 0
+              ? <div className="admin-empty">No chat bans.</div>
+              : chatBans.map(b => (
+                <div key={b.username} className="admin-chat-ban-row">
+                  <div>
+                    <span className="admin-chat-ban-user">@{b.username}</span>
+                    {b.reason && <span className="admin-chat-ban-reason"> — {b.reason}</span>}
+                    <div className="admin-chat-ban-meta">
+                      {b.expiresAt ? `Until ${new Date(b.expiresAt).toLocaleString()}` : 'Permanent'}
+                      {' · '}by {b.bannedBy}
+                    </div>
+                  </div>
+                  <button className="admin-btn admin-btn--ghost admin-btn--sm" onClick={async () => {
+                    await authFetch(`/api/admin/chat/ban/${encodeURIComponent(b.username)}`, token, { method: 'DELETE' });
+                    loadChat(); setChatStatus(`Unbanned @${b.username} from chat.`);
+                  }}>Unban</button>
+                </div>
+              ))
+            }
+          </div>
+
+          {/* ── Muted / Violations ───────────────────────────────────────── */}
+          <div className="admin-site-card">
+            <div className="admin-site-card-title">🔇 Muted Users & Violations</div>
+            <div className="admin-site-card-sub">Shadow-muted users think they're chatting but no one else sees their messages.</div>
+            {chatMuted.length === 0 && chatViolations.length === 0
+              ? <div className="admin-empty">No muted users or violations.</div>
+              : null
+            }
+            {[...new Set([...chatMuted, ...chatViolations.map(v => v.username)])].map(uname => {
+              const isMuted   = chatMuted.includes(uname);
+              const violation = chatViolations.find(v => v.username === uname);
+              return (
+                <div key={uname} className="admin-chat-ban-row">
+                  <div>
+                    <span className="admin-chat-ban-user">@{uname}</span>
+                    {isMuted && <span className="admin-chat-muted-badge">🔇 muted</span>}
+                    {violation && <span className="admin-chat-viols"> {violation.count} violation{violation.count !== 1 ? 's' : ''}</span>}
+                  </div>
+                  <div style={{ display:'flex', gap:6 }}>
+                    {isMuted && (
+                      <button className="admin-btn admin-btn--ghost admin-btn--sm" onClick={async () => {
+                        await authFetch(`/api/admin/chat/mute/${encodeURIComponent(uname)}`, token, { method: 'DELETE' });
+                        loadChat(); setChatStatus(`Unmuted @${uname}`);
+                      }}>Unmute</button>
+                    )}
+                    {!isMuted && (
+                      <button className="admin-btn admin-btn--warn admin-btn--sm" onClick={async () => {
+                        await authFetch(`/api/admin/chat/mute/${encodeURIComponent(uname)}`, token, { method: 'POST' });
+                        loadChat(); setChatStatus(`Muted @${uname}`);
+                      }}>Mute</button>
+                    )}
+                    <button className="admin-btn admin-btn--ghost admin-btn--sm" onClick={async () => {
+                      await authFetch(`/api/admin/chat/violations/${encodeURIComponent(uname)}`, token, { method: 'DELETE' });
+                      loadChat(); setChatStatus(`Reset violations for @${uname}`);
+                    }}>Reset</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ── Message Feed ──────────────────────────────────────────────── */}
+          <div className="admin-site-card">
+            <div className="admin-site-card-header">
+              <div className="admin-site-card-title">📜 Message Log (newest first)</div>
+              <button className="admin-btn admin-btn--danger admin-btn--sm" onClick={async () => {
+                if (!window.confirm('Clear all chat messages? Cannot be undone.')) return;
+                await authFetch('/api/admin/chat/messages', token, { method: 'DELETE' });
+                loadChat(); setChatStatus('Chat log cleared.');
+              }}>🗑 Clear</button>
+            </div>
+            <div className="admin-chat-feed">
+              {chatMessages.length === 0 && <div className="admin-empty">No messages.</div>}
+              {chatMessages.map((m, i) => (
+                <div key={m.id || i} className={`admin-chat-msg${m.filtered ? ' admin-chat-msg--filtered' : ''}${m.shadowMuted ? ' admin-chat-msg--shadow' : ''}`}>
+                  <span className="admin-chat-msg-user">@{m.username}</span>
+                  <span className="admin-chat-msg-text">{m.text}</span>
+                  <span className="admin-chat-msg-time">{new Date(m.timestamp).toLocaleTimeString()}</span>
+                  {m.filtered   && <span className="admin-chat-msg-tag admin-chat-msg-tag--blocked">BLOCKED: {m.filterReason}</span>}
+                  {m.shadowMuted && <span className="admin-chat-msg-tag admin-chat-msg-tag--shadow">SHADOW</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
       )}
     </div>

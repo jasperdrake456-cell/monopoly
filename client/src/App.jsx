@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { SiteConfigProvider } from './contexts/SiteConfigContext';
 import GameGuard from './components/GameGuard';
+import ChatPanel from './components/ChatPanel';
 import PasswordGate from './components/PasswordGate';
 import HomePage from './pages/HomePage';
 import AuthPage from './pages/AuthPage';
@@ -61,6 +62,7 @@ export default function App() {
   return (
     <AuthProvider>
       <SiteConfigProvider>
+        <ChatPanel />
         <PasswordGate>
           <Routes>
             <Route path="/" element={<HomePage />} />

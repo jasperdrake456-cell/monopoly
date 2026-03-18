@@ -458,4 +458,5 @@ module.exports = {
   register, login, getMe, syncBalance, claimDaily, transfer, logout, userExists,
   deleteUser, adminGiveMoney, adminSetBalance, listUsers, isAdminToken, getTopBalances,
   recordIP, kickUser, addBonus, pruneZeroBalanceAccounts,
+  validateToken,
 };
