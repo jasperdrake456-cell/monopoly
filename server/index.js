@@ -11,6 +11,7 @@ const us = require('./userStore');
 const rp = require('./reportStore');
 const bn = require('./banStore');
 const wl = require('./winLog');
+const sc = require('./siteConfig');
 
 const app = express();
 const server = http.createServer(app);
@@ -413,6 +414,42 @@ app.get('/api/admin/bans/lookup-ip', requireAdmin, (req, res) => {
   res.json({ ok: true, yourIP: getClientIP(req) });
 });
 
+
+// ── Site config (game closures + testing mode) ────────────────────────────────
+
+// Public: client fetches this to know what's closed / testing mode state
+app.get('/api/site/config', (req, res) => {
+  res.json(sc.getConfig());
+});
+
+// Toggle a game open/closed
+app.post('/api/admin/site/game-close', requireAdmin, (req, res) => {
+  const { slug, closed } = req.body || {};
+  if (!slug) return res.status(400).json({ ok: false, error: 'Missing slug' });
+  sc.setGameClosed(slug, !!closed);
+  res.json({ ok: true, config: sc.getConfig() });
+});
+
+// Enable/disable testing mode
+app.post('/api/admin/site/testing-mode', requireAdmin, (req, res) => {
+  const { enabled } = req.body || {};
+  sc.setTestingMode(!!enabled);
+  res.json({ ok: true, config: sc.getConfig() });
+});
+
+// Add an approved tester
+app.post('/api/admin/site/testers', requireAdmin, (req, res) => {
+  const { username } = req.body || {};
+  if (!username) return res.status(400).json({ ok: false, error: 'Missing username' });
+  sc.addTester(username.trim().toLowerCase());
+  res.json({ ok: true, config: sc.getConfig() });
+});
+
+// Remove an approved tester
+app.delete('/api/admin/site/testers/:username', requireAdmin, (req, res) => {
+  sc.removeTester(req.params.username);
+  res.json({ ok: true, config: sc.getConfig() });
+});
 
 // ── Static client ─────────────────────────────────────────────────────────────
 

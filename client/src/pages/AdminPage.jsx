@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useSiteConfig } from '../contexts/SiteConfigContext';
+import { GAME_LIST } from '../utils/gameList';
 import './AdminPage.css';
 
 // ── Username moderation helpers ───────────────────────────────────────────────
@@ -41,7 +43,7 @@ export default function AdminPage() {
   const { user, token, isLoggedIn } = useAuth();
   const navigate = useNavigate();
 
-  const [tab, setTab]           = useState('reports'); // 'reports' | 'users' | 'money' | 'bans' | 'wins'
+  const [tab, setTab]           = useState('reports'); // 'reports'|'users'|'money'|'bans'|'wins'|'site'
   const [reports, setReports]   = useState([]);
   const [users, setUsers]       = useState([]);
   const [bigWins, setBigWins]   = useState([]);
@@ -82,6 +84,11 @@ export default function AdminPage() {
   const [banUserDur, setBanUserDur] = useState('permanent');
   const [banUserGames, setBanUserGames] = useState('all');
   const [activity, setActivity]         = useState({}); // username → gameSlug
+
+  // ── Site config (game closures + testing mode) ────────────────────────────
+  const { closedGames, testingMode, approvedTesters, refreshConfig } = useSiteConfig();
+  const [testerInput, setTesterInput]   = useState('');
+  const [siteStatus, setSiteStatus]     = useState('');
 
   const ALL_GAMES = [
     'crash','plinko','dice','roulette','blackjack','baccarat',
@@ -143,7 +150,8 @@ export default function AdminPage() {
     if (tab === 'users')   { loadUsers(); loadActivity(); }
     if (tab === 'bans')    { loadIPBans(); loadUserBans(); }
     if (tab === 'wins')    { loadBigWins(); }
-  }, [tab, loadReports, loadUsers, loadIPBans, loadUserBans, loadActivity, loadBigWins]);
+    if (tab === 'site')    { refreshConfig(); }
+  }, [tab, loadReports, loadUsers, loadIPBans, loadUserBans, loadActivity, loadBigWins, refreshConfig]);
 
   // Poll activity every 10 seconds while on users tab
   useEffect(() => {
@@ -297,6 +305,7 @@ export default function AdminPage() {
               if (tab === 'users')   { loadUsers(); loadActivity(); }
               if (tab === 'bans')    { loadIPBans(); loadUserBans(); }
               if (tab === 'wins')    { loadBigWins(); }
+              if (tab === 'site')    { refreshConfig(); setSiteStatus('↻ Refreshed'); }
               setStatus('↻ Refreshed');
             }}
           >↻ Reload</button>
@@ -305,7 +314,7 @@ export default function AdminPage() {
       </div>
 
       <div className="admin-tabs">
-        {[['reports','📋 Reports'],['users','👥 Users'],['money','💰 Give Money'],['bans','🚫 Bans'],['wins','🏆 Big Wins']].map(([id, label]) => (
+        {[['reports','📋 Reports'],['users','👥 Users'],['money','💰 Give Money'],['bans','🚫 Bans'],['wins','🏆 Big Wins'],['site','⚙️ Site Control']].map(([id, label]) => (
           <button key={id} className={`admin-tab${tab === id ? ' active' : ''}`} onClick={() => setTab(id)}>
             {label}
           </button>
@@ -669,6 +678,136 @@ export default function AdminPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ── Site Control ── */}
+      {tab === 'site' && (
+        <div className="admin-section">
+          <div className="admin-section-title">⚙️ Site Control</div>
+          {siteStatus && <div className="admin-status-msg">{siteStatus}</div>}
+
+          {/* ── Testing Mode ─────────────────────────────────────────────── */}
+          <div className="admin-site-card">
+            <div className="admin-site-card-header">
+              <div>
+                <div className="admin-site-card-title">🔬 Testing Mode</div>
+                <div className="admin-site-card-sub">
+                  {testingMode
+                    ? 'ACTIVE — only approved testers can access any game.'
+                    : 'Off — all logged-in users can play normally.'}
+                </div>
+              </div>
+              <button
+                className={`admin-toggle-btn${testingMode ? ' admin-toggle-btn--on' : ''}`}
+                onClick={async () => {
+                  const res = await authFetch('/api/admin/site/testing-mode', token, {
+                    method: 'POST',
+                    body: JSON.stringify({ enabled: !testingMode }),
+                  });
+                  if (res.ok) { refreshConfig(); setSiteStatus(testingMode ? 'Testing mode disabled.' : 'Testing mode enabled.'); }
+                }}
+              >
+                {testingMode ? 'ON' : 'OFF'}
+              </button>
+            </div>
+
+            {/* Approved testers list */}
+            <div className="admin-testers-section">
+              <div className="admin-testers-label">Approved Testers ({approvedTesters.length})</div>
+              {approvedTesters.length === 0 && (
+                <div className="admin-empty" style={{ fontSize: '0.82rem', padding: '0.5rem 0' }}>
+                  No testers added yet. Add usernames below.
+                </div>
+              )}
+              <div className="admin-testers-list">
+                {approvedTesters.map(u => (
+                  <div key={u} className="admin-tester-chip">
+                    <span>{u}</span>
+                    <button
+                      className="admin-tester-remove"
+                      title="Remove tester"
+                      onClick={async () => {
+                        const res = await authFetch(`/api/admin/site/testers/${encodeURIComponent(u)}`, token, { method: 'DELETE' });
+                        if (res.ok) { refreshConfig(); setSiteStatus(`Removed ${u} from testers.`); }
+                      }}
+                    >✕</button>
+                  </div>
+                ))}
+              </div>
+              <div className="admin-testers-add">
+                <input
+                  className="admin-input"
+                  placeholder="Username to authorise"
+                  value={testerInput}
+                  onChange={e => setTesterInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && testerInput.trim()) {
+                      authFetch('/api/admin/site/testers', token, {
+                        method: 'POST',
+                        body: JSON.stringify({ username: testerInput.trim() }),
+                      }).then(res => {
+                        if (res.ok) { refreshConfig(); setSiteStatus(`Added ${testerInput.trim()} as tester.`); setTesterInput(''); }
+                      });
+                    }
+                  }}
+                />
+                <button
+                  className="admin-btn admin-btn--primary admin-btn--sm"
+                  disabled={!testerInput.trim()}
+                  onClick={async () => {
+                    const u = testerInput.trim();
+                    if (!u) return;
+                    const res = await authFetch('/api/admin/site/testers', token, {
+                      method: 'POST',
+                      body: JSON.stringify({ username: u }),
+                    });
+                    if (res.ok) { refreshConfig(); setSiteStatus(`Added ${u} as tester.`); setTesterInput(''); }
+                  }}
+                >+ Add</button>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Game Toggles ─────────────────────────────────────────────── */}
+          <div className="admin-site-card">
+            <div className="admin-site-card-title">🔧 Game Availability</div>
+            <div className="admin-site-card-sub">
+              Close individual games for maintenance. Admins can still access closed games.
+            </div>
+            {['casino', 'arcade', 'multiplayer'].map(cat => {
+              const games = GAME_LIST.filter(g => g.category === cat);
+              return (
+                <div key={cat} className="admin-game-group">
+                  <div className="admin-game-group-label">
+                    {{ casino: '🎰 Casino', arcade: '🕹️ Arcade', multiplayer: '👥 Multiplayer' }[cat]}
+                  </div>
+                  <div className="admin-game-grid">
+                    {games.map(g => {
+                      const closed = closedGames.includes(g.slug);
+                      return (
+                        <div key={g.slug} className={`admin-game-tile${closed ? ' admin-game-tile--closed' : ''}`}>
+                          <span className="admin-game-tile-name">{g.name}</span>
+                          <button
+                            className={`admin-toggle-btn admin-toggle-btn--sm${closed ? ' admin-toggle-btn--off' : ' admin-toggle-btn--open'}`}
+                            onClick={async () => {
+                              const res = await authFetch('/api/admin/site/game-close', token, {
+                                method: 'POST',
+                                body: JSON.stringify({ slug: g.slug, closed: !closed }),
+                              });
+                              if (res.ok) { refreshConfig(); setSiteStatus(`${g.name} ${closed ? 'opened' : 'closed'}.`); }
+                            }}
+                          >
+                            {closed ? 'CLOSED' : 'OPEN'}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

@@ -1,6 +1,8 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { SiteConfigProvider } from './contexts/SiteConfigContext';
+import GameGuard from './components/GameGuard';
 import PasswordGate from './components/PasswordGate';
 import HomePage from './pages/HomePage';
 import AuthPage from './pages/AuthPage';
@@ -46,55 +48,74 @@ import DragonTigerPage from './pages/DragonTigerPage';
 import RequireAuth from './components/RequireAuth';
 import './App.css';
 
+// Convenience wrapper: RequireAuth + GameGuard for a given slug
+function GR({ slug, children }) {
+  return (
+    <RequireAuth>
+      <GameGuard slug={slug}>{children}</GameGuard>
+    </RequireAuth>
+  );
+}
+
 export default function App() {
   return (
     <AuthProvider>
-      <PasswordGate>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/monopoly"      element={<RequireAuth><MonopolyPage /></RequireAuth>} />
-        <Route path="/2048"          element={<RequireAuth><Game2048Page /></RequireAuth>} />
-        <Route path="/snake"         element={<RequireAuth><SnakePage /></RequireAuth>} />
-        <Route path="/minesweeper"   element={<RequireAuth><MinesweeperPage /></RequireAuth>} />
-        <Route path="/tetris"        element={<RequireAuth><TetrisPage /></RequireAuth>} />
-        <Route path="/chess"         element={<RequireAuth><ChessPage /></RequireAuth>} />
-        <Route path="/connect4"      element={<RequireAuth><Connect4Page /></RequireAuth>} />
-        <Route path="/checkers"      element={<RequireAuth><CheckersPage /></RequireAuth>} />
-        <Route path="/battleship"    element={<RequireAuth><BattleshipPage /></RequireAuth>} />
-        <Route path="/wordle"        element={<RequireAuth><WordlePage /></RequireAuth>} />
-        <Route path="/sudoku"        element={<RequireAuth><SudokuPage /></RequireAuth>} />
-        <Route path="/space-invaders" element={<RequireAuth><SpaceInvadersPage /></RequireAuth>} />
-        <Route path="/trivia"        element={<RequireAuth><TriviaPage /></RequireAuth>} />
-        <Route path="/flappy-bird"   element={<RequireAuth><FlappyBirdPage /></RequireAuth>} />
-        <Route path="/memory-match"  element={<RequireAuth><MemoryMatchPage /></RequireAuth>} />
-        <Route path="/pong"          element={<RequireAuth><PongPage /></RequireAuth>} />
-        <Route path="/tic-tac-toe"   element={<RequireAuth><TicTacToePage /></RequireAuth>} />
-        <Route path="/typing-speed"  element={<RequireAuth><TypingSpeedPage /></RequireAuth>} />
-        <Route path="/leaderboard"   element={<LeaderboardPage />} />
-        <Route path="/ride-the-bus"  element={<RequireAuth><RideTheBusPage /></RequireAuth>} />
-        <Route path="/blackjack"     element={<RequireAuth><BlackjackPage /></RequireAuth>} />
-        <Route path="/baccarat"      element={<RequireAuth><BaccaratPage /></RequireAuth>} />
-        <Route path="/mines"         element={<RequireAuth><MinesPage /></RequireAuth>} />
-        <Route path="/crash"         element={<RequireAuth><CrashPage /></RequireAuth>} />
-        <Route path="/plinko"        element={<RequireAuth><PlinkoPage /></RequireAuth>} />
-        <Route path="/dice"          element={<RequireAuth><DicePage /></RequireAuth>} />
-        <Route path="/roulette"      element={<RequireAuth><RoulettePage /></RequireAuth>} />
-        <Route path="/texas-holdem"  element={<RequireAuth><TexasHoldemPage /></RequireAuth>} />
-        <Route path="/slots"         element={<RequireAuth><SlotsPage /></RequireAuth>} />
-        <Route path="/casino-leaderboard" element={<CasinoLeaderboardPage />} />
-        <Route path="/chicken-cross"      element={<RequireAuth><ChickenCrossPage /></RequireAuth>} />
-        <Route path="/hilo"               element={<RequireAuth><HiloPage /></RequireAuth>} />
-        <Route path="/tower"              element={<RequireAuth><TowerPage /></RequireAuth>} />
-        <Route path="/wheel"              element={<RequireAuth><WheelPage /></RequireAuth>} />
-        <Route path="/video-poker"        element={<RequireAuth><VideoPokerPage /></RequireAuth>} />
-        <Route path="/keno"               element={<RequireAuth><KenoPage /></RequireAuth>} />
-        <Route path="/dragon-tiger"       element={<RequireAuth><DragonTigerPage /></RequireAuth>} />
-        <Route path="/auth" element={<AuthPage />} />
-        <Route path="/transfer" element={<TransferPage />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-      </PasswordGate>
+      <SiteConfigProvider>
+        <PasswordGate>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+
+            {/* Multiplayer */}
+            <Route path="/monopoly"    element={<GR slug="monopoly"><MonopolyPage /></GR>} />
+            <Route path="/chess"       element={<GR slug="chess"><ChessPage /></GR>} />
+            <Route path="/connect4"    element={<GR slug="connect4"><Connect4Page /></GR>} />
+            <Route path="/checkers"    element={<GR slug="checkers"><CheckersPage /></GR>} />
+            <Route path="/battleship"  element={<GR slug="battleship"><BattleshipPage /></GR>} />
+
+            {/* Arcade */}
+            <Route path="/2048"          element={<GR slug="2048"><Game2048Page /></GR>} />
+            <Route path="/snake"         element={<GR slug="snake"><SnakePage /></GR>} />
+            <Route path="/minesweeper"   element={<GR slug="minesweeper"><MinesweeperPage /></GR>} />
+            <Route path="/tetris"        element={<GR slug="tetris"><TetrisPage /></GR>} />
+            <Route path="/wordle"        element={<GR slug="wordle"><WordlePage /></GR>} />
+            <Route path="/sudoku"        element={<GR slug="sudoku"><SudokuPage /></GR>} />
+            <Route path="/space-invaders" element={<GR slug="space-invaders"><SpaceInvadersPage /></GR>} />
+            <Route path="/trivia"        element={<GR slug="trivia"><TriviaPage /></GR>} />
+            <Route path="/flappy-bird"   element={<GR slug="flappy-bird"><FlappyBirdPage /></GR>} />
+            <Route path="/memory-match"  element={<GR slug="memory-match"><MemoryMatchPage /></GR>} />
+            <Route path="/pong"          element={<GR slug="pong"><PongPage /></GR>} />
+            <Route path="/tic-tac-toe"   element={<GR slug="tic-tac-toe"><TicTacToePage /></GR>} />
+            <Route path="/typing-speed"  element={<GR slug="typing-speed"><TypingSpeedPage /></GR>} />
+
+            {/* Casino */}
+            <Route path="/ride-the-bus"  element={<GR slug="ride-the-bus"><RideTheBusPage /></GR>} />
+            <Route path="/blackjack"     element={<GR slug="blackjack"><BlackjackPage /></GR>} />
+            <Route path="/baccarat"      element={<GR slug="baccarat"><BaccaratPage /></GR>} />
+            <Route path="/mines"         element={<GR slug="mines"><MinesPage /></GR>} />
+            <Route path="/crash"         element={<GR slug="crash"><CrashPage /></GR>} />
+            <Route path="/plinko"        element={<GR slug="plinko"><PlinkoPage /></GR>} />
+            <Route path="/dice"          element={<GR slug="dice"><DicePage /></GR>} />
+            <Route path="/roulette"      element={<GR slug="roulette"><RoulettePage /></GR>} />
+            <Route path="/texas-holdem"  element={<GR slug="texas-holdem"><TexasHoldemPage /></GR>} />
+            <Route path="/slots"         element={<GR slug="slots"><SlotsPage /></GR>} />
+            <Route path="/chicken-cross" element={<GR slug="chicken-cross"><ChickenCrossPage /></GR>} />
+            <Route path="/hilo"          element={<GR slug="hilo"><HiloPage /></GR>} />
+            <Route path="/tower"         element={<GR slug="tower"><TowerPage /></GR>} />
+            <Route path="/wheel"         element={<GR slug="wheel"><WheelPage /></GR>} />
+            <Route path="/video-poker"   element={<GR slug="video-poker"><VideoPokerPage /></GR>} />
+            <Route path="/keno"          element={<GR slug="keno"><KenoPage /></GR>} />
+            <Route path="/dragon-tiger"  element={<GR slug="dragon-tiger"><DragonTigerPage /></GR>} />
+
+            {/* Non-game pages */}
+            <Route path="/leaderboard"        element={<LeaderboardPage />} />
+            <Route path="/casino-leaderboard" element={<CasinoLeaderboardPage />} />
+            <Route path="/auth"     element={<AuthPage />} />
+            <Route path="/transfer" element={<TransferPage />} />
+            <Route path="/admin"    element={<AdminPage />} />
+            <Route path="*"         element={<Navigate to="/" replace />} />
+          </Routes>
+        </PasswordGate>
+      </SiteConfigProvider>
     </AuthProvider>
   );
 }
