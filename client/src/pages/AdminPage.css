@@ -646,3 +646,32 @@
   text-decoration: line-through;
   text-decoration-color: rgba(239,68,68,0.5);
 }
+
+/* Testing mode tile + button states */
+.admin-game-tile--testing {
+  background: rgba(192,132,252,0.07);
+  border-color: rgba(192,132,252,0.3);
+}
+
+.admin-game-tile--testing .admin-game-tile-name {
+  color: #c084fc;
+  text-decoration: none;
+}
+
+.admin-toggle-btn--testing {
+  background: rgba(192,132,252,0.18);
+  border-color: #a855f7;
+  color: #c084fc;
+}
+
+.admin-toggle-btn--live {
+  background: rgba(148,163,184,0.08);
+  border-color: rgba(148,163,184,0.25);
+  color: #64748b;
+}
+
+.admin-game-tile-btns {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}

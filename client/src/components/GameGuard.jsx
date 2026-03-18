@@ -7,12 +7,12 @@ import './GameGuard.css';
 
 /**
  * Wraps a game page. Shows a maintenance or testing-mode screen when:
- *   - the game's slug is in closedGames  (and user is not admin)
- *   - testingMode is on and user is not in approvedTesters (and not admin)
+ *   - the game's slug is in closedGames   (and user is not admin)
+ *   - the game's slug is in testingGames  (and user is not admin / approved tester)
  * Admins always bypass both gates.
  */
 export default function GameGuard({ slug, children }) {
-  const { closedGames, testingMode, approvedTesters } = useSiteConfig();
+  const { closedGames, testingGames, approvedTesters } = useSiteConfig();
   const { user, isAdmin } = useAuth();
 
   // Admins always pass through
@@ -20,18 +20,18 @@ export default function GameGuard({ slug, children }) {
 
   const gameName = GAME_BY_SLUG[slug]?.name ?? slug;
 
-  // Testing mode gate
-  if (testingMode) {
+  // Per-game testing mode gate
+  if (testingGames.includes(slug)) {
     const username = user?.username?.toLowerCase() ?? '';
     const allowed  = approvedTesters.map(t => t.toLowerCase()).includes(username);
     if (!allowed) {
       return (
         <div className="gameguard-screen gameguard-testing">
           <div className="gameguard-icon">🔬</div>
-          <h1 className="gameguard-title">Testing in Progress</h1>
+          <h1 className="gameguard-title">{gameName} — Testing in Progress</h1>
           <p className="gameguard-sub">
-            The platform is currently undergoing testing and is only accessible
-            to authorised testers. Check back soon!
+            This game is currently in testing and is only accessible to
+            authorised testers. Check back soon!
           </p>
           <Link to="/" className="gameguard-btn">← Back to Hub</Link>
         </div>

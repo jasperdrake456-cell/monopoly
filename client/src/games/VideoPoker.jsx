@@ -70,7 +70,7 @@ const PAY_TABLE = [
   { hand: 'Straight',         mult: 4   },
   { hand: 'Three of a Kind',  mult: 3   },
   { hand: 'Two Pair',         mult: 2   },
-  { hand: 'Jacks or Better',  mult: 1   },
+  { hand: 'Jacks or Better',  mult: 2   },
 ];
 
 function getMult(handName) {

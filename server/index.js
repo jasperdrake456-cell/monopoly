@@ -430,10 +430,11 @@ app.post('/api/admin/site/game-close', requireAdmin, (req, res) => {
   res.json({ ok: true, config: sc.getConfig() });
 });
 
-// Enable/disable testing mode
-app.post('/api/admin/site/testing-mode', requireAdmin, (req, res) => {
-  const { enabled } = req.body || {};
-  sc.setTestingMode(!!enabled);
+// Toggle a specific game into/out of testing mode
+app.post('/api/admin/site/game-test', requireAdmin, (req, res) => {
+  const { slug, testing } = req.body || {};
+  if (!slug) return res.status(400).json({ ok: false, error: 'Missing slug' });
+  sc.setGameTesting(slug, !!testing);
   res.json({ ok: true, config: sc.getConfig() });
 });
 

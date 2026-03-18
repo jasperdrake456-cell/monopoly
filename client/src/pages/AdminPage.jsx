@@ -86,7 +86,7 @@ export default function AdminPage() {
   const [activity, setActivity]         = useState({}); // username → gameSlug
 
   // ── Site config (game closures + testing mode) ────────────────────────────
-  const { closedGames, testingMode, approvedTesters, refreshConfig } = useSiteConfig();
+  const { closedGames, testingGames, approvedTesters, refreshConfig } = useSiteConfig();
   const [testerInput, setTesterInput]   = useState('');
   const [siteStatus, setSiteStatus]     = useState('');
 
@@ -687,37 +687,17 @@ export default function AdminPage() {
           <div className="admin-section-title">⚙️ Site Control</div>
           {siteStatus && <div className="admin-status-msg">{siteStatus}</div>}
 
-          {/* ── Testing Mode ─────────────────────────────────────────────── */}
+          {/* ── Approved Testers ─────────────────────────────────────────── */}
           <div className="admin-site-card">
-            <div className="admin-site-card-header">
-              <div>
-                <div className="admin-site-card-title">🔬 Testing Mode</div>
-                <div className="admin-site-card-sub">
-                  {testingMode
-                    ? 'ACTIVE — only approved testers can access any game.'
-                    : 'Off — all logged-in users can play normally.'}
-                </div>
-              </div>
-              <button
-                className={`admin-toggle-btn${testingMode ? ' admin-toggle-btn--on' : ''}`}
-                onClick={async () => {
-                  const res = await authFetch('/api/admin/site/testing-mode', token, {
-                    method: 'POST',
-                    body: JSON.stringify({ enabled: !testingMode }),
-                  });
-                  if (res.ok) { refreshConfig(); setSiteStatus(testingMode ? 'Testing mode disabled.' : 'Testing mode enabled.'); }
-                }}
-              >
-                {testingMode ? 'ON' : 'OFF'}
-              </button>
+            <div className="admin-site-card-title">🔬 Approved Testers</div>
+            <div className="admin-site-card-sub">
+              Users in this list can access any game marked as Testing below.
+              You (jasper) always have access regardless.
             </div>
-
-            {/* Approved testers list */}
             <div className="admin-testers-section">
-              <div className="admin-testers-label">Approved Testers ({approvedTesters.length})</div>
               {approvedTesters.length === 0 && (
-                <div className="admin-empty" style={{ fontSize: '0.82rem', padding: '0.5rem 0' }}>
-                  No testers added yet. Add usernames below.
+                <div className="admin-empty" style={{ fontSize: '0.82rem', padding: '0.4rem 0' }}>
+                  No testers added yet.
                 </div>
               )}
               <div className="admin-testers-list">
@@ -769,11 +749,13 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* ── Game Toggles ─────────────────────────────────────────────── */}
+          {/* ── Game Grid ────────────────────────────────────────────────── */}
           <div className="admin-site-card">
-            <div className="admin-site-card-title">🔧 Game Availability</div>
+            <div className="admin-site-card-title">🎮 Game Status</div>
             <div className="admin-site-card-sub">
-              Close individual games for maintenance. Admins can still access closed games.
+              <span style={{color:'#86efac'}}>● OPEN</span> — everyone can play &nbsp;·&nbsp;
+              <span style={{color:'#f87171'}}>● CLOSED</span> — maintenance, no access &nbsp;·&nbsp;
+              <span style={{color:'#c084fc'}}>● TESTING</span> — approved testers only
             </div>
             {['casino', 'arcade', 'multiplayer'].map(cat => {
               const games = GAME_LIST.filter(g => g.category === cat);
@@ -784,22 +766,38 @@ export default function AdminPage() {
                   </div>
                   <div className="admin-game-grid">
                     {games.map(g => {
-                      const closed = closedGames.includes(g.slug);
+                      const closed  = closedGames.includes(g.slug);
+                      const testing = testingGames.includes(g.slug);
                       return (
-                        <div key={g.slug} className={`admin-game-tile${closed ? ' admin-game-tile--closed' : ''}`}>
+                        <div
+                          key={g.slug}
+                          className={`admin-game-tile${closed ? ' admin-game-tile--closed' : testing ? ' admin-game-tile--testing' : ''}`}
+                        >
                           <span className="admin-game-tile-name">{g.name}</span>
-                          <button
-                            className={`admin-toggle-btn admin-toggle-btn--sm${closed ? ' admin-toggle-btn--off' : ' admin-toggle-btn--open'}`}
-                            onClick={async () => {
-                              const res = await authFetch('/api/admin/site/game-close', token, {
-                                method: 'POST',
-                                body: JSON.stringify({ slug: g.slug, closed: !closed }),
-                              });
-                              if (res.ok) { refreshConfig(); setSiteStatus(`${g.name} ${closed ? 'opened' : 'closed'}.`); }
-                            }}
-                          >
-                            {closed ? 'CLOSED' : 'OPEN'}
-                          </button>
+                          <div className="admin-game-tile-btns">
+                            <button
+                              className={`admin-toggle-btn admin-toggle-btn--sm${closed ? ' admin-toggle-btn--off' : ' admin-toggle-btn--open'}`}
+                              title={closed ? 'Click to reopen' : 'Click to close for maintenance'}
+                              onClick={async () => {
+                                const res = await authFetch('/api/admin/site/game-close', token, {
+                                  method: 'POST',
+                                  body: JSON.stringify({ slug: g.slug, closed: !closed }),
+                                });
+                                if (res.ok) { refreshConfig(); setSiteStatus(`${g.name} ${closed ? 'opened' : 'closed'}.`); }
+                              }}
+                            >{closed ? 'CLOSED' : 'OPEN'}</button>
+                            <button
+                              className={`admin-toggle-btn admin-toggle-btn--sm${testing ? ' admin-toggle-btn--testing' : ' admin-toggle-btn--live'}`}
+                              title={testing ? 'Click to make live' : 'Click to set to testing mode'}
+                              onClick={async () => {
+                                const res = await authFetch('/api/admin/site/game-test', token, {
+                                  method: 'POST',
+                                  body: JSON.stringify({ slug: g.slug, testing: !testing }),
+                                });
+                                if (res.ok) { refreshConfig(); setSiteStatus(`${g.name} set to ${testing ? 'LIVE' : 'TESTING'}.`); }
+                              }}
+                            >{testing ? '🔬 TEST' : 'LIVE'}</button>
+                          </div>
                         </div>
                       );
                     })}
