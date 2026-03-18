@@ -3,15 +3,16 @@ import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin
 import './ChickenCross.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
+import { useGameBoost } from '../hooks/useGameBoost';
 
 const ROWS = 8;
 const COLS = 5;
 const HOUSE_EDGE = 0.99;
 
 const DIFFICULTIES = {
-  easy:   { cars: 1, rowMult: 1.05, label: 'Easy',   emoji: '😌', color: '#22c55e' },
-  medium: { cars: 2, rowMult: 1.10, label: 'Medium', emoji: '😰', color: '#eab308' },
-  hard:   { cars: 3, rowMult: 1.20, label: 'Hard',   emoji: '💀', color: '#ef4444' },
+  easy:   { cars: 1, rowMult: 1.10, label: 'Easy',   emoji: '😌', color: '#22c55e' },
+  medium: { cars: 2, rowMult: 1.16, label: 'Medium', emoji: '😰', color: '#eab308' },
+  hard:   { cars: 3, rowMult: 1.26, label: 'Hard',   emoji: '💀', color: '#ef4444' },
 };
 
 function generateGrid(difficulty) {
@@ -35,6 +36,7 @@ function makeEmptyCells() {
 export default function ChickenCross() {
   const { banned, reason, expiresAt, loading } = useBanCheck('chicken-cross');
   useGameActivity('chicken-cross');
+  const boost = useGameBoost('chicken-cross');
   const [balance, setBalance]       = useState(getBalance);
   const [bet, setBet]               = useState(10);
   const [difficulty, setDifficulty] = useState('medium');
@@ -118,7 +120,7 @@ export default function ChickenCross() {
 
       if (row + 1 >= ROWS) {
         // Crossed all rows — auto win
-        const payout = Math.floor(betRef.current * newMult);
+        const payout = Math.floor(betRef.current * newMult * boost);
         addBalance(payout);
         syncBalance();
         reportBigWin('chicken-cross', betRef.current, payout, newMult, `${difficulty} · all ${ROWS} rows crossed · ${newMult.toFixed(2)}×`);
@@ -132,7 +134,7 @@ export default function ChickenCross() {
 
   function cashOut() {
     if (phase !== 'playing' || currentRow === 0) return;
-    const payout = Math.floor(betRef.current * multRef.current);
+    const payout = Math.floor(betRef.current * multRef.current * boost);
     addBalance(payout);
     syncBalance();
     reportBigWin('chicken-cross', betRef.current, payout, multRef.current, `${difficulty} · ${currentRow} row(s) crossed · ${multRef.current.toFixed(2)}×`);
@@ -330,7 +332,7 @@ export default function ChickenCross() {
           {/* Result banners */}
           {phase === 'won' && (
             <div className="cc-banner cc-banner--win">
-              🎉 You won ${Math.floor(betRef.current * multiplier).toLocaleString()}!
+              🎉 You won ${Math.floor(betRef.current * multiplier * boost).toLocaleString()}!
             </div>
           )}
           {phase === 'lost' && (

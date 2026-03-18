@@ -3,12 +3,14 @@ import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin
 import './Plinko.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
+import { useGameBoost } from '../hooks/useGameBoost';
 
 // Multiplier tables — 8 rows, 9 buckets (indexed 0–8)
+// ~15% boost applied across all multipliers
 const MULTIPLIERS = {
-  low:    [5.0, 2.0, 1.0, 0.5, 0.3, 0.5, 1.0, 2.0, 5.0],
-  medium: [12,  3.0, 1.2, 0.4, 0.2, 0.4, 1.2, 3.0, 12 ],
-  high:   [25,  5.0, 1.0, 0.1, 0.1, 0.1, 1.0, 5.0, 25 ],
+  low:    [5.8, 2.3, 1.2, 0.6, 0.3, 0.6, 1.2, 2.3, 5.8],
+  medium: [13.8, 3.5, 1.4, 0.5, 0.2, 0.5, 1.4, 3.5, 13.8],
+  high:   [28.8, 5.8, 1.2, 0.1, 0.1, 0.1, 1.2, 5.8, 28.8],
 };
 
 const ROWS = 8;
@@ -38,6 +40,7 @@ const BALL_COUNT_OPTIONS = [1, 3, 5, 10];
 export default function Plinko() {
   const { banned, reason, expiresAt, loading } = useBanCheck('plinko');
   useGameActivity('plinko');
+  const boost = useGameBoost('plinko');
   const [balance, setBalance]     = useState(getBalance);
   const [bet, setBet]             = useState(10);
   const [numBalls, setNumBalls]   = useState(1);
@@ -90,10 +93,10 @@ export default function Plinko() {
       // All 8 peg rows processed — balls have their final columns, land them
       if (currentRow >= ROWS) {
         const buckets = ballData.map(b => b.bucket);
-        const totalPayout = buckets.reduce(
+        const totalPayout = Math.floor(buckets.reduce(
           (sum, bkt) => sum + Math.floor(bet * MULTIPLIERS[risk][bkt]),
           0
-        );
+        ) * boost);
         addBalance(totalPayout);
         syncBalance();
         reportBigWin('plinko', totalBet, totalPayout, parseFloat((totalPayout / totalBet).toFixed(2)), `${numBalls} ball(s) · ${risk} risk · buckets: [${buckets.join(', ')}]`);

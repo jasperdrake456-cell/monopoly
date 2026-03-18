@@ -3,6 +3,7 @@ import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin
 import './Wheel.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
+import { useGameBoost } from '../hooks/useGameBoost';
 
 // Wheel of Fortune — casino style
 // Segments are weighted by risk mode. Player bets on a color zone.
@@ -18,35 +19,38 @@ const RISK_MODES = {
     label: 'Low Risk',
     emoji: '🟢',
     color: '#22c55e',
+    // total weight=85; house edge per segment: Green 7%, Blue 8%, Purple 5%, Gold 13%
     segments: [
       { color: '#22c55e', label: 'Green',  mult: 1.6,   weight: 49 },
       { color: '#3b82f6', label: 'Blue',   mult: 3.2,   weight: 24 },
-      { color: '#a855f7', label: 'Purple', mult: 8.0,   weight: 9  },
-      { color: '#FFD700', label: 'Gold',   mult: 40.0,  weight: 1  },
+      { color: '#a855f7', label: 'Purple', mult: 8.0,   weight: 10 },
+      { color: '#FFD700', label: 'Gold',   mult: 37.0,  weight: 2  },
     ],
   },
   medium: {
     label: 'Medium Risk',
     emoji: '🟡',
     color: '#eab308',
+    // total weight=81; house edge per segment: Green 11%, Blue 9%, Purple 10%, Red 11%, Gold 7%
     segments: [
-      { color: '#22c55e', label: 'Green',  mult: 1.6,   weight: 35 },
-      { color: '#3b82f6', label: 'Blue',   mult: 3.2,   weight: 18 },
-      { color: '#a855f7', label: 'Purple', mult: 8.0,   weight: 8  },
+      { color: '#22c55e', label: 'Green',  mult: 1.6,   weight: 45 },
+      { color: '#3b82f6', label: 'Blue',   mult: 3.2,   weight: 23 },
+      { color: '#a855f7', label: 'Purple', mult: 8.0,   weight: 9  },
       { color: '#ef4444', label: 'Red',    mult: 24.0,  weight: 3  },
-      { color: '#FFD700', label: 'Gold',   mult: 80.0,  weight: 1  },
+      { color: '#FFD700', label: 'Gold',   mult: 75.0,  weight: 1  },
     ],
   },
   high: {
     label: 'High Risk',
     emoji: '🔴',
     color: '#ef4444',
+    // total weight=50; house edge per segment: Green 16%, Blue 16%, Purple 10%, Red 10%, Gold 10%
     segments: [
-      { color: '#22c55e', label: 'Green',  mult: 1.5,   weight: 26 },
-      { color: '#3b82f6', label: 'Blue',   mult: 3.5,   weight: 11 },
-      { color: '#a855f7', label: 'Purple', mult: 7.0,   weight: 5  },
-      { color: '#ef4444', label: 'Red',    mult: 12.0,  weight: 2  },
-      { color: '#FFD700', label: 'Gold',   mult: 50.0,  weight: 1  },
+      { color: '#22c55e', label: 'Green',  mult: 1.5,   weight: 28 },
+      { color: '#3b82f6', label: 'Blue',   mult: 3.5,   weight: 12 },
+      { color: '#a855f7', label: 'Purple', mult: 7.5,   weight: 6  },
+      { color: '#ef4444', label: 'Red',    mult: 15.0,  weight: 3  },
+      { color: '#FFD700', label: 'Gold',   mult: 45.0,  weight: 1  },
     ],
   },
 };
@@ -78,6 +82,7 @@ const MAX_HISTORY = 8;
 export default function Wheel() {
   const { banned, reason, expiresAt, loading } = useBanCheck('wheel');
   useGameActivity('wheel');
+  const boost = useGameBoost('wheel');
   const [balance, setBalance]       = useState(getBalance);
   const [bet, setBet]               = useState(10);
   const [risk, setRisk]             = useState('medium');
@@ -139,7 +144,7 @@ export default function Wheel() {
       ) || wheelSegs[wheelSegs.length - 1];
 
       const won = landedSeg.color === selectedColor;
-      const payout = won ? Math.floor(bet * landedSeg.mult) : 0;
+      const payout = won ? Math.floor(bet * landedSeg.mult * boost) : 0;
       if (won) {
         addBalance(payout);
         reportBigWin('wheel', bet, payout, landedSeg.mult, `${risk} risk · bet ${selectedColor} · landed ${landedSeg.label} · ${landedSeg.mult}×`);

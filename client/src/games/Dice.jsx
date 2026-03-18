@@ -3,12 +3,13 @@ import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin
 import './Dice.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
+import { useGameBoost } from '../hooks/useGameBoost';
 
-// 8% house edge: multiplier = 0.92 / winChance
+// 3% house edge: multiplier = 0.97 / winChance
 function calcMultiplier(target, direction) {
   const winChance = direction === 'over' ? (100 - target) / 100 : target / 100;
   if (winChance <= 0 || winChance >= 1) return 0;
-  return parseFloat((0.92 / winChance).toFixed(4));
+  return parseFloat((0.97 / winChance).toFixed(4));
 }
 
 function calcWinChance(target, direction) {
@@ -20,6 +21,7 @@ function calcWinChance(target, direction) {
 export default function Dice() {
   const { banned, reason, expiresAt, loading } = useBanCheck('dice');
   useGameActivity('dice');
+  const boost = useGameBoost('dice');
   const [balance, setBalance]     = useState(getBalance);
   const [bet, setBet]             = useState(10);
   const [target, setTarget]       = useState(50);
@@ -59,7 +61,7 @@ export default function Dice() {
       const rolled   = parseFloat((Math.random() * 100).toFixed(2));
       const win      = direction === 'over' ? rolled > target : rolled < target;
       const mult     = calcMultiplier(target, direction);
-      const payout   = win ? Math.floor(bet * mult) : 0;
+      const payout   = win ? Math.floor(bet * mult * boost) : 0;
 
       if (win) {
         addBalance(payout);
@@ -213,7 +215,7 @@ export default function Dice() {
         </>
       )}
 
-      <div className="dice-hint">Roll 0.00 – 100.00 • 8% house edge</div>
+      <div className="dice-hint">Roll 0.00 – 100.00 • 3% house edge</div>
     </div>
   );
 }

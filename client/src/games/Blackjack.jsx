@@ -3,6 +3,7 @@ import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin
 import './Blackjack.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
+import { useGameBoost } from '../hooks/useGameBoost';
 
 // ── Deck ─────────────────────────────────────────────────────────────────────
 const SUITS    = ['♠', '♥', '♦', '♣'];
@@ -110,6 +111,7 @@ function Hand({ cards, hideSecond, label, total, soft, active, handResult, betAm
 export default function Blackjack() {
   const { banned, reason, expiresAt, loading } = useBanCheck('blackjack');
   useGameActivity('blackjack');
+  const boost = useGameBoost('blackjack');
   const shoeRef = useRef(createShoe());
 
   const [balance, setBalance]       = useState(getBalance);
@@ -191,10 +193,10 @@ export default function Blackjack() {
         setResults([{ msg: '🤝 Push — Both Blackjack!', net: 0 }]);
         setTotalNet(0);
       } else {
-        const profit = Math.floor(bet * 1.2);
+        const profit = Math.floor(bet * 1.5 * boost);
         addBalance(bet + profit);
         syncBalance();
-        setResults([{ msg: '🃏 Blackjack! 6:5 Payout!', net: profit }]);
+        setResults([{ msg: '🃏 Blackjack! 3:2 Payout!', net: profit }]);
         setTotalNet(profit);
       }
       setPhase('result');
@@ -228,8 +230,8 @@ export default function Blackjack() {
 
     if (dealerBJ) {
       // Insurance pays 2:1
-      const insNet = insAmount > 0 ? insAmount * 2 : 0;
-      if (insAmount > 0) { addBalance(insAmount * 3); syncBalance(); } // return stake + profit
+      const insNet = insAmount > 0 ? Math.floor(insAmount * 2 * boost) : 0;
+      if (insAmount > 0) { addBalance(insAmount + insNet); syncBalance(); } // return stake + profit
 
       // For multi-hand: each hand that is BJ pushes, others lose
       if (numHands === 1) {
@@ -270,9 +272,9 @@ export default function Blackjack() {
       if (insAmount > 0) setInsLost(true);
 
       if (numHands === 1 && isBlackjack(hands[0].cards)) {
-        const profit = Math.floor(bet * 1.2);
+        const profit = Math.floor(bet * 1.5 * boost);
         addBalance(bet + profit); syncBalance();
-        setResults([{ msg: `🃏 Blackjack! 6:5 Payout!`, net: profit - insAmount }]);
+        setResults([{ msg: `🃏 Blackjack! 3:2 Payout!`, net: profit - insAmount }]);
         setTotalNet(profit - insAmount);
         setPhase('result');
       } else {
@@ -423,10 +425,10 @@ export default function Blackjack() {
           netTotal += 0;
           return { msg: '🤝 Push — Both Blackjack!', net: 0 };
         } else {
-          const profit = Math.floor(hand.bet * 1.2);
+          const profit = Math.floor(hand.bet * 1.5 * boost);
           addBalance(hand.bet + profit);
           netTotal += profit;
-          return { msg: '🃏 Blackjack! 6:5', net: profit };
+          return { msg: '🃏 Blackjack! 3:2', net: profit };
         }
       }
 
@@ -441,8 +443,9 @@ export default function Blackjack() {
         net = -thisBet;
         msg = '❌ Dealer Blackjack';
       } else if (dBust || pTotal > dTotal) {
-        addBalance(thisBet * 2); // return bet + equal profit (1:1)
-        net = thisBet;
+        const winProfit = Math.floor(thisBet * boost);
+        addBalance(thisBet + winProfit); // return bet + boosted profit (1:1)
+        net = winProfit;
         msg = dBust ? '✅ Dealer Bust' : '✅ Win';
       } else if (pTotal === dTotal) {
         addBalance(thisBet); // return bet
@@ -687,7 +690,7 @@ export default function Blackjack() {
       )}
 
       <div className="bj-hint">
-        Dealer hits soft 17 • BJ pays 6:5 • Double on any 2 cards • Split up to 4 hands • Insurance • Surrender • Play 1–3 hands
+        Dealer hits soft 17 • BJ pays 3:2 • Double on any 2 cards • Split up to 4 hands • Insurance • Surrender • Play 1–3 hands
       </div>
     </div>
   );

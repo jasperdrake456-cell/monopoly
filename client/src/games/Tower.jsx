@@ -3,6 +3,7 @@ import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin
 import './Tower.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
+import { useGameBoost } from '../hooks/useGameBoost';
 
 // Tower: ROWS floors, each floor has COLS tiles.
 // Per difficulty: number of bomb tiles per floor.
@@ -14,7 +15,7 @@ import useGameActivity from '../hooks/useGameActivity';
 const ROWS = 9;  // 9 floors (bottom = floor 0, top = floor 8)
 const COLS = 3;  // 3 tiles per floor
 
-const HOUSE_EDGE = 0.85;
+const HOUSE_EDGE = 0.935;
 
 // DIFF_CONFIG: Easy=1 bomb (66% safe), Medium=2 bombs (33% safe),
 // Hard=2 bombs (33% safe) with 1.1× multiplier boost per floor for higher risk/reward.
@@ -53,6 +54,7 @@ const MAX_HISTORY = 8;
 export default function Tower() {
   const { banned, reason, expiresAt, loading } = useBanCheck('tower');
   useGameActivity('tower');
+  const boost = useGameBoost('tower');
   const [balance, setBalance]       = useState(getBalance);
   const [bet, setBet]               = useState(10);
   const [difficulty, setDifficulty] = useState('medium');
@@ -141,7 +143,7 @@ export default function Tower() {
   }
 
   function doWin(mult, states) {
-    const payout = Math.floor(bet * mult);
+    const payout = Math.floor(bet * mult * boost);
     addBalance(payout);
     syncBalance();
     reportBigWin('tower', bet, payout, mult, `${difficulty} · all ${ROWS} floors cleared · ${mult.toFixed(2)}×`);
@@ -151,7 +153,7 @@ export default function Tower() {
 
   function cashOut() {
     if (phase !== 'playing' || currentFloor === 0) return;
-    const payout = Math.floor(bet * currentMult);
+    const payout = Math.floor(bet * currentMult * boost);
     addBalance(payout);
     syncBalance();
     reportBigWin('tower', bet, payout, currentMult, `${difficulty} · ${currentFloor} floor(s) cleared · ${currentMult.toFixed(2)}×`);
@@ -217,7 +219,7 @@ export default function Tower() {
             onClick={cashOut}
             disabled={currentFloor === 0}
           >
-            💰 Cash Out ${Math.floor(bet * currentMult)}
+            💰 Cash Out ${Math.floor(bet * currentMult * boost)}
           </button>
         </div>
       )}
@@ -266,7 +268,7 @@ export default function Tower() {
       {phase === 'won' && (
         <div className="tower-result tower-result--win">
           <div>🎉 Cashed Out!</div>
-          <div>+${Math.floor(bet * currentMult) - bet} at {currentMult.toFixed(2)}×</div>
+          <div>+${Math.floor(bet * currentMult * boost) - bet} at {currentMult.toFixed(2)}×</div>
           <button className="tower-btn tower-btn--start" onClick={reset}>🔄 Play Again</button>
         </div>
       )}

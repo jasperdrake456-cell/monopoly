@@ -3,6 +3,7 @@ import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin
 import './Roulette.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
+import { useGameBoost } from '../hooks/useGameBoost';
 
 const RED_NUMBERS = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
 const WHEEL_ORDER = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
@@ -43,20 +44,21 @@ const SECTORS = WHEEL_ORDER.map((num, i) => {
 
 // payout = total return multiplier (e.g. 1.8 means bet $100 → get $180 back)
 const OUTSIDE_BETS = [
-  { type: 'red',    label: 'Red',    icon: '🔴', payout: 1.95 },
-  { type: 'black',  label: 'Black',  icon: '⚫', payout: 1.95 },
-  { type: 'odd',    label: 'Odd',    icon: '',   payout: 1.95 },
-  { type: 'even',   label: 'Even',   icon: '',   payout: 1.95 },
-  { type: 'low',    label: '1–18',   icon: '',   payout: 1.95 },
-  { type: 'high',   label: '19–36',  icon: '',   payout: 1.95 },
-  { type: 'dozen1', label: '1st 12', icon: '',   payout: 2.85 },
-  { type: 'dozen2', label: '2nd 12', icon: '',   payout: 2.85 },
-  { type: 'dozen3', label: '3rd 12', icon: '',   payout: 2.85 },
+  { type: 'red',    label: 'Red',    icon: '🔴', payout: 1.97 },
+  { type: 'black',  label: 'Black',  icon: '⚫', payout: 1.97 },
+  { type: 'odd',    label: 'Odd',    icon: '',   payout: 1.97 },
+  { type: 'even',   label: 'Even',   icon: '',   payout: 1.97 },
+  { type: 'low',    label: '1–18',   icon: '',   payout: 1.97 },
+  { type: 'high',   label: '19–36',  icon: '',   payout: 1.97 },
+  { type: 'dozen1', label: '1st 12', icon: '',   payout: 2.92 },
+  { type: 'dozen2', label: '2nd 12', icon: '',   payout: 2.92 },
+  { type: 'dozen3', label: '3rd 12', icon: '',   payout: 2.92 },
 ];
 
 export default function Roulette() {
   const { banned, reason, expiresAt, loading } = useBanCheck('roulette');
   useGameActivity('roulette');
+  const boost = useGameBoost('roulette');
   const [balance, setBalance]     = useState(getBalance);
   const [bet, setBet]             = useState(10);
   const [betType, setBetType]     = useState(null);
@@ -121,7 +123,7 @@ export default function Roulette() {
       let totalReturn = 0;
       if (win) {
         // payout is total return multiplier: 2× for even-money, 3× for dozens, 36× for single
-        totalReturn = bet * betType.payout;
+        totalReturn = Math.floor(bet * betType.payout * boost);
         addBalance(totalReturn);
         net = totalReturn - bet; // profit
         reportBigWin('roulette', bet, totalReturn, betType.payout, `Bet ${betType.label} · landed ${num} ${color} · ${betType.payout}×`);
@@ -252,17 +254,17 @@ export default function Roulette() {
 
             {/* Number grid */}
             <div className="roulette-num-section">
-              <div className="roulette-num-label">Straight Up — 34× return</div>
+              <div className="roulette-num-label">Straight Up — 35× return</div>
               <div className="roulette-num-grid">
                 <button
                   className={`roulette-nb roulette-nb--green ${betType?.type === 'number' && betType.value === 0 ? 'selected' : ''}`}
-                  onClick={() => setBetType({ type: 'number', value: 0, label: '0', payout: 34 })}
+                  onClick={() => setBetType({ type: 'number', value: 0, label: '0', payout: 35 })}
                 >0</button>
                 {Array.from({ length: 36 }, (_, i) => i + 1).map(n => (
                   <button
                     key={n}
                     className={`roulette-nb roulette-nb--${RED_NUMBERS.has(n) ? 'red' : 'black'} ${betType?.type === 'number' && betType.value === n ? 'selected' : ''}`}
-                    onClick={() => setBetType({ type: 'number', value: n, label: String(n), payout: 34 })}
+                    onClick={() => setBetType({ type: 'number', value: n, label: String(n), payout: 35 })}
                   >{n}</button>
                 ))}
               </div>
@@ -304,7 +306,7 @@ export default function Roulette() {
         </div>
       )}
 
-      <div className="roulette-hint">Roulette · 0–36 · High house edge</div>
+      <div className="roulette-hint">Roulette · 0–36 · Even 1.97× · Dozens 2.92× · Straight up 35×</div>
     </div>
   );
 }

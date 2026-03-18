@@ -3,6 +3,7 @@ import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin
 import './Baccarat.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
+import { useGameBoost } from '../hooks/useGameBoost';
 
 // ── Deck ─────────────────────────────────────────────────────────────────────
 const SUITS = ['♠', '♥', '♦', '♣'];
@@ -62,6 +63,7 @@ function BacCard({ card, faceDown }) {
 export default function Baccarat() {
   const { banned, reason, expiresAt, loading } = useBanCheck('baccarat');
   useGameActivity('baccarat');
+  const boost = useGameBoost('baccarat');
   const shoeRef   = useRef(createShoe());
   const [balance, setBalance] = useState(getBalance);
   const [bet, setBet]         = useState(10);
@@ -151,14 +153,14 @@ export default function Baccarat() {
       let net = 0;
       let msg = '';
       if (winner === 'tie' && side === 'tie') {
-        const payout = bet * 6;
+        const payout = Math.floor(bet * 8 * boost);
         addBalance(payout + bet);
         net = payout;
-        msg = `🎉 Tie! You win $${payout} (6:1)!`;
-        reportBigWin('baccarat', bet, payout + bet, 6, `Bet Tie · result Tie · player ${fp} banker ${fb} · 6:1`);
+        msg = `🎉 Tie! You win $${payout} (8:1)!`;
+        reportBigWin('baccarat', bet, payout + bet, 8, `Bet Tie · result Tie · player ${fp} banker ${fb} · 8:1`);
       } else if (winner === side && side !== 'tie') {
-        const mult = side === 'banker' ? 0.88 : 0.95;
-        const payout = Math.floor(bet * mult);
+        const mult = side === 'banker' ? 0.95 : 1.0;
+        const payout = Math.floor(bet * mult * boost);
         addBalance(bet + payout);
         net = payout;
         msg = `✅ ${winner === 'player' ? 'Player' : 'Banker'} wins! +$${payout}`;
@@ -183,9 +185,9 @@ export default function Baccarat() {
   const quickBets = [5, 10, 25, 50, 100, 250].filter(v => v <= balance_);
 
   const PAYOUTS = {
-    player: '0.95:1',
-    banker: '0.88:1',
-    tie:    '6:1',
+    player: '1:1',
+    banker: '0.95:1',
+    tie:    '8:1',
   };
 
   if (loading) return null;

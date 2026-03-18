@@ -1,7 +1,8 @@
 'use strict';
-const fs     = require('fs');
-const path   = require('path');
-const crypto = require('crypto');
+const fs        = require('fs');
+const path      = require('path');
+const crypto    = require('crypto');
+const profanity = require('./profanity');
 
 // ── Storage files ─────────────────────────────────────────────────────────────
 // Use DATA_DIR env var (set to a Railway Volume mount path like /data) so that
@@ -111,6 +112,7 @@ function register(username, password, ip = null) {
   if (clean.length < 3) return { ok: false, error: 'Username must be 3+ characters (letters, numbers, _ -)' };
   if (clean.length > 20) return { ok: false, error: 'Username max 20 characters' };
   if (password.length < 4) return { ok: false, error: 'Password must be 4+ characters' };
+  if (!profanity.isClean(clean)) return { ok: false, error: 'Username contains prohibited words' };
 
   const users = readUsers();
   if (users[clean]) return { ok: false, error: 'Username already taken' };
@@ -185,20 +187,18 @@ function syncBalance(token, balance) {
 
   const newBalance = Math.floor(balance);
 
-  // Auto-delete accounts that hit zero
   if (newBalance <= 0) {
-    delete users[username];
-    writeUsers(users);
-    // Kill all sessions for this user
-    for (const [t, data] of sessions) {
-      if (data.username === username) sessions.delete(t);
+    // Mark when they first hit zero (don't overwrite if already set)
+    if (!users[username].brokeAt) {
+      users[username].brokeAt = Date.now();
     }
-    writeSessionsToDisk();
-    console.log(`[userStore] Auto-deleted "${username}" — balance reached zero`);
-    return { ok: false, deleted: true, error: 'Account deleted — balance reached zero' };
+    users[username].casinoBalance = 0;
+  } else {
+    // Back in the game — clear the broke timer
+    delete users[username].brokeAt;
+    users[username].casinoBalance = newBalance;
   }
 
-  users[username].casinoBalance = newBalance;
   writeUsers(users);
   return { ok: true, balance: users[username].casinoBalance };
 }
@@ -430,24 +430,29 @@ function kickUser(adminToken, targetUsername) {
   return { ok: true, sessionsKilled: killed };
 }
 
+const BROKE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 /**
- * Scan all accounts and delete any with balance <= 0 (excluding admin).
+ * Delete accounts that have been at $0 for more than 5 minutes.
+ * brokeAt is set by syncBalance when balance first hits zero.
  * Returns the number of accounts deleted.
  */
 function pruneZeroBalanceAccounts() {
+  const now   = Date.now();
   const users = readUsers();
-  const toDelete = Object.values(users).filter(
-    u => u.username !== ADMIN_USERNAME && (u.casinoBalance || 0) <= 0
+  const toDelete = Object.values(users).filter(u =>
+    u.username !== ADMIN_USERNAME &&
+    (u.casinoBalance || 0) <= 0 &&
+    u.brokeAt && (now - u.brokeAt) >= BROKE_TTL_MS
   );
   if (toDelete.length === 0) return 0;
 
   for (const u of toDelete) {
     delete users[u.username];
-    // Kill all sessions for this user
     for (const [t, data] of sessions) {
       if (data.username === u.username) sessions.delete(t);
     }
-    console.log(`[userStore] Pruned "${u.username}" — zero balance`);
+    console.log(`[userStore] Deleted "${u.username}" — broke for 5+ minutes`);
   }
   writeUsers(users);
   writeSessionsToDisk();

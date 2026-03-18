@@ -3,14 +3,15 @@ import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin
 import './Hilo.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
+import { useGameBoost } from '../hooks/useGameBoost';
 
 // Standard 52-card deck
 const SUITS = ['♠', '♥', '♦', '♣'];
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 const RANK_VALUES = { '2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'J':11,'Q':12,'K':13,'A':14 };
 
-// House edge per pick
-const HOUSE_EDGE = 0.85;
+// House edge per pick (reduced for more generous payouts)
+const HOUSE_EDGE = 0.90;
 
 function buildDeck() {
   const deck = [];
@@ -69,6 +70,7 @@ const MAX_HISTORY = 8;
 export default function Hilo() {
   const { banned, reason, expiresAt, loading } = useBanCheck('hilo');
   useGameActivity('hilo');
+  const boost = useGameBoost('hilo');
   const [balance, setBalance]       = useState(getBalance);
   const [bet, setBet]               = useState(10);
   const [phase, setPhase]           = useState('betting'); // betting | playing | won | lost
@@ -166,7 +168,7 @@ export default function Hilo() {
 
   function cashOut(forceMult) {
     const mult = forceMult ?? currentMult;
-    const payout = Math.floor(bet * mult);
+    const payout = Math.floor(bet * mult * boost);
     addBalance(payout);
     syncBalance();
     reportBigWin('hilo', bet, payout, mult, `${streak}-streak · ${revealedCards.length - 1} correct guess(es) · ${mult}×`);
@@ -242,7 +244,7 @@ export default function Hilo() {
             <span className="hilo-mult-value" style={{ color: currentMult >= 2 ? '#22c55e' : '#eab308' }}>
               {currentMult.toFixed(2)}×
             </span>
-            <span className="hilo-mult-cashval">Cash out: ${Math.floor(bet * currentMult)}</span>
+            <span className="hilo-mult-cashval">Cash out: ${Math.floor(bet * currentMult * boost)}</span>
           </div>
         </div>
       )}
@@ -302,7 +304,7 @@ export default function Hilo() {
             onClick={() => cashOut()}
             disabled={animating || currentMult <= 1.0}
           >
-            💰 Cash Out ${Math.floor(bet * currentMult)}
+            💰 Cash Out ${Math.floor(bet * currentMult * boost)}
           </button>
           <button
             className="hilo-btn hilo-btn--lower"

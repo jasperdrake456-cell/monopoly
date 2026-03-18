@@ -3,13 +3,14 @@ import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin
 import './Crash.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
+import { useGameBoost } from '../hooks/useGameBoost';
 
-// Crash point: 0.90 / (1 - random) with 10% house edge
-// Minimum 1.00x (instant crash ~8% of time)
+// Crash point: 0.96 / (1 - random) with 4% house edge
+// Minimum 1.00x (instant crash ~4% of time)
 function generateCrashPoint() {
   const r = Math.random();
-  if (r >= 0.92) return 1.00;
-  return Math.max(1.00, parseFloat((0.90 / (1 - r)).toFixed(2)));
+  if (r >= 0.96) return 1.00;
+  return Math.max(1.00, parseFloat((0.96 / (1 - r)).toFixed(2)));
 }
 
 const MAX_HISTORY = 10;
@@ -17,6 +18,7 @@ const MAX_HISTORY = 10;
 export default function Crash() {
   const { banned, reason, expiresAt, loading } = useBanCheck('crash');
   useGameActivity('crash');
+  const boost = useGameBoost('crash');
   const [balance, setBalance]         = useState(getBalance);
   const [bet, setBet]                 = useState(10);
   const [autoCashout, setAutoCashout] = useState('');
@@ -97,7 +99,7 @@ export default function Crash() {
   function doAutoCashout(mult) {
     if (cashedOutRef.current) return;
     cashedOutRef.current = true;
-    const payout = Math.floor(betRef.current * mult);
+    const payout = Math.floor(betRef.current * mult * boost);
     addBalance(payout);
     syncBalance();
     reportBigWin('crash', betRef.current, payout, mult, `Auto cashout at ${mult}×`);
@@ -110,7 +112,7 @@ export default function Crash() {
     if (phase !== 'running' || cashedOut) return;
     cashedOutRef.current = true;
     const mult   = currentMult;
-    const payout = Math.floor(betRef.current * mult);
+    const payout = Math.floor(betRef.current * mult * boost);
     addBalance(payout);
     syncBalance();
     reportBigWin('crash', betRef.current, payout, mult, `Cashed out at ${mult}×`);
@@ -187,7 +189,7 @@ export default function Crash() {
             <div className="crash-cashed-emoji">💰</div>
             <div className="crash-cashed-label">Cashed out at</div>
             <div className="crash-mult crash-mult--win">{cashoutMult?.toFixed(2)}×</div>
-            <div className="crash-cashed-profit">+${Math.floor(betRef.current * cashoutMult) - betRef.current}</div>
+            <div className="crash-cashed-profit">+${Math.floor(betRef.current * cashoutMult * boost) - betRef.current}</div>
           </>
         ) : (
           <>
@@ -269,7 +271,7 @@ export default function Crash() {
         </button>
       )}
 
-      <div className="crash-hint">Cash out before the rocket crashes! • 1% house edge</div>
+      <div className="crash-hint">Cash out before the rocket crashes! • 4% house edge</div>
     </div>
   );
 }

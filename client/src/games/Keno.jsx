@@ -3,6 +3,7 @@ import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin
 import './Keno.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
+import { useGameBoost } from '../hooks/useGameBoost';
 
 // ── Keno configuration ────────────────────────────────────────────────────────
 // 40 numbers, player picks 1-10, system draws 10
@@ -12,18 +13,18 @@ const MIN_PICK      = 1;
 const MAX_PICK      = 10;
 
 // Pay table: [picks][matches] = multiplier on bet
-// Aggressive house edge ~25%
+// ~15% more generous payouts
 const PAY_TABLE = {
-  1:  { 1: 2.5 },
-  2:  { 2: 6 },
-  3:  { 2: 1, 3: 18 },
-  4:  { 2: 1, 3: 4, 4: 60 },
-  5:  { 3: 2, 4: 12, 5: 200 },
-  6:  { 3: 1, 4: 6, 5: 50,  6: 500 },
-  7:  { 3: 1, 4: 3, 5: 20,  6: 100, 7: 1000 },
-  8:  { 4: 2, 5: 10, 6: 50, 7: 300, 8: 2000 },
-  9:  { 4: 1, 5: 5,  6: 25, 7: 150, 8: 1000, 9: 5000 },
-  10: { 5: 3, 6: 12, 7: 60, 8: 500, 9: 2000, 10: 10000 },
+  1:  { 1: 2.9 },
+  2:  { 2: 6.9 },
+  3:  { 2: 1.2, 3: 20.7 },
+  4:  { 2: 1.2, 3: 4.6, 4: 69 },
+  5:  { 3: 2.3, 4: 13.8, 5: 230 },
+  6:  { 3: 1.2, 4: 6.9, 5: 57.5,  6: 575 },
+  7:  { 3: 1.2, 4: 3.5, 5: 23,  6: 115, 7: 1150 },
+  8:  { 4: 2.3, 5: 11.5, 6: 57.5, 7: 345, 8: 2300 },
+  9:  { 4: 1.2, 5: 5.8,  6: 28.8, 7: 172.5, 8: 1150, 9: 5750 },
+  10: { 5: 3.5, 6: 13.8, 7: 69, 8: 575, 9: 2300, 10: 11500 },
 };
 
 function getPayouts(picks) {
@@ -50,6 +51,7 @@ const QUICK_BETS = [5, 10, 25, 50, 100, 250];
 export default function Keno() {
   const { banned, reason, expiresAt, loading } = useBanCheck('keno');
   useGameActivity('keno');
+  const boost = useGameBoost('keno');
   const [balance, setBalance] = useState(getBalance);
   const [bet, setBet]         = useState(10);
   const [picks, setPicks]     = useState(new Set());   // player's chosen numbers
@@ -118,7 +120,7 @@ export default function Keno() {
     const d = drawNumbers(DRAW_COUNT, TOTAL_NUMBERS);
     const numMatches = [...picks].filter(n => d.has(n)).length;
     const mult = getMultiplier(picks.size, numMatches);
-    const payout = Math.floor(bet * mult);
+    const payout = Math.floor(bet * mult * boost);
 
     if (payout > 0) {
       addBalance(payout);

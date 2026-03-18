@@ -3,6 +3,7 @@ import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin
 import './Mines.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
+import { useGameBoost } from '../hooks/useGameBoost';
 
 // ── Mines game (Rainbet-style) ────────────────────────────────────────────────
 // Grid: 5×5 = 25 tiles. Player picks mines count (1–24).
@@ -15,13 +16,13 @@ const GRID_SIZE = 25;
 function calcMultiplier(mines, revealed) {
   // Probability of hitting N safe tiles in a row given M mines in 25 tiles
   // = product(i=0..N-1) of (25 - mines - i) / (25 - i)
-  // Payout = 1 / probability * 0.85 (15% house edge)
+  // Payout = 1 / probability * 0.93 (7% house edge)
   let prob = 1;
   for (let i = 0; i < revealed; i++) {
     prob *= (GRID_SIZE - mines - i) / (GRID_SIZE - i);
   }
   if (prob <= 0) return 0;
-  return parseFloat((0.85 / prob).toFixed(2));
+  return parseFloat((0.93 / prob).toFixed(2));
 }
 
 function generateMines(count) {
@@ -37,6 +38,7 @@ const MINE_COUNTS = [1, 2, 3, 5, 7, 10, 15, 20, 24];
 export default function Mines() {
   const { banned, reason, expiresAt, loading } = useBanCheck('mines');
   useGameActivity('mines');
+  const boost = useGameBoost('mines');
   const [balance, setBalance]   = useState(getBalance);
   const [bet, setBet]           = useState(10);
   const [mineCount, setMineCount] = useState(3);
@@ -127,7 +129,7 @@ export default function Mines() {
       if (newCount >= safeCount) {
         playingRef.current = false; // block any further clicks immediately
         const mult = calcMultiplier(mineCount, newCount);
-        const payout = Math.floor(bet * mult);
+        const payout = Math.floor(bet * mult * boost);
         addBalance(payout);
         syncBalance();
         reportBigWin('mines', bet, payout, mult, `${mineCount} mines · all ${newCount} safe tiles revealed · ${mult}×`);
@@ -142,7 +144,7 @@ export default function Mines() {
     if (!playingRef.current || revCountRef.current === 0) return;
     playingRef.current = false;
     const mult = calcMultiplier(mineCount, revCountRef.current);
-    const payout = Math.floor(bet * mult);
+    const payout = Math.floor(bet * mult * boost);
     addBalance(payout);
     syncBalance();
     reportBigWin('mines', bet, payout, mult, `${mineCount} mines · ${revCountRef.current} safe tiles revealed · ${mult}×`);
@@ -293,7 +295,7 @@ export default function Mines() {
         </div>
       )}
 
-      <div className="mines-hint">{GRID_SIZE - mineCount} safe tiles · {mineCount} mines · 3% house edge</div>
+      <div className="mines-hint">{GRID_SIZE - mineCount} safe tiles · {mineCount} mines · 7% house edge</div>
     </div>
   );
 }

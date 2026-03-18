@@ -3,6 +3,7 @@ import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin
 import './Slots.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
+import { useGameBoost } from '../hooks/useGameBoost';
 
 // Tighter pool — more blanks/lemons to make wins rare.
 // Distribution: 💎×1, 7️⃣×1, ⭐×1, 🔔×2, 🍇×2, 🍊×2, 🍋×5, 🍒×4, 🔲×6 (24 total)
@@ -14,16 +15,16 @@ const REEL_POOL = [
 ];
 
 const PAYTABLE = [
-  { symbols: ['💎','💎','💎'], label: '💎 💎 💎', mult: 500 },
-  { symbols: ['7️⃣','7️⃣','7️⃣'], label: '7️⃣ 7️⃣ 7️⃣', mult: 250 },
-  { symbols: ['⭐','⭐','⭐'], label: '⭐ ⭐ ⭐', mult: 40 },
-  { symbols: ['🔔','🔔','🔔'], label: '🔔 🔔 🔔', mult: 20 },
-  { symbols: ['🍇','🍇','🍇'], label: '🍇 🍇 🍇', mult: 12 },
-  { symbols: ['🍊','🍊','🍊'], label: '🍊 🍊 🍊', mult: 8 },
-  { symbols: ['🍋','🍋','🍋'], label: '🍋 🍋 🍋', mult: 4 },
-  { symbols: ['🍒','🍒','🍒'], label: '🍒 🍒 🍒', mult: 2.5 },
-  { symbols: ['🍒','🍒','*'], label: '🍒 🍒 any', mult: 1.2 },
-  { symbols: ['🍒','*','*'], label: '🍒 any any', mult: 0.6 },
+  { symbols: ['💎','💎','💎'], label: '💎 💎 💎', mult: 575 },
+  { symbols: ['7️⃣','7️⃣','7️⃣'], label: '7️⃣ 7️⃣ 7️⃣', mult: 287.5 },
+  { symbols: ['⭐','⭐','⭐'], label: '⭐ ⭐ ⭐', mult: 46 },
+  { symbols: ['🔔','🔔','🔔'], label: '🔔 🔔 🔔', mult: 23 },
+  { symbols: ['🍇','🍇','🍇'], label: '🍇 🍇 🍇', mult: 13.8 },
+  { symbols: ['🍊','🍊','🍊'], label: '🍊 🍊 🍊', mult: 9.2 },
+  { symbols: ['🍋','🍋','🍋'], label: '🍋 🍋 🍋', mult: 4.6 },
+  { symbols: ['🍒','🍒','🍒'], label: '🍒 🍒 🍒', mult: 2.9 },
+  { symbols: ['🍒','🍒','*'], label: '🍒 🍒 any', mult: 1.4 },
+  { symbols: ['🍒','*','*'], label: '🍒 any any', mult: 0.7 },
 ];
 
 function rand() {
@@ -42,16 +43,16 @@ function initReelDisplays() {
 function evaluate(mids) {
   const [r0, r1, r2] = mids;
 
-  if (r0 === '💎' && r1 === '💎' && r2 === '💎') return { mult: 500, label: '💎 💎 💎 JACKPOT!' };
-  if (r0 === '7️⃣' && r1 === '7️⃣' && r2 === '7️⃣') return { mult: 250, label: '7️⃣ 7️⃣ 7️⃣ LUCKY SEVENS!' };
-  if (r0 === '⭐' && r1 === '⭐' && r2 === '⭐') return { mult: 40, label: '⭐ ⭐ ⭐ STARS!' };
-  if (r0 === '🔔' && r1 === '🔔' && r2 === '🔔') return { mult: 20, label: '🔔 🔔 🔔 BELLS!' };
-  if (r0 === '🍇' && r1 === '🍇' && r2 === '🍇') return { mult: 12, label: '🍇 🍇 🍇 GRAPES!' };
-  if (r0 === '🍊' && r1 === '🍊' && r2 === '🍊') return { mult: 8, label: '🍊 🍊 🍊 ORANGES!' };
-  if (r0 === '🍋' && r1 === '🍋' && r2 === '🍋') return { mult: 4, label: '🍋 🍋 🍋 LEMONS!' };
-  if (r0 === '🍒' && r1 === '🍒' && r2 === '🍒') return { mult: 2.5, label: '🍒 🍒 🍒 CHERRIES!' };
-  if (r0 === '🍒' && r1 === '🍒' && r2 !== '🍒') return { mult: 1.2, label: '🍒 🍒 — Double Cherry!' };
-  if (r0 === '🍒' && r1 !== '🍒') return { mult: 0.6, label: '🍒 — Single Cherry' };
+  if (r0 === '💎' && r1 === '💎' && r2 === '💎') return { mult: 575, label: '💎 💎 💎 JACKPOT!' };
+  if (r0 === '7️⃣' && r1 === '7️⃣' && r2 === '7️⃣') return { mult: 287.5, label: '7️⃣ 7️⃣ 7️⃣ LUCKY SEVENS!' };
+  if (r0 === '⭐' && r1 === '⭐' && r2 === '⭐') return { mult: 46, label: '⭐ ⭐ ⭐ STARS!' };
+  if (r0 === '🔔' && r1 === '🔔' && r2 === '🔔') return { mult: 23, label: '🔔 🔔 🔔 BELLS!' };
+  if (r0 === '🍇' && r1 === '🍇' && r2 === '🍇') return { mult: 13.8, label: '🍇 🍇 🍇 GRAPES!' };
+  if (r0 === '🍊' && r1 === '🍊' && r2 === '🍊') return { mult: 9.2, label: '🍊 🍊 🍊 ORANGES!' };
+  if (r0 === '🍋' && r1 === '🍋' && r2 === '🍋') return { mult: 4.6, label: '🍋 🍋 🍋 LEMONS!' };
+  if (r0 === '🍒' && r1 === '🍒' && r2 === '🍒') return { mult: 2.9, label: '🍒 🍒 🍒 CHERRIES!' };
+  if (r0 === '🍒' && r1 === '🍒' && r2 !== '🍒') return { mult: 1.4, label: '🍒 🍒 — Double Cherry!' };
+  if (r0 === '🍒' && r1 !== '🍒') return { mult: 0.7, label: '🍒 — Single Cherry' };
 
   return { mult: 0, label: 'No match. Better luck next time!' };
 }
@@ -75,6 +76,7 @@ const CYCLE_MS = 70;        // symbol cycle interval during spin
 export default function Slots() {
   const { banned, reason, expiresAt, loading } = useBanCheck('slots');
   useGameActivity('slots');
+  const boost = useGameBoost('slots');
   const [balance, setBalance] = useState(getBalance);
   const [bet, setBet] = useState(10);
   // reelDisplays[i] = [top, mid, bot]
@@ -160,7 +162,7 @@ export default function Slots() {
         if (reelIdx === 2) {
           let payout = 0;
           if (outcome.mult > 0) {
-            payout = Math.floor(betSnapshot * outcome.mult);
+            payout = Math.floor(betSnapshot * outcome.mult * boost);
             addBalance(payout);
             reportBigWin('slots', betSnapshot, payout, outcome.mult, `${outcome.label} · ${outcome.mult}×`);
           }

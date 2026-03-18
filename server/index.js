@@ -178,9 +178,8 @@ const ACTIVITY_TTL_MS = 90_000; // treat as offline after 90 seconds of no heart
 // token → pending bonus chips to deliver on next heartbeat
 const pendingBonuses = new Map();
 
-// NOTE: Auto-pruning of zero-balance accounts has been DISABLED.
-// Previously this deleted anyone who hit $0, causing unexpected account loss.
-// Accounts are now kept indefinitely (admin can manually delete if needed).
+// Delete accounts that have been broke for 5+ minutes (checked every minute).
+setInterval(() => { us.pruneZeroBalanceAccounts(); }, 60 * 1000);
 
 // Every 5 minutes: give all active online players $5,000
 setInterval(() => {

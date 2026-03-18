@@ -3,6 +3,7 @@ import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin
 import './VideoPoker.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
+import { useGameBoost } from '../hooks/useGameBoost';
 
 // ── Deck ─────────────────────────────────────────────────────────────────────
 const SUITS  = ['♠', '♥', '♦', '♣'];
@@ -60,17 +61,17 @@ function evalHand(cards) {
   return null;
 }
 
-// ── Pay table (bet × mult = payout) ──────────────────────────────────────────
+// ── Pay table (bet × mult = payout) — ~10% more generous ─────────────────────
 const PAY_TABLE = [
-  { hand: 'Royal Flush',      mult: 400 },
-  { hand: 'Straight Flush',   mult: 40  },
-  { hand: 'Four of a Kind',   mult: 20  },
-  { hand: 'Full House',       mult: 8   },
-  { hand: 'Flush',            mult: 5   },
-  { hand: 'Straight',         mult: 4   },
-  { hand: 'Three of a Kind',  mult: 3   },
-  { hand: 'Two Pair',         mult: 2   },
-  { hand: 'Jacks or Better',  mult: 2   },
+  { hand: 'Royal Flush',      mult: 440 },
+  { hand: 'Straight Flush',   mult: 44  },
+  { hand: 'Four of a Kind',   mult: 22  },
+  { hand: 'Full House',       mult: 8.8 },
+  { hand: 'Flush',            mult: 5.5 },
+  { hand: 'Straight',         mult: 4.4 },
+  { hand: 'Three of a Kind',  mult: 3.3 },
+  { hand: 'Two Pair',         mult: 2.2 },
+  { hand: 'Jacks or Better',  mult: 2.2 },
 ];
 
 function getMult(handName) {
@@ -82,6 +83,7 @@ const QUICK_BETS = [5, 10, 25, 50, 100, 250];
 export default function VideoPoker() {
   const { banned, reason, expiresAt, loading } = useBanCheck('video-poker');
   useGameActivity('video-poker');
+  const boost = useGameBoost('video-poker');
   const [balance, setBalance]   = useState(getBalance);
   const [bet, setBet]           = useState(10);
   const [deck, setDeck]         = useState([]);
@@ -136,7 +138,7 @@ export default function VideoPoker() {
 
     const handName = evalHand(newHand);
     const mult = getMult(handName);
-    const payout = Math.floor(bet * mult);
+    const payout = Math.floor(bet * mult * boost);
 
     if (payout > 0) {
       addBalance(payout);

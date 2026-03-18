@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { setAuthToken, getBalance, setBalance } from '../utils/casinoBalance';
+import { setAuthToken, getBalance, setBalance, setRiggedMode } from '../utils/casinoBalance';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
 const TOKEN_KEY  = 'gv_auth_token';
@@ -105,6 +105,17 @@ export function AuthProvider({ children }) {
       setBalanceState(getBalance());
     }).finally(() => setLoading(false));
   }, []);
+
+  // ── Fetch rigged-mode flag whenever token changes ─────────────────────────
+  useEffect(() => {
+    if (!token) { setRiggedMode(false); return; }
+    fetch(SERVER_URL + '/api/user/game-config', {
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(d => { if (d.ok) setRiggedMode(!d.luckyMode); })
+      .catch(() => {});
+  }, [token]);
 
   // ── Listen for balance changes from casino games ──────────────────────────
   useEffect(() => {

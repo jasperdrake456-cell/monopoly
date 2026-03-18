@@ -3,6 +3,7 @@ import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin
 import './RideTheBus.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
+import { useGameBoost } from '../hooks/useGameBoost';
 
 // ── Deck constants ──────────────────────────────────────────────────────────
 const SUITS    = ['hearts', 'diamonds', 'clubs', 'spades'];
@@ -12,8 +13,8 @@ const IS_RED   = { hearts: true, diamonds: true, clubs: false, spades: false };
 const VALUES   = [2,3,4,5,6,7,8,9,10,11,12,13,14];
 const VAL_LBL  = { 2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A' };
 
-// Schedule 1 multipliers: round 1=2x, 2=3x, 3=4x, 4=20x
-const MULTIPLIERS = [0, 2, 3, 4, 20];
+// Schedule 1 multipliers: round 1=2.3x, 2=3.5x, 3=4.6x, 4=23x (~15% boost)
+const MULTIPLIERS = [0, 2.3, 3.5, 4.6, 23];
 
 function createDeck() {
   const cards = [];
@@ -60,6 +61,7 @@ function Card({ card, faceDown, flipping }) {
 export default function RideTheBus() {
   const { banned, reason, expiresAt, loading } = useBanCheck('ride-the-bus');
   useGameActivity('ride-the-bus');
+  const boost = useGameBoost('ride-the-bus');
   const deckRef = useRef([]);
 
   const [balance, setBalance] = useState(getBalance);
@@ -145,14 +147,14 @@ export default function RideTheBus() {
         });
         setPhase('over');
       } else if (round === 4) {
-        const payout = bet * MULTIPLIERS[4];
+        const payout = Math.floor(bet * MULTIPLIERS[4] * boost);
         addBalance(payout);
         setBalance(getBalance());
         reportBigWin('ride-the-bus', bet, payout, MULTIPLIERS[4], `All 4 rounds correct · ${MULTIPLIERS[4]}× jackpot`);
         setResult({ correct: true, msg: `JACKPOT! ${MULTIPLIERS[4]}× your bet!`, payout });
         setPhase('over');
       } else {
-        const payout = bet * MULTIPLIERS[round];
+        const payout = Math.floor(bet * MULTIPLIERS[round] * boost);
         setResult({ correct: true, msg: `Correct! Cash out $${payout} or ride for more?`, payout });
         setPhase('decide');
       }
@@ -161,7 +163,7 @@ export default function RideTheBus() {
 
   // ── Cash out ──────────────────────────────────────────────────────────────
   function cashOut() {
-    const payout = bet * MULTIPLIERS[round];
+    const payout = Math.floor(bet * MULTIPLIERS[round] * boost);
     addBalance(payout);
     setBalance(getBalance());
     reportBigWin('ride-the-bus', bet, payout, MULTIPLIERS[round], `Cashed out after round ${round} · ${MULTIPLIERS[round]}×`);
@@ -211,7 +213,7 @@ export default function RideTheBus() {
     }
   }
 
-  const ROUND_MULTS = ['', '2×', '3×', '4×', '20×'];
+  const ROUND_MULTS = ['', '2.3×', '3.5×', '4.6×', '23×'];
 
   if (loading) return null;
   if (banned) {
@@ -272,7 +274,7 @@ export default function RideTheBus() {
               </div>
             </div>
             <div className="rtb-potential">
-              Win all 4: <span className="rtb-potential-val">${bet * 20}</span>
+              Win all 4: <span className="rtb-potential-val">${bet * 23}</span>
             </div>
             <button className="rtb-btn rtb-btn--start" onClick={startGame}>
               🚌 Ride the Bus!
@@ -303,7 +305,7 @@ export default function RideTheBus() {
       <div className="rtb-game-info">
         <span>Balance: <b>${balance + (phase === 'over' && !result?.correct ? 0 : 0)}</b></span>
         <span>Bet: <b>${bet}</b></span>
-        {phase === 'decide' && <span className="rtb-cashout-preview">Cash out: <b>${bet * MULTIPLIERS[round]}</b></span>}
+        {phase === 'decide' && <span className="rtb-cashout-preview">Cash out: <b>${Math.floor(bet * MULTIPLIERS[round] * boost)}</b></span>}
       </div>
 
       {/* Cards row */}
@@ -369,7 +371,7 @@ export default function RideTheBus() {
       {phase === 'decide' && (
         <div className="rtb-actions rtb-decide">
           <button className="rtb-btn rtb-btn--cashout" onClick={cashOut}>
-            💰 Cash Out ${bet * MULTIPLIERS[round]}
+            💰 Cash Out ${Math.floor(bet * MULTIPLIERS[round] * boost)}
           </button>
           <button className="rtb-btn rtb-btn--continue" onClick={continueGame}>
             🚌 Keep Riding → {ROUND_MULTS[round + 1]}

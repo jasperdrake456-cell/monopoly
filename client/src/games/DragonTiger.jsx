@@ -3,11 +3,12 @@ import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin
 import './DragonTiger.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
+import { useGameBoost } from '../hooks/useGameBoost';
 
 // ── Dragon Tiger ─────────────────────────────────────────────────────────────
 // One card each for Dragon and Tiger. Bet Dragon, Tiger, or Tie.
-// Tie pays 8:1. Dragon/Tiger pays 1:1 but LOSES on tie (no push — house keeps).
-// This gives ~32% house edge on Tie, and ~3.7% on Dragon/Tiger.
+// Tie pays 9:1. Dragon/Tiger pays 1:1 but LOSES on tie (no push — house keeps).
+// This gives ~25% house edge on Tie, and ~3.7% on Dragon/Tiger.
 
 const SUITS  = ['♠', '♥', '♦', '♣'];
 const RANKS  = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
@@ -48,13 +49,14 @@ function CardDisplay({ card, faceDown }) {
 const QUICK_BETS = [5, 10, 25, 50, 100, 250];
 const BETS = [
   { id: 'dragon', label: '🐉 Dragon', color: '#ef4444', payout: 2, desc: '1:1' },
-  { id: 'tie',    label: '⚖️ Tie',    color: '#FFD700', payout: 9, desc: '8:1' },
+  { id: 'tie',    label: '⚖️ Tie',    color: '#FFD700', payout: 10, desc: '9:1' },
   { id: 'tiger',  label: '🐯 Tiger',  color: '#3b82f6', payout: 2, desc: '1:1' },
 ];
 
 export default function DragonTiger() {
   const { banned, reason, expiresAt, loading } = useBanCheck('dragon-tiger');
   useGameActivity('dragon-tiger');
+  const boost = useGameBoost('dragon-tiger');
   const shoeRef = React.useRef(createShoe());
 
   const [balance, setBalance] = useState(getBalance);
@@ -120,13 +122,13 @@ export default function DragonTiger() {
         let msg = '';
 
         if (winner === 'tie' && betSide === 'tie') {
-          payout = bet * 9; // 8:1 pays total 9× stake
+          payout = Math.floor(bet * 10 * boost); // 9:1 pays total 10× stake
           addBalance(payout);
           net = payout - bet;
-          msg = `⚖️ Tie! Won $${net.toLocaleString()} (8:1)`;
-          reportBigWin('dragon-tiger', bet, payout, 8, `Tie · Dragon ${d.rank}${d.suit} = Tiger ${t.rank}${t.suit}`);
+          msg = `⚖️ Tie! Won $${net.toLocaleString()} (9:1)`;
+          reportBigWin('dragon-tiger', bet, payout, 9, `Tie · Dragon ${d.rank}${d.suit} = Tiger ${t.rank}${t.suit}`);
         } else if (winner === betSide && betSide !== 'tie') {
-          payout = bet * 2; // 1:1
+          payout = Math.floor(bet * 2 * boost); // 1:1
           addBalance(payout);
           net = payout - bet;
           msg = `✅ ${winner === 'dragon' ? '🐉 Dragon' : '🐯 Tiger'} wins! +$${net.toLocaleString()}`;
