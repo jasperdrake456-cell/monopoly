@@ -127,6 +127,10 @@ export default function AdminPage() {
   const [giveTarget, setGiveTarget] = useState('');
   const [giveAmount, setGiveAmount] = useState('');
 
+  // ── Create Account ──────────────────────────────────────────────────────────
+  const [newUser, setNewUser]   = useState('');
+  const [newPass, setNewPass]   = useState('');
+
   // ── Dismissed flags ────────────────────────────────────────────────────────
   const [dismissedUsernames, setDismissedUsernames] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem('admin_dismissed_usernames') || '[]')); }
@@ -365,6 +369,19 @@ export default function AdminPage() {
     const d = await authFetch(`/api/admin/users/${username}`, token, { method: 'DELETE' });
     setStatus(d.ok ? `Deleted user ${username}` : d.error);
     loadUsers();
+  }
+  async function createUser() {
+    if (!newUser.trim() || !newPass.trim()) return setStatus('Enter a username and password.');
+    const d = await authFetch('/api/admin/users/create', token, {
+      method: 'POST', body: JSON.stringify({ username: newUser.trim().toLowerCase(), password: newPass.trim() }),
+    });
+    if (d.ok) {
+      setStatus(`✅ Account "${d.username}" created successfully!`);
+      setNewUser(''); setNewPass('');
+      loadUsers();
+    } else {
+      setStatus(d.error || 'Failed to create account.');
+    }
   }
   async function kickUser(username) {
     const d = await authFetch(`/api/admin/kick/${encodeURIComponent(username)}`, token, { method: 'POST' });
@@ -627,6 +644,19 @@ export default function AdminPage() {
       {/* ════════════════════════════════════════════════════════════════════ */}
       {tab === 'users' && (
         <div className="admin-section">
+
+          {/* ── Create Account ────────────────────────────────────────────── */}
+          <div className="admin-site-card admin-give-card">
+            <div className="admin-site-card-title">➕ Create Account</div>
+            <div className="admin-give-form">
+              <input className="admin-input" placeholder="Username" value={newUser}
+                onChange={e => setNewUser(e.target.value)} autoCapitalize="none" autoCorrect="off" />
+              <input className="admin-input" type="password" placeholder="Password" value={newPass}
+                onChange={e => setNewPass(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && createUser()} />
+              <button className="admin-btn admin-btn--primary" onClick={createUser}>➕ Create</button>
+            </div>
+          </div>
 
           {/* ── Give Money ────────────────────────────────────────────────── */}
           <div className="admin-site-card admin-give-card">

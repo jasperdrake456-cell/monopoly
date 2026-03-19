@@ -4,13 +4,11 @@ import { useAuth } from '../contexts/AuthContext';
 import './AuthPage.css';
 
 export default function AuthPage() {
-  const { login, register } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [mode, setMode]         = useState('login'); // 'login' | 'register'
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [confirm, setConfirm]   = useState('');
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
 
@@ -18,14 +16,10 @@ export default function AuthPage() {
     e.preventDefault();
     setError('');
     if (!username.trim() || !password) { setError('Fill in all fields'); return; }
-    if (mode === 'register' && password !== confirm) { setError("Passwords don't match"); return; }
 
     setLoading(true);
     try {
-      const result = mode === 'login'
-        ? await login(username, password)
-        : await register(username, password);
-
+      const result = await login(username, password);
       if (result.ok) {
         navigate('/');
       } else {
@@ -43,21 +37,7 @@ export default function AuthPage() {
       <div className="auth-card">
         {/* Logo */}
         <div className="auth-logo">🎮 Game Vault</div>
-        <div className="auth-subtitle">
-          {mode === 'login' ? 'Sign in to save your progress' : 'Create an account'}
-        </div>
-
-        {/* Toggle tabs */}
-        <div className="auth-tabs">
-          <button
-            className={`auth-tab ${mode === 'login' ? 'active' : ''}`}
-            onClick={() => { setMode('login'); setError(''); }}
-          >Sign In</button>
-          <button
-            className={`auth-tab ${mode === 'register' ? 'active' : ''}`}
-            onClick={() => { setMode('register'); setError(''); }}
-          >Create Account</button>
-        </div>
+        <div className="auth-subtitle">Sign in to your account</div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <label className="auth-label">
@@ -67,7 +47,7 @@ export default function AuthPage() {
               type="text"
               value={username}
               onChange={e => setUsername(e.target.value)}
-              placeholder="letters, numbers, _ -"
+              placeholder="Your username"
               maxLength={20}
               autoCapitalize="none"
               autoCorrect="off"
@@ -82,38 +62,20 @@ export default function AuthPage() {
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="4+ characters"
+              placeholder="Your password"
             />
           </label>
-
-          {mode === 'register' && (
-            <label className="auth-label">
-              Confirm Password
-              <input
-                className="auth-input"
-                type="password"
-                value={confirm}
-                onChange={e => setConfirm(e.target.value)}
-                placeholder="Repeat password"
-              />
-            </label>
-          )}
 
           {error && <div className="auth-error">{error}</div>}
 
           <button className="auth-submit" type="submit" disabled={loading}>
-            {loading ? '…' : mode === 'login' ? 'Sign In' : 'Create Account'}
+            {loading ? '…' : 'Sign In'}
           </button>
         </form>
 
-        {mode === 'register' && (
-          <div className="auth-perks">
-            <div className="auth-perk">💰 Start with <strong>$2,000</strong> casino balance</div>
-            <div className="auth-perk">🎁 <strong>$250 daily</strong> reward at 8am</div>
-            <div className="auth-perk">💸 Transfer money to friends</div>
-            <div className="auth-perk">📈 Progress saved across devices</div>
-          </div>
-        )}
+        <div className="auth-no-account">
+          Don't have an account? Contact the admin to get one.
+        </div>
 
         <Link to="/" className="auth-back">← Back to Game Vault</Link>
       </div>

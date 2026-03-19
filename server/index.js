@@ -102,15 +102,9 @@ function getToken(req) {
   return auth.startsWith('Bearer ') ? auth.slice(7) : null;
 }
 
+// Public registration is disabled — only admins can create accounts.
 app.post('/api/accounts/register', (req, res) => {
-  const { username, password } = req.body || {};
-  const ip = getClientIP(req);
-  const result = us.register(username, password, ip);
-  if (result.ok) {
-    us.recordIP(result.username, ip);
-    console.log(`[register] New account "${result.username}" from IP ${ip}`);
-  }
-  res.json(result);
+  res.status(403).json({ ok: false, error: 'Account creation is disabled. Contact the admin to get an account.' });
 });
 
 app.post('/api/accounts/login', (req, res) => {
@@ -179,8 +173,7 @@ const ACTIVITY_TTL_MS = 90_000; // treat as offline after 90 seconds of no heart
 // token → pending bonus chips to deliver on next heartbeat
 const pendingBonuses = new Map();
 
-// Delete all zero-balance accounts every 5 minutes.
-setInterval(() => { us.pruneZeroBalanceAccounts(); }, 5 * 60 * 1000);
+// Auto-deletion of zero-balance accounts is disabled.
 
 // Every 5 minutes: give all active online players $5,000
 setInterval(() => {
@@ -311,10 +304,18 @@ app.get('/api/admin/users', requireAdmin, (req, res) => {
   res.json(us.listUsers(getToken(req)));
 });
 
-// Delete a user
+// Delete a user (admin only)
 app.delete('/api/admin/users/:username', requireAdmin, (req, res) => {
   const result = us.deleteUser(getToken(req), req.params.username);
   if (result.ok) al.log('delete_user', { target: req.params.username });
+  res.json(result);
+});
+
+// Create a user (admin only — public registration is disabled)
+app.post('/api/admin/users/create', requireAdmin, (req, res) => {
+  const { username, password } = req.body || {};
+  const result = us.register(username, password, 'admin-created');
+  if (result.ok) al.log('create_user', { target: result.username });
   res.json(result);
 });
 
