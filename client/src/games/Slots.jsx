@@ -5,15 +5,16 @@ import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 import { useGameBoost } from '../hooks/useGameBoost';
 
-// Extra nerfed pool — cherries ~12% per reel, heavy lemon filler.
-// Distribution: 💎×1, 7️⃣×1, ⭐×1, 🔔×2, 🍇×1, 🍊×1, 🍋×12, 🍒×3 (22 total)
+// Very low odds pool — cherries ~7% per reel, massive lemon filler.
+// Distribution: 💎×1, 7️⃣×1, ⭐×1, 🔔×1, 🍇×1, 🍊×1, 🍋×20, 🍒×2 (28 total)
 const REEL_POOL = [
   '💎','7️⃣','⭐',
-  '🔔','🔔',
+  '🔔',
   '🍇',
   '🍊',
-  '🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋',
-  '🍒','🍒','🍒',
+  '🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋',
+  '🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋',
+  '🍒','🍒',
 ];
 
 const PAYTABLE = [
@@ -21,12 +22,12 @@ const PAYTABLE = [
   { symbols: ['7️⃣','7️⃣','7️⃣'], label: '7️⃣ 7️⃣ 7️⃣', mult: 300 },
   { symbols: ['⭐','⭐','⭐'], label: '⭐ ⭐ ⭐', mult: 50 },
   { symbols: ['🔔','🔔','🔔'], label: '🔔 🔔 🔔', mult: 25 },
-  { symbols: ['🍇','🍇','🍇'], label: '🍇 🍇 🍇', mult: 12 },
-  { symbols: ['🍊','🍊','🍊'], label: '🍊 🍊 🍊', mult: 7 },
-  { symbols: ['🍋','🍋','🍋'], label: '🍋 🍋 🍋', mult: 3 },
-  { symbols: ['🍒','🍒','🍒'], label: '🍒 🍒 🍒', mult: 2 },
-  { symbols: ['🍒','🍒','*'], label: '🍒 🍒 any', mult: 0.8 },
-  { symbols: ['🍒','*','*'], label: '🍒 any any', mult: 0.3 },
+  { symbols: ['🍇','🍇','🍇'], label: '🍇 🍇 🍇', mult: 15 },
+  { symbols: ['🍊','🍊','🍊'], label: '🍊 🍊 🍊', mult: 10 },
+  { symbols: ['🍋','🍋','🍋'], label: '🍋 🍋 🍋', mult: 5 },
+  { symbols: ['🍒','🍒','🍒'], label: '🍒 🍒 🍒', mult: 3 },
+  { symbols: ['🍒','🍒','*'], label: '🍒 🍒 any', mult: 1.5 },
+  { symbols: ['🍒','*','*'], label: '🍒 any any', mult: 0.8 },
 ];
 
 function rand() {
@@ -51,14 +52,14 @@ function evaluate(mids) {
   if (r0 === '⭐' && r1 === '⭐' && r2 === '⭐') return { mult: 50, label: '⭐ ⭐ ⭐ STARS!' };
   if (r0 === '🔔' && r1 === '🔔' && r2 === '🔔') return { mult: 25, label: '🔔 🔔 🔔 BELLS!' };
   if (r0 === '🍇' && r1 === '🍇' && r2 === '🍇') return { mult: 15, label: '🍇 🍇 🍇 GRAPES!' };
-  if (r0 === '🍊' && r1 === '🍊' && r2 === '🍊') return { mult: 8,  label: '🍊 🍊 🍊 ORANGES!' };
-  if (r0 === '🍋' && r1 === '🍋' && r2 === '🍋') return { mult: 4,  label: '🍋 🍋 🍋 LEMONS!' };
+  if (r0 === '🍊' && r1 === '🍊' && r2 === '🍊') return { mult: 10, label: '🍊 🍊 🍊 ORANGES!' };
+  if (r0 === '🍋' && r1 === '🍋' && r2 === '🍋') return { mult: 5,  label: '🍋 🍋 🍋 LEMONS!' };
 
   // Cherry combos — count by total, any position (fixes 🍒❌🍒 and ❌🍒🍒 cases)
   const cherries = mids.filter(s => s === '🍒').length;
-  if (cherries === 3) return { mult: 2,   label: '🍒 🍒 🍒 CHERRIES!' };
-  if (cherries === 2) return { mult: 0.8, label: '🍒 🍒 — Double Cherry!' };
-  if (cherries === 1) return { mult: 0.3, label: '🍒 — Single Cherry' };
+  if (cherries === 3) return { mult: 3,   label: '🍒 🍒 🍒 CHERRIES!' };
+  if (cherries === 2) return { mult: 1.5, label: '🍒 🍒 — Double Cherry!' };
+  if (cherries === 1) return { mult: 0.8, label: '🍒 — Single Cherry' };
 
   return { mult: 0, label: 'No match. Better luck next time!' };
 }
