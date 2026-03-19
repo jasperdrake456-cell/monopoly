@@ -5,12 +5,12 @@ import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 import { useGameBoost } from '../hooks/useGameBoost';
 
-// Crash point: 0.96 / (1 - random) with 4% house edge
-// Minimum 1.00x (instant crash ~4% of time)
+// Crash point: 0.975 / (1 - random) with 2.5% house edge
+// Minimum 1.00x (instant crash ~2.5% of time)
 function generateCrashPoint() {
   const r = Math.random();
-  if (r >= 0.96) return 1.00;
-  return Math.max(1.00, parseFloat((0.96 / (1 - r)).toFixed(2)));
+  if (r >= 0.975) return 1.00;
+  return Math.max(1.00, parseFloat((0.975 / (1 - r)).toFixed(2)));
 }
 
 const MAX_HISTORY = 10;
@@ -271,7 +271,7 @@ export default function Crash() {
         </button>
       )}
 
-      <div className="crash-hint">Cash out before the rocket crashes! • 4% house edge</div>
+      <div className="crash-hint">Cash out before the rocket crashes! • 2.5% house edge</div>
     </div>
   );
 }

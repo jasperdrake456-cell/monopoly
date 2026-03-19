@@ -6,11 +6,11 @@ import useGameActivity from '../hooks/useGameActivity';
 import { useGameBoost } from '../hooks/useGameBoost';
 
 // Multiplier tables — 8 rows, 9 buckets (indexed 0–8)
-// ~15% boost applied across all multipliers
+// ~25% boost vs original, better middle payouts
 const MULTIPLIERS = {
-  low:    [5.8, 2.3, 1.2, 0.6, 0.3, 0.6, 1.2, 2.3, 5.8],
-  medium: [13.8, 3.5, 1.4, 0.5, 0.2, 0.5, 1.4, 3.5, 13.8],
-  high:   [28.8, 5.8, 1.2, 0.1, 0.1, 0.1, 1.2, 5.8, 28.8],
+  low:    [6.5, 2.8, 1.5, 0.8, 0.5, 0.8, 1.5, 2.8, 6.5],
+  medium: [16.0, 4.5, 1.8, 0.7, 0.3, 0.7, 1.8, 4.5, 16.0],
+  high:   [35.0, 7.0, 1.5, 0.2, 0.1, 0.2, 1.5, 7.0, 35.0],
 };
 
 const ROWS = 8;

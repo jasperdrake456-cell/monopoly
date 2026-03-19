@@ -17,15 +17,81 @@ if (!fs.existsSync(SESSIONS_FILE)) fs.writeFileSync(SESSIONS_FILE, '{}', 'utf8')
 
 console.log(`[userStore] Data directory: ${DATA_DIR}`);
 
+// ── In-memory user cache ──────────────────────────────────────────────────────
+// All reads/writes go through _usersCache so concurrent requests never race on
+// the file. The file is only the persistence layer, written atomically via a
+// temp-file+rename to prevent corruption if the server is killed mid-write.
+const BACKUP_FILE = path.join(DATA_DIR, 'users.backup.json');
+
+function _loadUsersFromDisk() {
+  // Try primary file first
+  try {
+    const raw  = fs.readFileSync(USERS_FILE, 'utf8');
+    const data = JSON.parse(raw);
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      // If primary is suspiciously empty but a backup exists, prefer the backup
+      if (Object.keys(data).length === 0 && fs.existsSync(BACKUP_FILE)) {
+        try {
+          const bdata = JSON.parse(fs.readFileSync(BACKUP_FILE, 'utf8'));
+          if (Object.keys(bdata).length > 0) {
+            console.warn('[userStore] Primary users.json empty — recovering from backup');
+            return bdata;
+          }
+        } catch { /* backup also empty or corrupt, keep going */ }
+      }
+      return data;
+    }
+  } catch { /* fall through */ }
+
+  // Primary is corrupt — try backup
+  if (fs.existsSync(BACKUP_FILE)) {
+    try {
+      const bdata = JSON.parse(fs.readFileSync(BACKUP_FILE, 'utf8'));
+      if (bdata && typeof bdata === 'object' && !Array.isArray(bdata)) {
+        console.error('[userStore] users.json corrupt — recovered from backup!');
+        return bdata;
+      }
+    } catch { /* fall through */ }
+  }
+
+  console.error('[userStore] CRITICAL: both users.json and backup are corrupt. Starting empty.');
+  return {};
+}
+
+// Single in-memory source of truth for all user data at runtime
+let _usersCache = _loadUsersFromDisk();
+console.log(`[userStore] Loaded ${Object.keys(_usersCache).length} accounts.`);
 
 function readUsers() {
-  try { return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8')); }
-  catch { return {}; }
+  return _usersCache; // always return the live in-memory copy
 }
 
 function writeUsers(users) {
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
+  _usersCache = users;
+  _flushToDisk();
 }
+
+// Atomic write: write to .tmp then fs.renameSync so a crash mid-write never
+// leaves users.json truncated/corrupt.
+function _flushToDisk() {
+  const tmpFile = USERS_FILE + '.tmp';
+  try {
+    fs.writeFileSync(tmpFile, JSON.stringify(_usersCache, null, 2), 'utf8');
+    fs.renameSync(tmpFile, USERS_FILE);
+  } catch (err) {
+    console.error('[userStore] Failed to flush users to disk:', err);
+  }
+}
+
+// Rolling backup every 60 s — a known-good snapshot to fall back on
+setInterval(() => {
+  try {
+    if (Object.keys(_usersCache).length === 0) return; // never overwrite backup with empty data
+    const tmpBak = BACKUP_FILE + '.tmp';
+    fs.writeFileSync(tmpBak, JSON.stringify(_usersCache, null, 2), 'utf8');
+    fs.renameSync(tmpBak, BACKUP_FILE);
+  } catch { /* non-fatal */ }
+}, 60_000);
 
 function readSessionsFromDisk() {
   try { return JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf8')); }

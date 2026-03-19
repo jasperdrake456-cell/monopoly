@@ -5,26 +5,30 @@ import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 import { useGameBoost } from '../hooks/useGameBoost';
 
-// Tighter pool — more blanks/lemons to make wins rare.
-// Distribution: 💎×1, 7️⃣×1, ⭐×1, 🔔×2, 🍇×2, 🍊×2, 🍋×5, 🍒×4, 🔲×6 (24 total)
-// Approx RTP: ~55% — most spins lose; big wins are rare
+// Better pool — no blank tiles, lots of cherries for frequent small wins.
+// Distribution: 💎×1, 7️⃣×1, ⭐×1, 🔔×2, 🍇×2, 🍊×2, 🍋×3, 🍒×12 (24 total)
+// Approx RTP: ~87% — cherries hit often; jackpots stay rare
 const REEL_POOL = [
-  '💎','7️⃣','⭐','🔔','🔔','🍇','🍇','🍊','🍊',
-  '🍋','🍋','🍋','🍋','🍋','🍒','🍒','🍒','🍒',
-  '🔲','🔲','🔲','🔲','🔲','🔲'
+  '💎','7️⃣','⭐',
+  '🔔','🔔',
+  '🍇','🍇',
+  '🍊','🍊',
+  '🍋','🍋','🍋',
+  '🍒','🍒','🍒','🍒','🍒','🍒',
+  '🍒','🍒','🍒','🍒','🍒','🍒',
 ];
 
 const PAYTABLE = [
-  { symbols: ['💎','💎','💎'], label: '💎 💎 💎', mult: 575 },
-  { symbols: ['7️⃣','7️⃣','7️⃣'], label: '7️⃣ 7️⃣ 7️⃣', mult: 287.5 },
-  { symbols: ['⭐','⭐','⭐'], label: '⭐ ⭐ ⭐', mult: 46 },
-  { symbols: ['🔔','🔔','🔔'], label: '🔔 🔔 🔔', mult: 23 },
-  { symbols: ['🍇','🍇','🍇'], label: '🍇 🍇 🍇', mult: 13.8 },
-  { symbols: ['🍊','🍊','🍊'], label: '🍊 🍊 🍊', mult: 9.2 },
-  { symbols: ['🍋','🍋','🍋'], label: '🍋 🍋 🍋', mult: 4.6 },
-  { symbols: ['🍒','🍒','🍒'], label: '🍒 🍒 🍒', mult: 2.9 },
-  { symbols: ['🍒','🍒','*'], label: '🍒 🍒 any', mult: 1.4 },
-  { symbols: ['🍒','*','*'], label: '🍒 any any', mult: 0.7 },
+  { symbols: ['💎','💎','💎'], label: '💎 💎 💎', mult: 600 },
+  { symbols: ['7️⃣','7️⃣','7️⃣'], label: '7️⃣ 7️⃣ 7️⃣', mult: 300 },
+  { symbols: ['⭐','⭐','⭐'], label: '⭐ ⭐ ⭐', mult: 50 },
+  { symbols: ['🔔','🔔','🔔'], label: '🔔 🔔 🔔', mult: 25 },
+  { symbols: ['🍇','🍇','🍇'], label: '🍇 🍇 🍇', mult: 15 },
+  { symbols: ['🍊','🍊','🍊'], label: '🍊 🍊 🍊', mult: 10 },
+  { symbols: ['🍋','🍋','🍋'], label: '🍋 🍋 🍋', mult: 5 },
+  { symbols: ['🍒','🍒','🍒'], label: '🍒 🍒 🍒', mult: 3.0 },
+  { symbols: ['🍒','🍒','*'], label: '🍒 🍒 any', mult: 1.5 },
+  { symbols: ['🍒','*','*'], label: '🍒 any any', mult: 0.8 },
 ];
 
 function rand() {
@@ -43,16 +47,16 @@ function initReelDisplays() {
 function evaluate(mids) {
   const [r0, r1, r2] = mids;
 
-  if (r0 === '💎' && r1 === '💎' && r2 === '💎') return { mult: 575, label: '💎 💎 💎 JACKPOT!' };
-  if (r0 === '7️⃣' && r1 === '7️⃣' && r2 === '7️⃣') return { mult: 287.5, label: '7️⃣ 7️⃣ 7️⃣ LUCKY SEVENS!' };
-  if (r0 === '⭐' && r1 === '⭐' && r2 === '⭐') return { mult: 46, label: '⭐ ⭐ ⭐ STARS!' };
-  if (r0 === '🔔' && r1 === '🔔' && r2 === '🔔') return { mult: 23, label: '🔔 🔔 🔔 BELLS!' };
-  if (r0 === '🍇' && r1 === '🍇' && r2 === '🍇') return { mult: 13.8, label: '🍇 🍇 🍇 GRAPES!' };
-  if (r0 === '🍊' && r1 === '🍊' && r2 === '🍊') return { mult: 9.2, label: '🍊 🍊 🍊 ORANGES!' };
-  if (r0 === '🍋' && r1 === '🍋' && r2 === '🍋') return { mult: 4.6, label: '🍋 🍋 🍋 LEMONS!' };
-  if (r0 === '🍒' && r1 === '🍒' && r2 === '🍒') return { mult: 2.9, label: '🍒 🍒 🍒 CHERRIES!' };
-  if (r0 === '🍒' && r1 === '🍒' && r2 !== '🍒') return { mult: 1.4, label: '🍒 🍒 — Double Cherry!' };
-  if (r0 === '🍒' && r1 !== '🍒') return { mult: 0.7, label: '🍒 — Single Cherry' };
+  if (r0 === '💎' && r1 === '💎' && r2 === '💎') return { mult: 600, label: '💎 💎 💎 JACKPOT!' };
+  if (r0 === '7️⃣' && r1 === '7️⃣' && r2 === '7️⃣') return { mult: 300, label: '7️⃣ 7️⃣ 7️⃣ LUCKY SEVENS!' };
+  if (r0 === '⭐' && r1 === '⭐' && r2 === '⭐') return { mult: 50, label: '⭐ ⭐ ⭐ STARS!' };
+  if (r0 === '🔔' && r1 === '🔔' && r2 === '🔔') return { mult: 25, label: '🔔 🔔 🔔 BELLS!' };
+  if (r0 === '🍇' && r1 === '🍇' && r2 === '🍇') return { mult: 15, label: '🍇 🍇 🍇 GRAPES!' };
+  if (r0 === '🍊' && r1 === '🍊' && r2 === '🍊') return { mult: 10, label: '🍊 🍊 🍊 ORANGES!' };
+  if (r0 === '🍋' && r1 === '🍋' && r2 === '🍋') return { mult: 5, label: '🍋 🍋 🍋 LEMONS!' };
+  if (r0 === '🍒' && r1 === '🍒' && r2 === '🍒') return { mult: 3.0, label: '🍒 🍒 🍒 CHERRIES!' };
+  if (r0 === '🍒' && r1 === '🍒' && r2 !== '🍒') return { mult: 1.5, label: '🍒 🍒 — Double Cherry!' };
+  if (r0 === '🍒' && r1 !== '🍒') return { mult: 0.8, label: '🍒 — Single Cherry' };
 
   return { mult: 0, label: 'No match. Better luck next time!' };
 }

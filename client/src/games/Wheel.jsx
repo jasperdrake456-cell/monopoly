@@ -19,38 +19,38 @@ const RISK_MODES = {
     label: 'Low Risk',
     emoji: '🟢',
     color: '#22c55e',
-    // total weight=85; house edge per segment: Green 7%, Blue 8%, Purple 5%, Gold 13%
+    // total weight=85; house edge per segment: Green 7.8%, Blue 9.6%, Purple 5.9%, Gold 1.2%
     segments: [
       { color: '#22c55e', label: 'Green',  mult: 1.6,   weight: 49 },
       { color: '#3b82f6', label: 'Blue',   mult: 3.2,   weight: 24 },
       { color: '#a855f7', label: 'Purple', mult: 8.0,   weight: 10 },
-      { color: '#FFD700', label: 'Gold',   mult: 37.0,  weight: 2  },
+      { color: '#FFD700', label: 'Gold',   mult: 42.0,  weight: 2  },
     ],
   },
   medium: {
     label: 'Medium Risk',
     emoji: '🟡',
     color: '#eab308',
-    // total weight=81; house edge per segment: Green 11%, Blue 9%, Purple 10%, Red 11%, Gold 7%
+    // total weight=81; house edge per segment: Green 11.1%, Blue 9.1%, Purple 11.1%, Red 11.1%, Gold 1.2%
     segments: [
       { color: '#22c55e', label: 'Green',  mult: 1.6,   weight: 45 },
       { color: '#3b82f6', label: 'Blue',   mult: 3.2,   weight: 23 },
       { color: '#a855f7', label: 'Purple', mult: 8.0,   weight: 9  },
       { color: '#ef4444', label: 'Red',    mult: 24.0,  weight: 3  },
-      { color: '#FFD700', label: 'Gold',   mult: 75.0,  weight: 1  },
+      { color: '#FFD700', label: 'Gold',   mult: 80.0,  weight: 1  },
     ],
   },
   high: {
     label: 'High Risk',
     emoji: '🔴',
     color: '#ef4444',
-    // total weight=50; house edge per segment: Green 16%, Blue 16%, Purple 10%, Red 10%, Gold 10%
+    // total weight=50; house edge per segment: Green 7.6%, Blue 7.6%, Purple 10%, Red 10%, Gold 4%
     segments: [
-      { color: '#22c55e', label: 'Green',  mult: 1.5,   weight: 28 },
-      { color: '#3b82f6', label: 'Blue',   mult: 3.5,   weight: 12 },
+      { color: '#22c55e', label: 'Green',  mult: 1.65,  weight: 28 },
+      { color: '#3b82f6', label: 'Blue',   mult: 3.85,  weight: 12 },
       { color: '#a855f7', label: 'Purple', mult: 7.5,   weight: 6  },
       { color: '#ef4444', label: 'Red',    mult: 15.0,  weight: 3  },
-      { color: '#FFD700', label: 'Gold',   mult: 45.0,  weight: 1  },
+      { color: '#FFD700', label: 'Gold',   mult: 48.0,  weight: 1  },
     ],
   },
 };

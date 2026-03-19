@@ -16,13 +16,13 @@ const GRID_SIZE = 25;
 function calcMultiplier(mines, revealed) {
   // Probability of hitting N safe tiles in a row given M mines in 25 tiles
   // = product(i=0..N-1) of (25 - mines - i) / (25 - i)
-  // Payout = 1 / probability * 0.93 (7% house edge)
+  // Payout = 1 / probability * 0.96 (4% house edge)
   let prob = 1;
   for (let i = 0; i < revealed; i++) {
     prob *= (GRID_SIZE - mines - i) / (GRID_SIZE - i);
   }
   if (prob <= 0) return 0;
-  return parseFloat((0.93 / prob).toFixed(2));
+  return parseFloat((0.96 / prob).toFixed(2));
 }
 
 function generateMines(count) {
