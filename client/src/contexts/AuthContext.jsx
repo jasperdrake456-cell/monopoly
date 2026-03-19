@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { setAuthToken, getBalance, setBalance, setRiggedMode } from '../utils/casinoBalance';
+import { setAuthToken, getBalance, setBalance, setBalanceFromServer, setRiggedMode } from '../utils/casinoBalance';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
 const TOKEN_KEY  = 'gv_auth_token';
@@ -57,8 +57,8 @@ export function AuthProvider({ children }) {
     try {
       const data = await authFetch('/api/accounts/me', tk);
       if (data.ok) {
-        setBalance(data.balance);
-        setBalanceState(data.balance);
+        setBalanceFromServer(data.balance);
+        setBalanceState(getBalance()); // read back what was actually stored
         return data.balance;
       }
     } catch { /* silent */ }
@@ -71,8 +71,8 @@ export function AuthProvider({ children }) {
     try {
       const data = await authFetch('/api/accounts/daily', tk, { method: 'POST' });
       if (data.ok && data.claimed) {
-        setBalance(data.balance);
-        setBalanceState(data.balance);
+        setBalanceFromServer(data.balance);
+        setBalanceState(getBalance());
         return data.amount;
       }
     } catch { /* silent */ }
@@ -90,9 +90,10 @@ export function AuthProvider({ children }) {
         setToken(savedToken);
         setUser({ username: data.username, displayName: data.displayName });
         setAuthToken(savedToken);
-        // Server balance is authoritative; overwrite local
-        setBalance(data.balance);
-        setBalanceState(data.balance);
+        // Server balance is authoritative; overwrite local only if higher
+        // (prevents a stale server value from wiping unsynced local winnings)
+        setBalanceFromServer(data.balance);
+        setBalanceState(getBalance());
       } else {
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
@@ -139,8 +140,8 @@ export function AuthProvider({ children }) {
       setToken(data.token);
       setUser({ username: data.username, displayName: data.displayName });
       setAuthToken(data.token);
-      setBalance(data.balance);
-      setBalanceState(data.balance);
+      setBalanceFromServer(data.balance);
+      setBalanceState(getBalance());
     }
     return data;
   }, []);
@@ -157,9 +158,10 @@ export function AuthProvider({ children }) {
       setToken(data.token);
       setUser({ username: data.username, displayName: data.displayName });
       setAuthToken(data.token);
-      // Server balance wins over local
-      setBalance(data.balance);
-      setBalanceState(data.balance);
+      // Server balance wins over local only if it's higher (avoid wiping
+      // unsynced winnings; client will push local balance after this anyway)
+      setBalanceFromServer(data.balance);
+      setBalanceState(getBalance());
     }
     return data;
   }, []);

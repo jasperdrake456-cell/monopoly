@@ -14,6 +14,15 @@ const MULTIPLIERS = {
 };
 
 const ROWS = 8;
+
+// Weighted bucket probabilities — natural binomial is C(8,k)/256.
+// Jackpot buckets (0 & 8) and near-jackpot (1 & 7) are nerfed to make big
+// wins much rarer. Center buckets are untouched.
+//   Natural:  [1,  8, 28, 56, 70, 56, 28,  8,  1]  (sum=256)
+//   Nerfed:   [0.2, 3, 28, 56, 70, 56, 28,  3, 0.2] (sum=244.4)
+const BUCKET_WEIGHTS = [0.2, 3, 28, 56, 70, 56, 28, 3, 0.2];
+const BUCKET_WEIGHT_TOTAL = BUCKET_WEIGHTS.reduce((a, b) => a + b, 0);
+
 const BUCKET_COLORS = {
   low:    ['#6366f1','#8b5cf6','#a78bfa','#c4b5fd','#ddd6fe','#c4b5fd','#a78bfa','#8b5cf6','#6366f1'],
   medium: ['#f59e0b','#f97316','#eab308','#84cc16','#22d3ee','#84cc16','#eab308','#f97316','#f59e0b'],
@@ -23,21 +32,35 @@ const BUCKET_COLORS = {
 // Step delay — slow enough to clearly watch each bounce
 const STEP_MS = 500;
 
-// Generate path + final bucket for one ball
+// Generate path + final bucket for one ball.
+// Uses weighted bucket selection so jackpot slots (edges) are much rarer,
+// then back-generates a valid path (bucket R steps + remaining L steps,
+// shuffled randomly) so the animation still looks natural.
 function dropBall() {
   if (isRiggedMode()) {
     // Rigged: always land in center bucket (lowest multiplier)
-    // 4 rights then 4 lefts = position 4 out of 0-8
     return { path: ['R','R','R','R','L','L','L','L'], bucket: 4 };
   }
-  const path = [];
-  let pos = 0;
-  for (let i = 0; i < ROWS; i++) {
-    const goRight = Math.random() < 0.5;
-    path.push(goRight ? 'R' : 'L');
-    if (goRight) pos++;
+
+  // Pick a bucket from the weighted distribution
+  let r = Math.random() * BUCKET_WEIGHT_TOTAL;
+  let bucket = BUCKET_WEIGHTS.length - 1;
+  for (let i = 0; i < BUCKET_WEIGHTS.length; i++) {
+    r -= BUCKET_WEIGHTS[i];
+    if (r <= 0) { bucket = i; break; }
   }
-  return { path, bucket: pos };
+
+  // Build a path with exactly `bucket` rights and (ROWS - bucket) lefts
+  const path = [
+    ...Array(bucket).fill('R'),
+    ...Array(ROWS - bucket).fill('L'),
+  ];
+  // Fisher-Yates shuffle so the path looks random, not "all rights then lefts"
+  for (let i = path.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [path[i], path[j]] = [path[j], path[i]];
+  }
+  return { path, bucket };
 }
 
 const BALL_COUNT_OPTIONS = [1, 3, 5, 10];
