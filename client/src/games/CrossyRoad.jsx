@@ -1,5 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { addBalance } from '../utils/casinoBalance';
 import './CrossyRoad.css';
+
+// Multiplier: +0.1× every 15 forward hops (score 0→1.0×, 15→1.1×, 150→2.0×, 300→3.0×)
+const MULT_STEP     = 15;   // hops per tier
+const MULT_INC      = 0.1;  // increase per tier
+const COIN_BASE     = 3;    // coins per score point (before mult)
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const COLS       = 11;
@@ -125,6 +131,7 @@ export default function CrossyRoad() {
       col: CENTER_COL, row: 0, pxX: CENTER_COL * CELL,
       rows, rowMap, entities,
       idleTimer: 0, deathFlash: 0,
+      mult: 1.0, multChanged: false, coinReward: 0,
     };
     phaseRef.current = 'playing';
     lastTs.current   = null;
@@ -261,6 +268,9 @@ export default function CrossyRoad() {
     setHighScore(hs);
 
     if (g.lives <= 0) {
+      const coins = Math.floor(g.score * COIN_BASE * g.mult);
+      g.coinReward = coins;
+      if (coins > 0) addBalance(coins);
       phaseRef.current = 'gameover';
       setPhase('gameover');
     } else {
@@ -292,7 +302,14 @@ export default function CrossyRoad() {
     g.row = newRow;
     g.pxX = newCol * CELL;
     g.idleTimer = 0;
-    if (newRow > g.score) g.score = newRow;
+    if (newRow > g.score) {
+      g.score = newRow;
+      const newMult = parseFloat((1.0 + Math.floor(newRow / MULT_STEP) * MULT_INC).toFixed(1));
+      if (newMult !== g.mult) { g.mult = newMult; g.multChanged = true; }
+      else g.multChanged = false;
+    } else {
+      g.multChanged = false;
+    }
     hopKey.current++;
     forceRender();
   }, [forceRender]);
@@ -367,6 +384,12 @@ export default function CrossyRoad() {
       {/* HUD */}
       <div className="cr-hud">
         <span className="cr-hud-score">🏆 {g.score}</span>
+        <span
+          key={`mult-${g.mult}`}
+          className={`cr-hud-mult ${g.multChanged ? 'cr-mult-up' : ''}`}
+        >
+          {g.mult.toFixed(1)}×
+        </span>
         <div className="cr-hud-lives">
           {Array.from({ length: INIT_LIVES }, (_, i) => (
             <span key={i} className={i < g.lives ? 'cr-heart' : 'cr-heart cr-heart-lost'}>❤️</span>
@@ -479,7 +502,8 @@ export default function CrossyRoad() {
         <div className="cr-overlay">
           <div className="cr-go-icon">💀</div>
           <div className="cr-go-title">Game Over</div>
-          <div className="cr-go-score">Score: {g.score}</div>
+          <div className="cr-go-score">Score: {g.score} · {g.mult.toFixed(1)}×</div>
+          {g.coinReward > 0 && <div className="cr-go-coins">+${g.coinReward.toLocaleString()} coins 🪙</div>}
           <div className="cr-go-hs">Best: {highScore}</div>
           <button className="cr-menu-play" onClick={startGame}>▶ Play Again</button>
           <button className="cr-go-menu" onClick={() => { phaseRef.current = 'menu'; setPhase('menu'); }}>

@@ -37,6 +37,11 @@
   50%  { filter: brightness(1.4); }
   100% { filter: brightness(1); }
 }
+@keyframes cr-mult-pop {
+  0%   { transform: scale(1);    color: #FFD700; }
+  30%  { transform: scale(1.5);  color: #fff;    text-shadow: 0 0 12px #FFD700; }
+  100% { transform: scale(1);    color: #4cff91; }
+}
 
 /* ── Wrapper ─────────────────────────────────────────────────────────────── */
 .cr-wrap {
@@ -129,6 +134,18 @@
 }
 .cr-heart      { font-size: 1.4rem; transition: opacity 0.3s; }
 .cr-heart-lost { opacity: 0.2; filter: grayscale(1); }
+.cr-hud-mult {
+  font-size:   1.15rem;
+  font-weight: 900;
+  color:       #4cff91;
+  min-width:   52px;
+  text-align:  center;
+  letter-spacing: 0.5px;
+  transition:  color 0.3s;
+}
+.cr-mult-up {
+  animation: cr-mult-pop 0.5s ease-out both;
+}
 .cr-hud-hs {
   font-size:  0.85rem;
   color:      #aaa;
@@ -400,6 +417,7 @@
 .cr-go-icon  { font-size: 4rem; }
 .cr-go-title { font-size: 2rem; font-weight: 900; color: #fff; margin: 0; }
 .cr-go-score { font-size: 1.4rem; font-weight: 700; color: #FFD700; }
+.cr-go-coins { font-size: 1.2rem; font-weight: 800; color: #4cff91; }
 .cr-go-hs    { font-size: 1rem; color: #aaa; }
 .cr-go-menu {
   margin-top:    4px;
