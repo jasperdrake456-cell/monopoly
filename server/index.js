@@ -18,6 +18,7 @@ const al        = require('./adminLog');
 const sg        = require('./suggestions');
 const ru        = require('./riggedUsers');
 const go        = require('./gameOdds');
+const ch        = require('./championStore');
 
 const app = express();
 const server = http.createServer(app);
@@ -721,10 +722,13 @@ app.delete('/api/admin/rigged/:username', requireAdmin, (req, res) => {
 
 // Public: get game boost for a specific game (and whether it's the wildcard)
 app.get('/api/game-config/:slug', (req, res) => {
-  const slug     = req.params.slug;
-  const wildcard = go.getDailyWildcard();
-  const boost    = go.getGameBoost(slug);
-  res.json({ ok: true, slug, wildcard, isWildcard: slug === wildcard, boost, wildcardBoost: go.getWildcardBoost() });
+  const slug          = req.params.slug;
+  const wildcard      = go.getDailyWildcard();
+  const baseBoost     = go.getGameBoost(slug);
+  const happyMult     = ch.getHappyHourMultiplier();
+  const boost         = parseFloat((baseBoost * happyMult).toFixed(4));
+  const happyHourActive = happyMult > 1.0;
+  res.json({ ok: true, slug, wildcard, isWildcard: slug === wildcard, boost, wildcardBoost: go.getWildcardBoost(), happyHourActive });
 });
 
 // Public: get today's wildcard
@@ -760,9 +764,130 @@ app.post('/api/admin/game-odds/wildcard/override', requireAdmin, (req, res) => {
 app.post('/api/admin/weekly-reset', requireAdmin, (req, res) => {
   const { amount } = req.body || {};
   const RESET_AMOUNT = Number(amount) > 0 ? Math.floor(Number(amount)) : 5000;
+
+  // Crown the richest player as this week's champion BEFORE resetting balances
+  const top = us.getTopBalances(1);
+  if (top.length > 0) {
+    const newChamp = top[0];
+    ch.setChampion(newChamp.username, newChamp.displayName);
+    const crownMsg = chatStore.addSystemMessage(
+      `👑 ${newChamp.displayName} is this week's Casino Champion with $${(newChamp.casinoBalance || 0).toLocaleString()}! They now have special powers for the week.`
+    );
+    io.of('/chat').emit('newMessage', crownMsg);
+    io.of('/chat').emit('announcement', {
+      text: `👑 ${newChamp.displayName} is this week's Casino Champion!`,
+      timestamp: Date.now(),
+    });
+  } else {
+    ch.clearChampion();
+  }
+
   const count = us.bulkResetBalances(RESET_AMOUNT);
   al.log('weekly_reset', { count, amount: RESET_AMOUNT });
   res.json({ ok: true, count, amount: RESET_AMOUNT });
+});
+
+// ── Weekly Champion ───────────────────────────────────────────────────────────
+
+// Public: get current champion info (for crown badges everywhere)
+app.get('/api/champion', (req, res) => {
+  const state = ch.getState();
+  res.json({
+    ok: true,
+    champion: state.champion,
+    happyHourActive: state.happyHourActive && state.happyHourEndsAt > Date.now(),
+    happyHourEndsAt: state.happyHourEndsAt,
+  });
+});
+
+// Champion-only: get full panel state
+app.get('/api/champion/panel', requireAuth, (req, res) => {
+  if (!ch.isChampion(req.user.username)) {
+    return res.status(403).json({ ok: false, error: 'Not the current champion' });
+  }
+  const state = ch.getState();
+  res.json({
+    ok: true,
+    champion:   state.champion,
+    broadcasts: { used: state.broadcastsUsed,  limit: ch.BROADCAST_LIMIT },
+    mutes:      { used: state.mutesUsed,        limit: ch.MUTE_LIMIT },
+    happyHour:  {
+      used:   state.happyHourUsed,
+      active: state.happyHourActive && state.happyHourEndsAt > Date.now(),
+      endsAt: state.happyHourEndsAt,
+    },
+  });
+});
+
+// Champion-only: broadcast a message site-wide (max 3/week)
+app.post('/api/champion/broadcast', requireAuth, (req, res) => {
+  const { text } = req.body || {};
+  if (!text || !text.trim()) return res.status(400).json({ ok: false, error: 'Empty message' });
+
+  const result = ch.useBroadcast(req.user.username);
+  if (!result.ok) return res.status(403).json(result);
+
+  const state = ch.getState();
+  const name  = state.champion?.displayName || req.user.username;
+  const msg   = chatStore.addSystemMessage(`👑 Champion ${name}: ${text.trim()}`);
+  io.of('/chat').emit('newMessage', msg);
+  io.of('/chat').emit('announcement', { text: `👑 ${name}: ${text.trim()}`, timestamp: Date.now() });
+
+  res.json({ ok: true, broadcastsLeft: ch.BROADCAST_LIMIT - result.used });
+});
+
+// Champion-only: mute a player from chat for 1 hour (max 3/week)
+app.post('/api/champion/mute', requireAuth, (req, res) => {
+  const { username } = req.body || {};
+  if (!username) return res.status(400).json({ ok: false, error: 'Missing username' });
+  const target = (username || '').toLowerCase().trim();
+  if (target === 'jasper') return res.status(403).json({ ok: false, error: 'Cannot mute the admin' });
+  if (target === req.user.username) return res.status(400).json({ ok: false, error: 'Cannot mute yourself' });
+
+  const result = ch.useMute(req.user.username);
+  if (!result.ok) return res.status(403).json(result);
+
+  const expiresAt = Date.now() + 60 * 60 * 1000; // 1 hour
+  chatStore.addChatBan(target, `Muted for 1 hour by the weekly champion`, expiresAt, req.user.username);
+
+  res.json({ ok: true, mutesLeft: ch.MUTE_LIMIT - result.used });
+});
+
+// Champion-only: trigger happy hour (2× payout boost, 30 min, once per week)
+app.post('/api/champion/happy-hour', requireAuth, (req, res) => {
+  const result = ch.triggerHappyHour(req.user.username);
+  if (!result.ok) return res.status(403).json(result);
+
+  const state = ch.getState();
+  const name  = state.champion?.displayName || req.user.username;
+  const msg   = chatStore.addSystemMessage(`🎉 HAPPY HOUR started by ${name}! ALL casino games pay 2× for 30 minutes!`);
+  io.of('/chat').emit('newMessage', msg);
+  io.of('/chat').emit('announcement', {
+    text: `🎉 HAPPY HOUR! 2× payouts on ALL casino games for 30 minutes!`,
+    timestamp: Date.now(),
+  });
+
+  // Auto-announce expiry
+  setTimeout(() => {
+    // Re-check state in case server restarted; getHappyHourMultiplier handles expiry
+    const expMsg = chatStore.addSystemMessage('⏰ Happy hour has ended. Thanks to this week\'s champion!');
+    io.of('/chat').emit('newMessage', expMsg);
+  }, ch.HAPPY_HOUR_MS);
+
+  res.json({ ok: true, endsAt: result.endsAt });
+});
+
+// Admin: manually set champion (for testing or overriding)
+app.post('/api/admin/champion', requireAdmin, (req, res) => {
+  const { username } = req.body || {};
+  if (!username) return res.status(400).json({ ok: false, error: 'Missing username' });
+  const clean = (username || '').toLowerCase().trim();
+  const all   = us.listUsers();
+  const user  = all.find(u => u.username === clean);
+  if (!user) return res.status(404).json({ ok: false, error: 'User not found' });
+  ch.setChampion(user.username, user.displayName);
+  al.log('set_champion', { target: user.username });
+  res.json({ ok: true });
 });
 
 // ── Static client ─────────────────────────────────────────────────────────────

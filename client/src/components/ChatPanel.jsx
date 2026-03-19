@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from '../contexts/AuthContext';
+import { useChampion } from '../hooks/useChampion';
 import { useNavigate } from 'react-router-dom';
 import './ChatPanel.css';
 
@@ -23,6 +24,7 @@ function fmt(ts) {
 
 export default function ChatPanel() {
   const { user, isLoggedIn } = useAuth();
+  const { champion } = useChampion();
   const navigate = useNavigate();
   const [open,       setOpen]       = useState(false);
   const [messages,   setMessages]   = useState([]);
@@ -165,17 +167,19 @@ export default function ChatPanel() {
             <div className="chat-empty">No messages yet. Say hi! 👋</div>
           )}
           {messages.map((m) => {
-            const isMe    = m.username === user?.username?.toLowerCase();
-            const isAdm   = m.isAdmin || m.username === 'jasper';
-            const hue     = userHue(m.username);
+            const isMe      = m.username === user?.username?.toLowerCase();
+            const isAdm     = m.isAdmin || m.username === 'jasper';
+            const isChamp   = !isAdm && champion?.username === m.username;
+            const hue       = userHue(m.username);
             return (
-              <div key={m.id} className={`chat-msg${isMe ? ' chat-msg--me' : ''}${isAdm ? ' chat-msg--admin' : ''}`}>
+              <div key={m.id} className={`chat-msg${isMe ? ' chat-msg--me' : ''}${isAdm ? ' chat-msg--admin' : ''}${isChamp ? ' chat-msg--champion' : ''}`}>
                 <div className="chat-msg-header">
                   <span
                     className="chat-msg-name"
-                    style={isAdm ? {} : { color: `hsl(${hue},65%,68%)` }}
+                    style={isAdm ? {} : isChamp ? { color: '#FFD700' } : { color: `hsl(${hue},65%,68%)` }}
                   >
-                    {isAdm && <span className="chat-admin-badge">👑</span>}
+                    {isAdm   && <span className="chat-admin-badge">👑</span>}
+                    {isChamp && <span className="chat-admin-badge">👑</span>}
                     {m.displayName || m.username}
                   </span>
                   <span className="chat-msg-time">{fmt(m.timestamp)}</span>

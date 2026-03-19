@@ -1,13 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useChampion } from '../hooks/useChampion';
 import './AccountWidget.css';
 
 export default function AccountWidget() {
   const { user, balance, isLoggedIn, logout } = useAuth();
+  const { champion } = useChampion();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const navigate = useNavigate();
+
+  const isChampion = isLoggedIn && user && champion?.username === user.username?.toLowerCase();
 
   // Close on outside click
   useEffect(() => {
@@ -27,8 +31,10 @@ export default function AccountWidget() {
   return (
     <div className="acw-wrap" ref={ref}>
       <button className="acw-trigger" onClick={() => setOpen(o => !o)}>
-        <span className="acw-avatar">{user.displayName[0].toUpperCase()}</span>
-        <span className="acw-name">{user.displayName}</span>
+        <span className="acw-avatar">{isChampion ? '👑' : user.displayName[0].toUpperCase()}</span>
+        <span className="acw-name" style={isChampion ? { color: '#FFD700' } : {}}>
+          {isChampion && <span style={{ marginRight: 3 }}>👑</span>}{user.displayName}
+        </span>
         <span className="acw-bal">${balance.toLocaleString()}</span>
         <span className="acw-caret">{open ? '▲' : '▼'}</span>
       </button>
@@ -36,7 +42,9 @@ export default function AccountWidget() {
       {open && (
         <div className="acw-dropdown">
           <div className="acw-header">
-            <div className="acw-header-name">{user.displayName}</div>
+            <div className="acw-header-name" style={isChampion ? { color: '#FFD700' } : {}}>
+            {isChampion && '👑 '}{user.displayName}
+          </div>
             <div className="acw-header-user">@{user.username}</div>
             <div className="acw-header-bal">💰 ${balance.toLocaleString()}</div>
           </div>

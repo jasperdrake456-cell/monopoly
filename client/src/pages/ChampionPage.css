@@ -1,0 +1,199 @@
+.champ-page {
+  min-height: 100vh;
+  background: #0f0f1a;
+  color: #fff;
+  font-family: 'Roboto', sans-serif;
+  padding: 32px 16px 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+/* ── Header ── */
+.champ-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 600px;
+}
+
+.champ-crown {
+  font-size: 4rem;
+  filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.7));
+  animation: champ-float 3s ease-in-out infinite;
+}
+
+@keyframes champ-float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
+.champ-title {
+  font-size: 2rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #FFD700, #ff9800, #FFD700);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: champ-shimmer 3s linear infinite;
+}
+
+@keyframes champ-shimmer {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+.champ-subtitle {
+  color: #aaa;
+  font-size: 1rem;
+}
+.champ-subtitle strong { color: #FFD700; }
+
+.champ-back {
+  color: #7c3aed;
+  text-decoration: none;
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+.champ-back:hover { color: #c084fc; }
+
+/* ── Status toast ── */
+.champ-status {
+  width: 100%;
+  max-width: 700px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  text-align: center;
+  animation: champ-fadein 0.3s ease;
+}
+.champ-status--ok  { background: rgba(46,204,113,0.15); border: 1px solid #2ecc71; color: #2ecc71; }
+.champ-status--err { background: rgba(231,76,60,0.15);  border: 1px solid #e74c3c; color: #e74c3c; }
+
+@keyframes champ-fadein { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+/* ── Powers grid ── */
+.champ-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  width: 100%;
+  max-width: 900px;
+}
+
+/* ── Card ── */
+.champ-card {
+  background: #1a1a2e;
+  border: 1px solid #2a2a4a;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color 0.2s;
+}
+.champ-card:hover { border-color: #FFD70055; }
+
+.champ-card--wide {
+  grid-column: 1 / -1;
+}
+
+.champ-card-icon  { font-size: 2rem; }
+.champ-card-title { font-size: 1.15rem; font-weight: 700; color: #FFD700; }
+.champ-card-desc  { font-size: 0.85rem; color: #888; line-height: 1.5; }
+
+/* ── Use pips ── */
+.champ-uses {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.champ-pip {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.champ-pip--free { background: #7c3aed; box-shadow: 0 0 6px #7c3aed; }
+.champ-pip--used { background: #333; }
+.champ-uses-label { font-size: 0.78rem; color: #666; margin-left: 4px; }
+
+/* ── Inputs ── */
+.champ-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: #111127;
+  border: 1px solid #333;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.9rem;
+  padding: 10px 12px;
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+.champ-textarea:focus { outline: none; border-color: #7c3aed; }
+
+.champ-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #111127;
+  border: 1px solid #333;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.9rem;
+  padding: 10px 12px;
+}
+.champ-input:focus { outline: none; border-color: #7c3aed; }
+
+/* ── Buttons ── */
+.champ-btn {
+  padding: 12px 20px;
+  border-radius: 10px;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.champ-btn:hover  { opacity: 0.85; }
+.champ-btn:active { transform: scale(0.97); }
+
+.champ-btn--purple { background: linear-gradient(135deg, #7c3aed, #9333ea); color: #fff; }
+.champ-btn--red    { background: linear-gradient(135deg, #dc2626, #ef4444); color: #fff; }
+.champ-btn--gold   { background: linear-gradient(135deg, #b45309, #d97706, #FFD700); color: #1a1a1a; font-size: 1.05rem; padding: 14px 24px; }
+
+/* ── Happy hour active ── */
+.champ-hh-active {
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid #FFD700;
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+  font-weight: 700;
+  color: #FFD700;
+  font-size: 1.1rem;
+}
+.champ-hh-countdown {
+  font-size: 0.85rem;
+  color: #aaa;
+  margin-top: 6px;
+  font-weight: 400;
+}
+
+/* ── Exhausted state ── */
+.champ-exhausted {
+  color: #555;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+/* ── Loading ── */
+.champ-loading {
+  color: #666;
+  margin-top: 80px;
+  font-size: 1.1rem;
+}

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AccountWidget from '../components/AccountWidget';
 import { useAuth } from '../contexts/AuthContext';
+import { useChampion } from '../hooks/useChampion';
 import './HomePage.css';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
@@ -52,6 +53,8 @@ const MULTI_GAMES = [
 export default function HomePage() {
   const { user } = useAuth();
   const isAdmin = user?.username === 'jasper';
+  const { champion, happyHourActive } = useChampion();
+  const isChampion = user && champion?.username === user.username?.toLowerCase();
 
   const [wildcard, setWildcard] = useState(null);
   useEffect(() => {
@@ -70,6 +73,7 @@ export default function HomePage() {
         <div className="home-header-right">
           <Link to="/trivia" className="home-trivia-btn">🎯 Daily Trivia</Link>
           <Link to="/leaderboard" className="home-trivia-btn">🏆 Leaderboard</Link>
+          {isChampion && <Link to="/champion-panel" className="home-trivia-btn" style={{ background: 'rgba(255,215,0,0.12)', borderColor: 'rgba(255,215,0,0.45)', color: '#FFD700', fontWeight: 700 }}>👑 Champion Panel</Link>}
           {isAdmin && <Link to="/admin" className="home-trivia-btn" style={{ background: 'rgba(239,68,68,0.15)', borderColor: 'rgba(239,68,68,0.4)', color: '#fca5a5' }}>🛡️ Admin</Link>}
           <AccountWidget />
         </div>
@@ -81,6 +85,13 @@ export default function HomePage() {
             <span>🎰 Casino</span>
             <Link to="/casino-leaderboard" className="home-trivia-btn" style={{ fontSize:'0.78rem', padding:'5px 12px' }}>💰 Rich List</Link>
           </h2>
+          {happyHourActive && (
+            <div className="gotd-banner" style={{ background: 'linear-gradient(135deg,rgba(255,215,0,0.12),rgba(255,152,0,0.12))', borderColor: 'rgba(255,215,0,0.4)' }}>
+              <span className="gotd-star">🎉</span>
+              <span className="gotd-label" style={{ color: '#FFD700' }}>HAPPY HOUR</span>
+              <span className="gotd-boost" style={{ color: '#FFD700' }}>All casino games pay 2× right now!</span>
+            </div>
+          )}
           {wildcard && (
             <div className="gotd-banner">
               <span className="gotd-star">⭐</span>

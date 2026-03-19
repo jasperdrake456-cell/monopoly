@@ -49,6 +49,7 @@ import KenoPage from './pages/KenoPage';
 import DragonTigerPage from './pages/DragonTigerPage';
 import RequireAuth from './components/RequireAuth';
 import SuggestionsPage from './pages/SuggestionsPage';
+import ChampionPage from './pages/ChampionPage';
 import './App.css';
 
 // Convenience wrapper: RequireAuth + GameGuard for a given slug
@@ -69,6 +70,7 @@ export default function App() {
         <PasswordGate>
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/champion-panel" element={<ChampionPage />} />
 
             {/* Multiplayer */}
             <Route path="/monopoly"    element={<GR slug="monopoly"><MonopolyPage /></GR>} />
