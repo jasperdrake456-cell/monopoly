@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSocket } from '../hooks/useSocket';
-import { getBalance, addBalance, subtractBalance } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, isRiggedMode } from '../utils/casinoBalance';
 import { isHighScore } from '../utils/leaderboard';
 import HighScoreModal from '../components/HighScoreModal';
 import './TexasHoldem.css';
@@ -453,10 +453,12 @@ export default function TexasHoldem() {
       on('cashOut', ({ chips }) => {
         // Server is cashing us out — add chips back to casino balance and return to lobby
         if (chips > 0) {
-          addBalance(chips);
+          // Rigged: cap payout to buy-in so players can never profit
+          const payout = isRiggedMode() ? Math.min(chips, sessionBuyIn) : chips;
+          addBalance(payout);
           syncBalance();
           // Check if session profit is a leaderboard high score
-          const profit = chips - sessionBuyIn;
+          const profit = payout - sessionBuyIn;
           if (profit > 0) {
             isHighScore('texas-holdem', profit).then(yes => {
               if (yes) setPokerHSScore(profit);
