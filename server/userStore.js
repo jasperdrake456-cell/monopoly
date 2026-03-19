@@ -60,7 +60,31 @@ function _loadUsersFromDisk() {
 
 // Single in-memory source of truth for all user data at runtime
 let _usersCache = _loadUsersFromDisk();
-console.log(`[userStore] Loaded ${Object.keys(_usersCache).length} accounts.`);
+const _accountCount = Object.keys(_usersCache).length;
+console.log(`[userStore] Loaded ${_accountCount} accounts from ${DATA_DIR}`);
+
+// ⚠️  PERSISTENCE WARNING
+// If DATA_DIR is not set to a Railway Volume (or equivalent persistent disk),
+// ALL USER DATA IS WIPED on every container restart — even without a deploy.
+// Railway restarts containers for many reasons (memory, health checks, maintenance)
+// and the container filesystem resets to the Git repo state (empty users.json).
+//
+// FIX: In Railway dashboard → your service → Variables, set:
+//   DATA_DIR = /data
+// Then in Railway dashboard → your service → Storage, create a Volume
+// mounted at /data.  After that, accounts survive restarts indefinitely.
+if (!process.env.DATA_DIR) {
+  console.warn('');
+  console.warn('╔══════════════════════════════════════════════════════════════╗');
+  console.warn('║  ⚠️  WARNING: DATA_DIR env var is NOT set!                   ║');
+  console.warn('║  User accounts are stored in server/data/ (container disk)   ║');
+  console.warn('║  ALL ACCOUNTS WILL BE DELETED on every container restart.    ║');
+  console.warn('║                                                               ║');
+  console.warn('║  FIX: In Railway → Variables, add: DATA_DIR=/data            ║');
+  console.warn('║       In Railway → Storage, create a Volume at /data         ║');
+  console.warn('╚══════════════════════════════════════════════════════════════╝');
+  console.warn('');
+}
 
 function readUsers() {
   return _usersCache; // always return the live in-memory copy
