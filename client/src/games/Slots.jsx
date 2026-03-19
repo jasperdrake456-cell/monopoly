@@ -5,17 +5,15 @@ import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 import { useGameBoost } from '../hooks/useGameBoost';
 
-// Buffed pool — cherries ~53% per reel for frequent wins, more lemons/oranges for mid-tier hits.
-// Distribution: 💎×1, 7️⃣×1, ⭐×1, 🔔×2, 🍇×2, 🍊×3, 🍋×4, 🍒×16 (30 total)
-// Approx RTP: ~95% — single cherry is now a net gain (1.2×)
+// Nerfed pool — cherries ~33% per reel, fewer mid-tier symbols.
+// Distribution: 💎×1, 7️⃣×1, ⭐×1, 🔔×2, 🍇×2, 🍊×2, 🍋×3, 🍒×9 (21 total)
 const REEL_POOL = [
   '💎','7️⃣','⭐',
   '🔔','🔔',
   '🍇','🍇',
-  '🍊','🍊','🍊',
-  '🍋','🍋','🍋','🍋',
-  '🍒','🍒','🍒','🍒','🍒','🍒','🍒','🍒',
-  '🍒','🍒','🍒','🍒','🍒','🍒','🍒','🍒',
+  '🍊','🍊',
+  '🍋','🍋','🍋',
+  '🍒','🍒','🍒','🍒','🍒','🍒','🍒','🍒','🍒',
 ];
 
 const PAYTABLE = [
@@ -23,12 +21,12 @@ const PAYTABLE = [
   { symbols: ['7️⃣','7️⃣','7️⃣'], label: '7️⃣ 7️⃣ 7️⃣', mult: 300 },
   { symbols: ['⭐','⭐','⭐'], label: '⭐ ⭐ ⭐', mult: 50 },
   { symbols: ['🔔','🔔','🔔'], label: '🔔 🔔 🔔', mult: 25 },
-  { symbols: ['🍇','🍇','🍇'], label: '🍇 🍇 🍇', mult: 18 },
-  { symbols: ['🍊','🍊','🍊'], label: '🍊 🍊 🍊', mult: 12 },
-  { symbols: ['🍋','🍋','🍋'], label: '🍋 🍋 🍋', mult: 6 },
-  { symbols: ['🍒','🍒','🍒'], label: '🍒 🍒 🍒', mult: 4 },
-  { symbols: ['🍒','🍒','*'], label: '🍒 🍒 any', mult: 2 },
-  { symbols: ['🍒','*','*'], label: '🍒 any any', mult: 1.2 },
+  { symbols: ['🍇','🍇','🍇'], label: '🍇 🍇 🍇', mult: 15 },
+  { symbols: ['🍊','🍊','🍊'], label: '🍊 🍊 🍊', mult: 10 },
+  { symbols: ['🍋','🍋','🍋'], label: '🍋 🍋 🍋', mult: 5 },
+  { symbols: ['🍒','🍒','🍒'], label: '🍒 🍒 🍒', mult: 3 },
+  { symbols: ['🍒','🍒','*'], label: '🍒 🍒 any', mult: 1.5 },
+  { symbols: ['🍒','*','*'], label: '🍒 any any', mult: 0.8 },
 ];
 
 function rand() {
@@ -58,9 +56,9 @@ function evaluate(mids) {
 
   // Cherry combos — count by total, any position (fixes 🍒❌🍒 and ❌🍒🍒 cases)
   const cherries = mids.filter(s => s === '🍒').length;
-  if (cherries === 3) return { mult: 4,   label: '🍒 🍒 🍒 CHERRIES!' };
-  if (cherries === 2) return { mult: 2,   label: '🍒 🍒 — Double Cherry!' };
-  if (cherries === 1) return { mult: 1.2, label: '🍒 — Single Cherry' };
+  if (cherries === 3) return { mult: 3,   label: '🍒 🍒 🍒 CHERRIES!' };
+  if (cherries === 2) return { mult: 1.5, label: '🍒 🍒 — Double Cherry!' };
+  if (cherries === 1) return { mult: 0.8, label: '🍒 — Single Cherry' };
 
   return { mult: 0, label: 'No match. Better luck next time!' };
 }
