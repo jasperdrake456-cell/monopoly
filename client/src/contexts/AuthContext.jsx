@@ -97,8 +97,7 @@ export function AuthProvider({ children }) {
         setToken(savedToken);
         setUser({ username: data.username, displayName: data.displayName });
         setAuthToken(savedToken);
-        // Server balance is authoritative; overwrite local only if higher
-        // (prevents a stale server value from wiping unsynced local winnings)
+        // Server balance is always authoritative — overwrites local cache
         setBalanceFromServer(data.balance);
         setBalanceState(getBalance());
       } else {
@@ -189,8 +188,7 @@ export function AuthProvider({ children }) {
       setToken(data.token);
       setUser({ username: data.username, displayName: data.displayName });
       setAuthToken(data.token);
-      // Server balance wins over local only if it's higher (avoid wiping
-      // unsynced winnings; client will push local balance after this anyway)
+      // Server balance is always authoritative — overwrites local cache
       setBalanceFromServer(data.balance);
       setBalanceState(getBalance());
     }

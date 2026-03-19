@@ -64,19 +64,12 @@ export function setBalance(amount) {
 }
 
 // Write the server's authoritative value to localStorage WITHOUT scheduling
-// a sync back. Used by AuthContext on login/mount so we don't echo the
-// server's own value back to it (which could race with in-flight bets).
+// a sync back. Server is always the source of truth — this ensures admin
+// resets/clears are immediately respected regardless of cached local values.
 export function setBalanceFromServer(amount) {
   if (typeof amount !== 'number' || !isFinite(amount) || amount < 0) return;
   const val = Math.max(0, Math.round(amount));
-  // Only overwrite if the server value is higher than current local value,
-  // OR if local value is 0/missing (fresh load). This prevents a stale server
-  // value from wiping out winnings the client hasn't synced yet.
-  const current = getBalance();
-  if (current === 0 || val >= current) {
-    localStorage.setItem(BALANCE_KEY, String(val));
-    // Don't call scheduleSync — the server already has this value.
-  }
+  localStorage.setItem(BALANCE_KEY, String(val));
 }
 
 export function addBalance(amount) {
