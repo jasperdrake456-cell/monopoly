@@ -278,14 +278,8 @@ function syncBalance(token, balance) {
   const newBalance = Math.floor(balance);
 
   if (newBalance <= 0) {
-    // Mark when they first hit zero (don't overwrite if already set)
-    if (!users[username].brokeAt) {
-      users[username].brokeAt = Date.now();
-    }
     users[username].casinoBalance = 0;
   } else {
-    // Back in the game — clear the broke timer
-    delete users[username].brokeAt;
     users[username].casinoBalance = newBalance;
   }
 
@@ -527,25 +521,9 @@ function kickUser(adminToken, targetUsername) {
  *
  * Returns the number of accounts deleted.
  */
+// Account deletion by zero balance is disabled — accounts are never auto-deleted.
 function pruneZeroBalanceAccounts() {
-  const users = readUsers();
-  const toDelete = Object.values(users).filter(u =>
-    u.username !== ADMIN_USERNAME &&
-    (u.casinoBalance || 0) <= 0 &&
-    u.brokeAt  // set by syncBalance when balance genuinely hits 0
-  );
-  if (toDelete.length === 0) return 0;
-
-  for (const u of toDelete) {
-    delete users[u.username];
-    for (const [t, data] of sessions) {
-      if (data.username === u.username) sessions.delete(t);
-    }
-    console.log(`[userStore] Deleted "${u.username}" — broke for 5+ minutes`);
-  }
-  writeUsers(users);
-  writeSessionsToDisk();
-  return toDelete.length;
+  return 0;
 }
 
 /**
