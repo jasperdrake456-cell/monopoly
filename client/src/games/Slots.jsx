@@ -27,7 +27,6 @@ const PAYTABLE = [
   { symbols: ['🍋','🍋','🍋'], label: '🍋 🍋 🍋', mult: 5 },
   { symbols: ['🍒','🍒','🍒'], label: '🍒 🍒 🍒', mult: 3 },
   { symbols: ['🍒','🍒','*'], label: '🍒 🍒 any', mult: 1.5 },
-  { symbols: ['🍒','*','*'], label: '🍒 any any', mult: 0.8 },
 ];
 
 function rand() {
@@ -59,7 +58,6 @@ function evaluate(mids) {
   const cherries = mids.filter(s => s === '🍒').length;
   if (cherries === 3) return { mult: 3,   label: '🍒 🍒 🍒 CHERRIES!' };
   if (cherries === 2) return { mult: 1.5, label: '🍒 🍒 — Double Cherry!' };
-  if (cherries === 1) return { mult: 0.8, label: '🍒 — Single Cherry' };
 
   return { mult: 0, label: 'No match. Better luck next time!' };
 }
