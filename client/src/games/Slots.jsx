@@ -5,16 +5,16 @@ import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 import { useGameBoost } from '../hooks/useGameBoost';
 
-// Very low odds pool — cherries ~7% per reel, massive lemon filler.
-// Distribution: 💎×1, 7️⃣×1, ⭐×1, 🔔×1, 🍇×1, 🍊×1, 🍋×20, 🍒×2 (28 total)
+// Near-impossible pool — each winning symbol only 1 in 60, cherries ~1.6% per reel.
+// Distribution: 💎×1, 7️⃣×1, ⭐×1, 🔔×1, 🍇×1, 🍊×1, 🍒×1, 🍋×54 (61 total)
 const REEL_POOL = [
-  '💎','7️⃣','⭐',
-  '🔔',
-  '🍇',
-  '🍊',
+  '💎','7️⃣','⭐','🔔','🍇','🍊','🍒',
   '🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋',
   '🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋',
-  '🍒','🍒',
+  '🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋',
+  '🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋',
+  '🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋',
+  '🍋','🍋','🍋','🍋',
 ];
 
 const PAYTABLE = [
