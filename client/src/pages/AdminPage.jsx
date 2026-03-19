@@ -746,7 +746,11 @@ export default function AdminPage() {
                       }}>🎲 Rig</button>
                     )}
                     {currentChampion === u.username ? (
-                      <button className="admin-btn admin-btn--ghost admin-btn--sm" style={{borderColor:'#FFD700',color:'#FFD700'}} title="Currently the weekly champion" disabled>👑 Champion</button>
+                      <button className="admin-btn admin-btn--ghost admin-btn--sm" style={{borderColor:'#ef4444',color:'#ef4444'}} onClick={async () => {
+                        const d = await authFetch('/api/admin/champion', token, { method: 'DELETE' });
+                        setStatus(d.ok ? `👑 Champion removed.` : (d.error || 'Failed'));
+                        if (d.ok) loadChampion();
+                      }}>✖ Remove Champion</button>
                     ) : (
                       <button className="admin-btn admin-btn--ghost admin-btn--sm" style={{borderColor:'#b45309',color:'#d97706'}} onClick={async () => {
                         const d = await authFetch('/api/admin/champion', token, {

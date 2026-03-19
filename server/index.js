@@ -945,6 +945,13 @@ app.post('/api/champion/airdrop', requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
+// Admin: remove champion
+app.delete('/api/admin/champion', requireAdmin, (req, res) => {
+  ch.clearChampion();
+  al.log('clear_champion', {});
+  res.json({ ok: true });
+});
+
 // Admin: manually set champion (for testing or overriding)
 app.post('/api/admin/champion', requireAdmin, (req, res) => {
   const { username } = req.body || {};
