@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import './Plinko.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -25,6 +25,11 @@ const STEP_MS = 500;
 
 // Generate path + final bucket for one ball
 function dropBall() {
+  if (isRiggedMode()) {
+    // Rigged: always land in center bucket (lowest multiplier)
+    // 4 rights then 4 lefts = position 4 out of 0-8
+    return { path: ['R','R','R','R','L','L','L','L'], bucket: 4 };
+  }
   const path = [];
   let pos = 0;
   for (let i = 0; i < ROWS; i++) {

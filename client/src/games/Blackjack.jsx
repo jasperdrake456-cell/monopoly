@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import './Blackjack.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -12,6 +12,18 @@ const RED_SUITS = new Set(['♥', '♦']);
 const NUM_DECKS = 6;
 
 function createShoe() {
+  if (isRiggedMode()) {
+    // Rigged shoe: player always gets 10+6=16 (must hit), dealer shows Ace (strong)
+    // Every subsequent card is a 10 — player busts on first hit (16+10=26)
+    const mk = (rank) => ({ suit: '♠', rank });
+    return [
+      mk('10'), mk('A'), mk('6'),  mk('5'),   // P1=10, D=A(soft), P2=6 → 16 vs dealer Ace
+      mk('10'), mk('10'), mk('10'), mk('10'), mk('10'), mk('10'), mk('10'), mk('10'),
+      mk('10'), mk('10'), mk('10'), mk('10'), mk('10'), mk('10'), mk('10'), mk('10'),
+      mk('10'), mk('10'), mk('10'), mk('10'), mk('10'), mk('10'), mk('10'), mk('10'),
+      mk('10'), mk('10'), mk('10'), mk('10'), mk('10'), mk('10'), mk('10'), mk('10'),
+    ];
+  }
   const cards = [];
   for (let d = 0; d < NUM_DECKS; d++)
     for (const suit of SUITS)

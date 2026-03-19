@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import './Tower.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -103,7 +103,8 @@ export default function Tower() {
   function pickTile(floor, col) {
     if (phase !== 'playing') return;
     if (floor !== currentFloor) return; // can only pick active floor
-    const isBomb = tower[floor][col];
+    // Rigged: the clicked tile is always a bomb
+    const isBomb = isRiggedMode() ? true : tower[floor][col];
 
     const newStates = cellStates.map(r => [...r]);
 

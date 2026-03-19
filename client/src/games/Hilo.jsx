@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import './Hilo.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -125,12 +125,24 @@ export default function Hilo() {
     setAnimating(true);
     setLastGuess(direction);
 
+    // Rigged: always wrong — swap the next card for one guaranteed to lose
+    let effectiveNext = nextCard;
+    if (isRiggedMode()) {
+      // Pick a card value that defeats the guess
+      const allValues = [2,3,4,5,6,7,8,9,10,11,12,13,14];
+      const losingValues = direction === 'higher'
+        ? allValues.filter(v => v <= currentCard.value)   // need lower/equal to lose "higher"
+        : allValues.filter(v => v >= currentCard.value);  // need higher/equal to lose "lower"
+      const pick = losingValues[Math.floor(Math.random() * losingValues.length)] || currentCard.value;
+      const rankNames = ['','','2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+      effectiveNext = { suit: '♠', rank: rankNames[pick], value: pick };
+    }
     const isCorrect =
-      (direction === 'higher' && nextCard.value > currentCard.value) ||
-      (direction === 'lower'  && nextCard.value < currentCard.value);
+      (direction === 'higher' && effectiveNext.value > currentCard.value) ||
+      (direction === 'lower'  && effectiveNext.value < currentCard.value);
 
     // Skip ties — ties always lose (no tie refund — house keeps)
-    const isTie = nextCard.value === currentCard.value;
+    const isTie = effectiveNext.value === currentCard.value;
 
     const usedValues = revealedCards.map(c => c.value);
     const { multHigher, multLower } = calcMultipliers(currentCard.value, usedValues);
@@ -140,7 +152,7 @@ export default function Hilo() {
     const pickedMult = baseMult ? parseFloat((baseMult * streakBonus).toFixed(2)) : baseMult;
 
     setTimeout(() => {
-      const newRevealed = [...revealedCards, nextCard];
+      const newRevealed = [...revealedCards, effectiveNext];
       setRevealedCards(newRevealed);
       setCardIndex(i => i + 1);
 

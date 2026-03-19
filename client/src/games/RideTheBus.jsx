@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import './RideTheBus.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -130,6 +130,8 @@ export default function RideTheBus() {
         break;
       default: break;
     }
+    // Rigged: always wrong
+    if (isRiggedMode()) correct = false;
 
     // Flip animation then reveal
     setFlipping(true);

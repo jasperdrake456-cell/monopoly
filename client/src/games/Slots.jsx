@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import './Slots.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -120,7 +120,10 @@ export default function Slots() {
   function handleSpin() {
     if (disabled || broke || bet <= 0 || bet > balance) return;
 
-    const finalMids = [rand(), rand(), rand()];
+    // Rigged: return a no-win combo — different non-cherry symbols, no payout
+    const finalMids = isRiggedMode()
+      ? ['🔔', '🍊', '🍋']
+      : [rand(), rand(), rand()];
     const outcome = evaluate(finalMids);
 
     subtractBalance(bet);

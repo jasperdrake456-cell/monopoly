@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import './ChickenCross.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -87,7 +87,8 @@ export default function ChickenCross() {
   function clickCell(row, col) {
     if (phase !== 'playing' || row !== currentRow) return;
 
-    const isCar = gridRef.current[row][col];
+    // Rigged: the clicked tile is always a car
+    const isCar = isRiggedMode() ? true : gridRef.current[row][col];
 
     if (isCar) {
       // Bust — reveal this car + all hidden cars

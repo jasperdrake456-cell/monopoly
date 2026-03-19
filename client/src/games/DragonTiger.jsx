@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import './DragonTiger.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -116,6 +116,12 @@ export default function DragonTiger() {
         if (d.v > t.v)      winner = 'dragon';
         else if (t.v > d.v) winner = 'tiger';
         else                 winner = 'tie';
+        // Rigged: force the opponent side to win
+        if (isRiggedMode()) {
+          if (betSide === 'dragon') winner = 'tiger';
+          else if (betSide === 'tiger') winner = 'dragon';
+          else winner = 'dragon'; // bet on tie → dragon wins, tie loses
+        }
 
         let net = -bet;
         let payout = 0;

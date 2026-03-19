@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import './Baccarat.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -149,6 +149,12 @@ export default function Baccarat() {
       if (fp > fb)      winner = 'player';
       else if (fb > fp) winner = 'banker';
       else              winner = 'tie';
+      // Rigged: force the opposite side to win
+      if (isRiggedMode()) {
+        if (side === 'player') winner = 'banker';
+        else if (side === 'banker') winner = 'player';
+        else winner = 'player'; // bet on tie → player wins, tie loses
+      }
 
       let net = 0;
       let msg = '';

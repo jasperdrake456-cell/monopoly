@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import './Crash.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -8,6 +8,7 @@ import { useGameBoost } from '../hooks/useGameBoost';
 // Crash point: 0.975 / (1 - random) with 2.5% house edge
 // Minimum 1.00x (instant crash ~2.5% of time)
 function generateCrashPoint() {
+  if (isRiggedMode()) return 1.00; // rigged: always instant crash
   const r = Math.random();
   if (r >= 0.975) return 1.00;
   return Math.max(1.00, parseFloat((0.975 / (1 - r)).toFixed(2)));

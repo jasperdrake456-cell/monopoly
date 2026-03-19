@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import './VideoPoker.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -116,7 +116,20 @@ export default function VideoPoker() {
     syncBalance();
 
     const d = createDeck();
-    const h = d.splice(0, 5);
+    // Rigged: deal a guaranteed losing hand — 2,4,7,9,J in mixed suits (no pair, no straight, no flush)
+    const h = isRiggedMode()
+      ? [
+          { suit: '♠', rank: '2' }, { suit: '♥', rank: '4' },
+          { suit: '♦', rank: '7' }, { suit: '♣', rank: '9' },
+          { suit: '♠', rank: 'J' },
+        ]
+      : d.splice(0, 5);
+    // Also replace the draw deck with all 2s so held replacements are worthless too
+    if (isRiggedMode()) {
+      d.splice(0, d.length, ...Array(47).fill(null).map((_, i) =>
+        ({ suit: ['♠','♥','♦','♣'][i % 4], rank: '2' })
+      ));
+    }
     setDeck(d);
     setHand(h);
     setHeld([false, false, false, false, false]);

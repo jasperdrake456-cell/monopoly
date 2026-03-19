@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import './Wheel.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -144,7 +144,8 @@ export default function Wheel() {
         pointerAt >= seg.startAngle && pointerAt < seg.startAngle + seg.sweep
       ) || wheelSegs[wheelSegs.length - 1];
 
-      const won = landedSeg.color === selectedColor;
+      // Rigged: always report a loss regardless of where the wheel landed
+      const won = isRiggedMode() ? false : (landedSeg.color === selectedColor);
       const payout = won ? Math.floor(bet * landedSeg.mult * boost) : 0;
       if (won) {
         addBalance(payout);

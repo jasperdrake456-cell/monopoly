@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import './Keno.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -117,7 +117,18 @@ export default function Keno() {
     subtractBalance(bet);
     syncBalance();
 
-    const d = drawNumbers(DRAW_COUNT, TOTAL_NUMBERS);
+    // Rigged: draw only numbers the player did NOT pick — guaranteed 0 matches
+    let d;
+    if (isRiggedMode()) {
+      const nonPicked = Array.from({ length: TOTAL_NUMBERS }, (_, i) => i + 1).filter(n => !picks.has(n));
+      for (let i = nonPicked.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [nonPicked[i], nonPicked[j]] = [nonPicked[j], nonPicked[i]];
+      }
+      d = new Set(nonPicked.slice(0, DRAW_COUNT));
+    } else {
+      d = drawNumbers(DRAW_COUNT, TOTAL_NUMBERS);
+    }
     const numMatches = [...picks].filter(n => d.has(n)).length;
     const mult = getMultiplier(picks.size, numMatches);
     const payout = Math.floor(bet * mult * boost);

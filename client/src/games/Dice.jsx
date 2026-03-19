@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import './Dice.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -58,7 +58,12 @@ export default function Dice() {
 
     // Short "rolling" animation then resolve
     setTimeout(() => {
-      const rolled   = parseFloat((Math.random() * 100).toFixed(2));
+      // Rigged: always roll on the losing side
+      const rolled = isRiggedMode()
+        ? (direction === 'over'
+            ? parseFloat((Math.random() * Math.max(0, target - 0.01)).toFixed(2))
+            : parseFloat((Math.min(100, target + 0.01) + Math.random() * (100 - target)).toFixed(2)))
+        : parseFloat((Math.random() * 100).toFixed(2));
       const win      = direction === 'over' ? rolled > target : rolled < target;
       const mult     = calcMultiplier(target, direction);
       const payout   = win ? Math.floor(bet * mult * boost) : 0;

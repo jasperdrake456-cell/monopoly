@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import './Roulette.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -90,7 +90,30 @@ export default function Roulette() {
     setPhase('spinning');
     setResult(null);
 
-    const num   = Math.floor(Math.random() * 37); // 0–36
+    // Rigged: pick a number that definitely loses for the current bet
+    let num;
+    if (isRiggedMode()) {
+      // Find a number that makes the bet lose
+      const allNums = Array.from({ length: 37 }, (_, i) => i);
+      const losers = allNums.filter(n => {
+        const c = numColor(n);
+        const { type, value } = betType;
+        if (type === 'number')  return n !== value;
+        if (type === 'red')     return c !== 'red';
+        if (type === 'black')   return c !== 'black';
+        if (type === 'odd')     return !(n !== 0 && n % 2 === 1);
+        if (type === 'even')    return !(n !== 0 && n % 2 === 0);
+        if (type === 'low')     return !(n >= 1 && n <= 18);
+        if (type === 'high')    return !(n >= 19 && n <= 36);
+        if (type === 'dozen1')  return !(n >= 1 && n <= 12);
+        if (type === 'dozen2')  return !(n >= 13 && n <= 24);
+        if (type === 'dozen3')  return !(n >= 25 && n <= 36);
+        return true;
+      });
+      num = losers[Math.floor(Math.random() * losers.length)];
+    } else {
+      num = Math.floor(Math.random() * 37); // 0–36
+    }
     const color = numColor(num);
 
     // Compute target rotation so that num's sector center ends up at top

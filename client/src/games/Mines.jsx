@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import './Mines.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -101,7 +101,12 @@ export default function Mines() {
 
     // First click: place mines (synchronously stored in ref to block re-rolls)
     if (activeMines.size === 0) {
-      activeMines = generateMines(mineCount);
+      if (isRiggedMode()) {
+        // Rigged: every tile is a mine — first click always explodes
+        activeMines = new Set(Array.from({ length: GRID_SIZE }, (_, i) => i));
+      } else {
+        activeMines = generateMines(mineCount);
+      }
       minesRef.current = activeMines; // update ref immediately (synchronous)
       setMines(activeMines);          // update state for rendering
     }
