@@ -949,9 +949,10 @@ app.post('/api/champion/airdrop', requireAuth, (req, res) => {
 app.post('/api/admin/champion', requireAdmin, (req, res) => {
   const { username } = req.body || {};
   if (!username) return res.status(400).json({ ok: false, error: 'Missing username' });
-  const clean = (username || '').toLowerCase().trim();
-  const all   = us.listUsers();
-  const user  = all.find(u => u.username === clean);
+  const clean  = (username || '').toLowerCase().trim();
+  const result = us.listUsers(getToken(req));
+  if (!result.ok) return res.status(403).json({ ok: false, error: 'Forbidden' });
+  const user   = result.users.find(u => u.username === clean);
   if (!user) return res.status(404).json({ ok: false, error: 'User not found' });
   ch.setChampion(user.username, user.displayName);
   al.log('set_champion', { target: user.username });
