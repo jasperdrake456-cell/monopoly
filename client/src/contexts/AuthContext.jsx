@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { setAuthToken, getBalance, setBalance, setBalanceFromServer, setRiggedMode } from '../utils/casinoBalance';
+import { io } from 'socket.io-client';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
 const TOKEN_KEY  = 'gv_auth_token';
@@ -39,6 +40,7 @@ export function AuthProvider({ children }) {
   const [token, setToken]     = useState(null);
   const [balance, setBalanceState] = useState(0);
   const [loading, setLoading] = useState(true);
+  const forceLogoutSocketRef  = useRef(null);
 
   // ── Push local balance to server ─────────────────────────────────────────
   const pushBalance = useCallback(async (tk, bal) => {
@@ -117,6 +119,22 @@ export function AuthProvider({ children }) {
       .then(d => { if (d.ok) setRiggedMode(!d.luckyMode); })
       .catch(() => {});
   }, [token]);
+
+  // ── Listen for server-forced logout (weekly reset) ───────────────────────
+  useEffect(() => {
+    const sock = io(SERVER_URL, { autoConnect: true });
+    forceLogoutSocketRef.current = sock;
+    sock.on('forceLogout', () => {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      setToken(null);
+      setUser(null);
+      setAuthToken(null);
+      // Hard redirect to login page
+      window.location.href = '/auth';
+    });
+    return () => sock.disconnect();
+  }, []);
 
   // ── Listen for balance changes from casino games ──────────────────────────
   useEffect(() => {

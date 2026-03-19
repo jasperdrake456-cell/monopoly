@@ -784,8 +784,21 @@ app.post('/api/admin/weekly-reset', requireAdmin, (req, res) => {
   }
 
   const count = us.bulkResetBalances(RESET_AMOUNT);
-  al.log('weekly_reset', { count, amount: RESET_AMOUNT });
-  res.json({ ok: true, count, amount: RESET_AMOUNT });
+
+  // Kick everyone and kill all sessions so they see a fresh login
+  const allUsers = us.listUsers(getToken(req));
+  let sessionsKilled = 0;
+  if (allUsers.ok) {
+    for (const u of allUsers.users) {
+      const r = us.kickUser(getToken(req), u.username);
+      if (r.ok) sessionsKilled += r.sessionsKilled;
+    }
+  }
+  // Broadcast forced-logout event so clients redirect to login
+  io.emit('forceLogout', { reason: 'Weekly reset — please log back in!' });
+
+  al.log('weekly_reset', { count, amount: RESET_AMOUNT, sessionsKilled });
+  res.json({ ok: true, count, amount: RESET_AMOUNT, sessionsKilled });
 });
 
 // ── Weekly Champion ───────────────────────────────────────────────────────────
