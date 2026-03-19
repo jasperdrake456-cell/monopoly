@@ -10,9 +10,9 @@ const COLS = 5;
 const HOUSE_EDGE = 0.99;
 
 const DIFFICULTIES = {
-  easy:   { cars: 1, rowMult: 1.10, label: 'Easy',   emoji: '😌', color: '#22c55e' },
-  medium: { cars: 2, rowMult: 1.16, label: 'Medium', emoji: '😰', color: '#eab308' },
-  hard:   { cars: 3, rowMult: 1.26, label: 'Hard',   emoji: '💀', color: '#ef4444' },
+  easy:   { cars: 1, rowMult: 1.25, label: 'Easy',   emoji: '😌', color: '#22c55e' },
+  medium: { cars: 2, rowMult: 1.35, label: 'Medium', emoji: '😰', color: '#eab308' },
+  hard:   { cars: 3, rowMult: 1.60, label: 'Hard',   emoji: '💀', color: '#ef4444' },
 };
 
 function generateGrid(difficulty) {

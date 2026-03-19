@@ -38,9 +38,11 @@ const CASINO_GAMES = [
   { path: '/video-poker',  name: 'Video Poker',     desc: 'Hold your best cards, draw the rest — Jacks or Better pays!', icon: '🂡', players: '1 player' },
   { path: '/keno',         name: 'Keno',            desc: 'Pick up to 10 numbers — match as many as you can from the draw!', icon: '🎱', players: '1 player' },
   { path: '/dragon-tiger', name: 'Dragon Tiger',    desc: 'One card each — Dragon vs Tiger. Highest card wins. Simple & fast!', icon: '🐉', players: '1 player' },
+  { path: '/crossy-road', name: 'Crossy Road',     desc: 'Hop across roads, rivers and rails — cash out before you get squashed!', icon: '🐸', players: '1 player' },
 ];
 
 const MULTI_GAMES = [
+  { path: '/uno', name: 'UNO', desc: 'Be the first to empty your hand — call UNO or get caught!', icon: '🃏', players: '2-8 players' },
   { path: '/chess', name: 'Chess', desc: 'Classic strategy board game', icon: '♟️', players: '2 players' },
   { path: '/connect4', name: 'Connect 4', desc: 'Drop discs to get 4 in a row', icon: '🟡', players: '2 players' },
   { path: '/checkers', name: 'Checkers', desc: 'Jump and capture all enemy pieces', icon: '⬛', players: '2 players' },

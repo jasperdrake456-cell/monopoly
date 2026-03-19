@@ -983,6 +983,7 @@ require('./games/connect4').register(io.of('/connect4'));
 require('./games/checkers').register(io.of('/checkers'));
 require('./games/battleship').register(io.of('/battleship'));
 require('./games/texasholdem').register(io.of('/texasholdem'));
+require('./games/uno').register(io.of('/uno'));
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => console.log(`Game platform server running on port ${PORT}`));

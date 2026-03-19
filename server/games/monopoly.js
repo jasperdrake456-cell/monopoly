@@ -1,6 +1,9 @@
 'use strict';
 const rm = require('../roomManager');
 const gl = require('../gameLogic');
+const us = require('../userStore');
+
+const MONOPOLY_WIN_BONUS = 20000;
 
 function roomChannel(code) { return `room:${code}`; }
 
@@ -41,15 +44,15 @@ function handleAction(ns, socket, roomCode, fn) {
 function register(ns) {
   ns.on('connection', (socket) => {
 
-    socket.on('createRoom', ({ playerName, token, freeParkingEnabled, boardType }) => {
-      const { room, player, sessionId } = rm.createRoom(socket.id, playerName, token, freeParkingEnabled, boardType);
+    socket.on('createRoom', ({ playerName, token, freeParkingEnabled, boardType, authToken }) => {
+      const { room, player, sessionId } = rm.createRoom(socket.id, playerName, token, freeParkingEnabled, boardType, authToken);
       socket.join(roomChannel(room.code));
       socket.emit('roomCreated', { roomCode: room.code, playerId: socket.id, sessionId });
       broadcastState(ns, room);
     });
 
-    socket.on('joinRoom', ({ roomCode, playerName, token }) => {
-      const result = rm.joinRoom(roomCode, socket.id, playerName, token);
+    socket.on('joinRoom', ({ roomCode, playerName, token, authToken }) => {
+      const result = rm.joinRoom(roomCode, socket.id, playerName, token, authToken);
       if (result.error) { socket.emit('error', { message: result.error }); return; }
       socket.join(roomChannel(roomCode));
       socket.emit('roomJoined', { playerId: socket.id, sessionId: result.player.sessionId });
@@ -198,10 +201,34 @@ function register(ns) {
     });
 
     socket.on('declareBankruptcy', ({ roomCode }) => {
-      handleAction(ns, socket, roomCode, (room) => {
-        if (!room.gameState) return { error: 'No game' };
-        return gl.doDeclareBankruptcy(room.gameState, socket.id);
-      });
+      const room = rm.getRoom(roomCode);
+      if (!room) { socket.emit('error', { message: 'Room not found' }); return; }
+      if (!room.gameState) { socket.emit('error', { message: 'No game' }); return; }
+      let result;
+      try { result = gl.doDeclareBankruptcy(room.gameState, socket.id); } catch (err) {
+        console.error('[Monopoly] declareBankruptcy threw:', err);
+        socket.emit('error', { message: 'Server error' }); return;
+      }
+      if (result && result.error) { socket.emit('error', { message: result.error }); return; }
+
+      // Pay winner $20k when the last player standing is determined
+      if (room.gameState.status === 'ended' && room.gameState.winner) {
+        const winnerId = room.gameState.winner;
+        const winnerPlayer = room.players.find(p => p.id === winnerId);
+        if (winnerPlayer?.authToken) {
+          const username = us.validateToken(winnerPlayer.authToken);
+          if (username) {
+            us.addBonus(username, MONOPOLY_WIN_BONUS);
+            broadcast(ns, roomCode, 'chatMessage', {
+              name: '🏆 Server',
+              text: `${winnerPlayer.name} wins the game and earns $${MONOPOLY_WIN_BONUS.toLocaleString()} in casino coins!`,
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            });
+          }
+        }
+      }
+
+      broadcastState(ns, room);
     });
 
     socket.on('chatMessage', ({ roomCode, text }) => {

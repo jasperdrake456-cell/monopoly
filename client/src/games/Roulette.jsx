@@ -44,12 +44,12 @@ const SECTORS = WHEEL_ORDER.map((num, i) => {
 
 // payout = total return multiplier (e.g. 1.8 means bet $100 → get $180 back)
 const OUTSIDE_BETS = [
-  { type: 'red',    label: 'Red',    icon: '🔴', payout: 1.98 },
-  { type: 'black',  label: 'Black',  icon: '⚫', payout: 1.98 },
-  { type: 'odd',    label: 'Odd',    icon: '',   payout: 1.98 },
-  { type: 'even',   label: 'Even',   icon: '',   payout: 1.98 },
-  { type: 'low',    label: '1–18',   icon: '',   payout: 1.98 },
-  { type: 'high',   label: '19–36',  icon: '',   payout: 1.98 },
+  { type: 'red',    label: 'Red',    icon: '🔴', payout: 2.2 },
+  { type: 'black',  label: 'Black',  icon: '⚫', payout: 2.2 },
+  { type: 'odd',    label: 'Odd',    icon: '',   payout: 2.2 },
+  { type: 'even',   label: 'Even',   icon: '',   payout: 2.2 },
+  { type: 'low',    label: '1–18',   icon: '',   payout: 2.2 },
+  { type: 'high',   label: '19–36',  icon: '',   payout: 2.2 },
   { type: 'dozen1', label: '1st 12', icon: '',   payout: 2.95 },
   { type: 'dozen2', label: '2nd 12', icon: '',   payout: 2.95 },
   { type: 'dozen3', label: '3rd 12', icon: '',   payout: 2.95 },

@@ -10,7 +10,7 @@ function genCode() {
   return code;
 }
 
-function createRoom(hostSocketId, playerName, token, freeParkingEnabled, boardType) {
+function createRoom(hostSocketId, playerName, token, freeParkingEnabled, boardType, authToken) {
   let code;
   do { code = genCode(); } while (rooms.has(code));
 
@@ -20,6 +20,7 @@ function createRoom(hostSocketId, playerName, token, freeParkingEnabled, boardTy
     sessionId,
     name: playerName,
     token,
+    authToken: authToken || null,
     connected: true,
     isHost: true,
   };
@@ -38,7 +39,7 @@ function createRoom(hostSocketId, playerName, token, freeParkingEnabled, boardTy
   return { room, player, sessionId };
 }
 
-function joinRoom(roomCode, socketId, playerName, token) {
+function joinRoom(roomCode, socketId, playerName, token, authToken) {
   const room = rooms.get(roomCode);
   if (!room) return { error: 'Room not found' };
   if (room.status !== 'lobby') return { error: 'Game already in progress' };
@@ -56,6 +57,7 @@ function joinRoom(roomCode, socketId, playerName, token) {
     sessionId,
     name: playerName,
     token,
+    authToken: authToken || null,
     connected: true,
     isHost: false,
   };

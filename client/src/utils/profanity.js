@@ -21,6 +21,8 @@ const BAD_WORDS = [
   // Violence / extremism
   'kill','murder','rape','lynch','genocide','nazi','hitler','kkk',
   'heil','14words','1488','rahowa','whitepride','whitesupremacy',
+  // Reserved admin name — no impersonation allowed
+  'jasper',
 ];
 
 // Normalise: lowercase + strip spaces/punctuation + decode l33tspeak

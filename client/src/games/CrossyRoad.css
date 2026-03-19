@@ -1,0 +1,1805 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   CrossyRoad.css — Massively detailed styling + animations for Crossy Road Casino
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Keyframe Animations ─────────────────────────────────────────────────── */
+
+/* Character hop: bounce up then land */
+@keyframes cr-hop {
+  0%   { transform: translateY(0)   scale(1);    }
+  25%  { transform: translateY(-32px) scale(0.88, 1.12); }
+  50%  { transform: translateY(-42px) scale(1.08, 0.93); }
+  70%  { transform: translateY(-12px) scale(0.96, 1.06); }
+  85%  { transform: translateY(-3px)  scale(1.03, 0.97); }
+  100% { transform: translateY(0)   scale(1);    }
+}
+
+/* Character squish on death */
+@keyframes cr-squish {
+  0%   { transform: scale(1);       filter: none; }
+  10%  { transform: scale(1.7, 0.35) rotate(-12deg); filter: hue-rotate(0deg) saturate(1); }
+  25%  { transform: scale(0.75, 0.9) rotate(6deg);  filter: hue-rotate(110deg) saturate(4); }
+  40%  { transform: scale(1.35, 0.45) rotate(-8deg); filter: hue-rotate(200deg) saturate(3); }
+  60%  { transform: scale(0.85, 0.65) rotate(3deg); filter: grayscale(0.3); }
+  80%  { transform: scale(1.05, 0.55) rotate(-2deg); filter: grayscale(0.7); }
+  100% { transform: scale(1, 0.5);  filter: grayscale(1) brightness(0.4); }
+}
+
+/* Red screen flash on death */
+@keyframes cr-death-flash {
+  0%   { opacity: 0; }
+  15%  { opacity: 0.4; }
+  35%  { opacity: 0.15; }
+  55%  { opacity: 0.38; }
+  75%  { opacity: 0.1; }
+  100% { opacity: 0; }
+}
+
+/* Screen shake on death */
+@keyframes cr-shake {
+  0%  { transform: translateX(0) rotate(0); }
+  8%  { transform: translateX(-10px) rotate(-1.2deg); }
+  18% { transform: translateX(10px)  rotate(1.2deg); }
+  28% { transform: translateX(-7px) rotate(-0.7deg); }
+  38% { transform: translateX(7px)  rotate(0.7deg); }
+  48% { transform: translateX(-5px) rotate(-0.3deg); }
+  58% { transform: translateX(5px)  rotate(0.3deg); }
+  68% { transform: translateX(-3px); }
+  78% { transform: translateX(3px); }
+  88% { transform: translateX(-1px); }
+  100%{ transform: translateX(0) rotate(0); }
+}
+
+/* Character gentle idle bob */
+@keyframes cr-idle-bob {
+  0%, 100% { transform: translateY(0) scale(1); filter: drop-shadow(0 0 6px rgba(52,211,153,0.4)); }
+  50%       { transform: translateY(-6px) scale(1.03, 0.97); filter: drop-shadow(0 4px 10px rgba(52,211,153,0.6)); }
+}
+
+/* Cars driving left */
+@keyframes cr-car-left {
+  0%   { transform: translateX(130%) translateY(-50%); }
+  100% { transform: translateX(-130%) translateY(-50%); }
+}
+
+/* Cars driving right */
+@keyframes cr-car-right {
+  0%   { transform: translateX(-130%) translateY(-50%); }
+  100% { transform: translateX(130%) translateY(-50%); }
+}
+
+/* Second car driving left */
+@keyframes cr-car2-left {
+  0%   { transform: translateX(130%) translateY(-50%); }
+  100% { transform: translateX(-130%) translateY(-50%); }
+}
+
+/* Second car driving right */
+@keyframes cr-car2-right {
+  0%   { transform: translateX(-130%) translateY(-50%); }
+  100% { transform: translateX(130%) translateY(-50%); }
+}
+
+/* Log platform sliding left */
+@keyframes cr-log-col-left {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-8px); }
+}
+
+/* Log platform sliding right */
+@keyframes cr-log-col-right {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(8px); }
+}
+
+/* Logs floating left (legacy, kept for compatibility) */
+@keyframes cr-log-left {
+  from { transform: translateX(80%) translateY(-50%); }
+  to   { transform: translateX(-80%) translateY(-50%); }
+}
+
+/* Logs floating right */
+@keyframes cr-log-right {
+  from { transform: translateX(-80%) translateY(-50%); }
+  to   { transform: translateX(80%) translateY(-50%); }
+}
+
+/* Train rushing left — fast with blur */
+@keyframes cr-train-left {
+  0%   { transform: translateX(130%) translateY(-50%); opacity: 0; filter: blur(0px); }
+  5%   { opacity: 1; }
+  40%  { filter: blur(4px); }
+  90%  { opacity: 1; }
+  100% { transform: translateX(-130%) translateY(-50%); opacity: 0; filter: blur(0px); }
+}
+
+/* Train rushing right */
+@keyframes cr-train-right {
+  0%   { transform: translateX(-130%) translateY(-50%) scaleX(-1); opacity: 0; filter: blur(0px); }
+  5%   { opacity: 1; }
+  40%  { filter: blur(4px); }
+  90%  { opacity: 1; }
+  100% { transform: translateX(130%) translateY(-50%) scaleX(-1); opacity: 0; filter: blur(0px); }
+}
+
+/* Water flow shimmer */
+@keyframes cr-water-flow {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Water ripple wave */
+@keyframes cr-ripple {
+  0%   { transform: scaleX(0.5) translateX(0); opacity: 0.7; }
+  60%  { opacity: 0.5; }
+  100% { transform: scaleX(1.4) translateX(20px); opacity: 0; }
+}
+
+/* Water ripple wave 2 (offset) */
+@keyframes cr-ripple-2 {
+  0%   { transform: scaleX(0.7) translateX(-10px); opacity: 0.5; }
+  60%  { opacity: 0.4; }
+  100% { transform: scaleX(1.6) translateX(15px); opacity: 0; }
+}
+
+/* Water column shimmer */
+@keyframes cr-water-col-shimmer {
+  0%   { background-position: 0% 0%; }
+  100% { background-position: 200% 200%; }
+}
+
+/* Rail warning flash (when train is coming) */
+@keyframes cr-rail-warning {
+  0%, 100% { background-color: rgba(255,80,0,0); box-shadow: none; }
+  50%       { background-color: rgba(255,80,0,0.13); box-shadow: inset 0 0 20px rgba(255,80,0,0.2); }
+}
+
+/* Rail danger pulse glow */
+@keyframes cr-rail-danger-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%       { opacity: 1; transform: scale(1.15); }
+}
+
+/* Rail spark electric flash */
+@keyframes cr-rail-spark {
+  0%   { opacity: 0; transform: scale(0.5) translateY(0); }
+  15%  { opacity: 1; transform: scale(1.3) translateY(-4px); }
+  35%  { opacity: 0.7; transform: scale(0.9) translateY(-2px); }
+  55%  { opacity: 1; transform: scale(1.5) translateY(-6px); }
+  75%  { opacity: 0.5; transform: scale(0.8) translateY(-3px); }
+  100% { opacity: 0; transform: scale(0.4) translateY(0); }
+}
+
+/* Rail warning light pulse (red dot) */
+@keyframes cr-rail-warning-light {
+  0%, 100% { box-shadow: 0 0 4px 2px rgba(255,60,0,0.4); opacity: 0.7; }
+  50%       { box-shadow: 0 0 14px 6px rgba(255,60,0,0.9); opacity: 1; }
+}
+
+/* Row cleared flash */
+@keyframes cr-row-clear {
+  0%   { background-color: rgba(34,197,94,0); }
+  25%  { background-color: rgba(34,197,94,0.28); }
+  100% { background-color: rgba(34,197,94,0); }
+}
+
+/* Multiplier number pump */
+@keyframes cr-mult-pump {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.22) rotate(-1deg); }
+  55%  { transform: scale(0.96) rotate(0.5deg); }
+  75%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+/* Multiplier color glow */
+@keyframes cr-mult-glow {
+  0%, 100% { text-shadow: 0 0 18px currentColor, 0 0 4px rgba(0,0,0,0.5); }
+  50%       { text-shadow: 0 0 40px currentColor, 0 0 70px currentColor, 0 0 4px rgba(0,0,0,0.5); }
+}
+
+/* Cash out button pulse — uses CSS variable for speed */
+@keyframes cr-cashout-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.55), 0 4px 16px rgba(34,197,94,0.25); }
+  50%       { box-shadow: 0 0 0 12px rgba(34,197,94,0), 0 4px 30px rgba(34,197,94,0.4); }
+}
+
+/* Jackpot confetti burst */
+@keyframes cr-confetti-fall {
+  0%   { transform: translateY(-20px) rotate(0deg) scale(1); opacity: 1; }
+  60%  { opacity: 1; }
+  100% { transform: translateY(90px)  rotate(780deg) scale(0.7); opacity: 0; }
+}
+
+/* Coin shower */
+@keyframes cr-coin-spin {
+  0%   { transform: rotateY(0deg); }
+  100% { transform: rotateY(360deg); }
+}
+
+/* Win banner entrance */
+@keyframes cr-banner-in {
+  from { transform: scale(0.65) translateY(-14px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* Hop button press ripple */
+@keyframes cr-btn-ripple {
+  from { box-shadow: 0 0 0 0 rgba(234,179,8,0.7); }
+  to   { box-shadow: 0 0 0 22px rgba(234,179,8,0); }
+}
+
+/* Safe column glow */
+@keyframes cr-safe-glow {
+  0%, 100% { box-shadow: inset 0 0 0 2px rgba(34,197,94,0.3); }
+  50%       { box-shadow: inset 0 0 0 2px rgba(34,197,94,0.9), 0 0 12px rgba(34,197,94,0.45); }
+}
+
+/* Neon pulse for next row highlight */
+@keyframes cr-next-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(234,179,8,0.3); }
+  50%       { box-shadow: 0 0 0 5px rgba(234,179,8,0.75), 0 0 22px rgba(234,179,8,0.35); }
+}
+
+/* Jackpot flash */
+@keyframes cr-jackpot-flash {
+  0%   { background: rgba(255,215,0,0); }
+  20%  { background: rgba(255,215,0,0.22); }
+  40%  { background: rgba(255,215,0,0); }
+  60%  { background: rgba(255,215,0,0.17); }
+  80%  { background: rgba(255,215,0,0.05); }
+  100% { background: rgba(255,215,0,0); }
+}
+
+/* Floating text: multiplier gain rising up and fading */
+@keyframes cr-float-text {
+  0%   { transform: translateY(0) scale(0.7); opacity: 0; }
+  20%  { transform: translateY(-8px) scale(1.15); opacity: 1; }
+  50%  { transform: translateY(-22px) scale(1); opacity: 0.95; }
+  80%  { transform: translateY(-38px) scale(0.92); opacity: 0.5; }
+  100% { transform: translateY(-52px) scale(0.8); opacity: 0; }
+}
+
+/* Grass blade gentle sway */
+@keyframes cr-grass-sway {
+  0%, 100% { transform: rotate(-4deg) scaleY(0.95); }
+  50%       { transform: rotate(4deg) scaleY(1.05); }
+}
+
+/* Road dust drift */
+@keyframes cr-dust-drift-left {
+  0%   { transform: translateX(50%) translateY(-50%) scale(0.5); opacity: 0; }
+  20%  { opacity: 0.45; }
+  100% { transform: translateX(-100%) translateY(-50%) scale(1.4); opacity: 0; }
+}
+
+@keyframes cr-dust-drift-right {
+  0%   { transform: translateX(-50%) translateY(-50%) scale(0.5); opacity: 0; }
+  20%  { opacity: 0.45; }
+  100% { transform: translateX(100%) translateY(-50%) scale(1.4); opacity: 0; }
+}
+
+/* Log column gentle rock */
+@keyframes cr-log-rock {
+  0%, 100% { transform: translateY(0) rotate(-0.5deg); }
+  50%       { transform: translateY(1px) rotate(0.5deg); }
+}
+
+/* Neon safe tile pulse for logs */
+@keyframes cr-log-neon {
+  0%, 100% { box-shadow: 0 0 4px rgba(139,90,43,0.4), inset 0 0 6px rgba(255,200,100,0.1); }
+  50%       { box-shadow: 0 0 12px rgba(160,110,60,0.7), inset 0 0 10px rgba(255,200,100,0.2); }
+}
+
+/* Hop button terrain pulse (road) */
+@keyframes cr-hop-road-pulse {
+  0%, 100% { border-color: rgba(234,179,8,0.35); }
+  50%       { border-color: rgba(234,179,8,0.7); box-shadow: 0 0 12px rgba(234,179,8,0.2); }
+}
+
+/* Hop button terrain pulse (river) */
+@keyframes cr-hop-river-pulse {
+  0%, 100% { border-color: rgba(59,130,246,0.4); }
+  50%       { border-color: rgba(59,130,246,0.8); box-shadow: 0 0 12px rgba(59,130,246,0.25); }
+}
+
+/* Hop button terrain pulse (rail) */
+@keyframes cr-hop-rail-pulse {
+  0%, 100% { border-color: rgba(249,115,22,0.4); }
+  50%       { border-color: rgba(249,115,22,0.85); box-shadow: 0 0 14px rgba(249,115,22,0.3); }
+}
+
+/* Animated question mark for river hint */
+@keyframes cr-question-spin {
+  0%    { transform: scale(1) rotate(0deg); }
+  25%   { transform: scale(1.2) rotate(-8deg); }
+  75%   { transform: scale(0.9) rotate(8deg); }
+  100%  { transform: scale(1) rotate(0deg); }
+}
+
+/* Headlight glow pulse */
+@keyframes cr-headlight-glow {
+  0%, 100% { opacity: 0.5; transform: scaleX(1); }
+  50%       { opacity: 0.9; transform: scaleX(1.3); }
+}
+
+/* Row label terrain name fade in */
+@keyframes cr-terrain-name-in {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Root Layout ─────────────────────────────────────────────────────────── */
+
+.cr-wrap {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 40% at 50% 0%, rgba(52,211,153,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at top, #0d0d1f 0%, #050510 60%, #020208 100%);
+  color: #e0e0e0;
+  font-family: 'Roboto', system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 16px 48px;
+  gap: 12px;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Death overlay — red flash */
+.cr-death-overlay {
+  position: fixed;
+  inset: 0;
+  background: #ff0000;
+  pointer-events: none;
+  z-index: 9999;
+  animation: cr-death-flash 0.7s ease forwards;
+}
+
+/* Jackpot overlay */
+.cr-jackpot-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  animation: cr-jackpot-flash 1.3s ease 3;
+}
+
+/* Screen shake wrapper */
+.cr-wrap--shaking {
+  animation: cr-shake 0.55s ease;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+
+.cr-header {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cr-title {
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #fff;
+  text-shadow: 0 0 28px rgba(52,211,153,0.55), 0 0 10px rgba(52,211,153,0.3);
+  white-space: nowrap;
+}
+
+.cr-balance-area {
+  text-align: right;
+}
+
+.cr-balance {
+  font-size: 0.95rem;
+  color: #8b949e;
+}
+.cr-balance strong {
+  color: #22c55e;
+  font-weight: 800;
+}
+
+.cr-boost-badge {
+  font-size: 0.72rem;
+  background: rgba(255,215,0,0.15);
+  border: 1px solid rgba(255,215,0,0.4);
+  color: #FFD700;
+  padding: 1px 7px;
+  border-radius: 10px;
+  margin-left: 6px;
+  font-weight: 700;
+}
+
+/* ── History pills ───────────────────────────────────────────────────────── */
+
+.cr-history {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  justify-content: center;
+  min-height: 26px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.cr-pill {
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.cr-pill.win  { background: rgba(34,197,94,0.13);  color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+.cr-pill.lose { background: rgba(239,68,68,0.13);   color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+.cr-pill.jackpot { background: rgba(255,215,0,0.15); color: #FFD700; border: 1px solid rgba(255,215,0,0.4); }
+.cr-hist-empty { font-size: 0.78rem; color: #444; }
+
+/* ── Multiplier display ──────────────────────────────────────────────────── */
+
+.cr-mult-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  user-select: none;
+  position: relative;
+}
+
+/* Anchor for floating text positioned relative to mult number */
+.cr-mult-float-anchor {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cr-mult {
+  font-size: 3.8rem;
+  font-weight: 900;
+  letter-spacing: -2px;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.4s ease;
+  line-height: 1;
+}
+.cr-mult--green  { color: #22c55e; animation: cr-mult-glow 2s ease infinite; }
+.cr-mult--yellow { color: #eab308; animation: cr-mult-glow 1.5s ease infinite; }
+.cr-mult--orange { color: #f97316; animation: cr-mult-glow 1.1s ease infinite; }
+.cr-mult--red    { color: #ef4444; animation: cr-mult-glow 0.85s ease infinite; }
+.cr-mult--lost   { color: #ef4444; animation: cr-shake 0.5s ease; font-size: 2.4rem; }
+.cr-mult--pump   { animation: cr-mult-pump 0.38s cubic-bezier(0.36,0.07,0.19,0.97) both; }
+
+.cr-mult-sub {
+  font-size: 0.78rem;
+  color: #666;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* Floating "+X.XX×" text that rises and fades */
+.cr-float-text {
+  position: absolute;
+  top: 0;
+  right: -50px;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #34d399;
+  text-shadow: 0 0 14px rgba(52,211,153,0.7);
+  pointer-events: none;
+  z-index: 10;
+  white-space: nowrap;
+  animation: cr-float-text 1.1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* ── Payout potential ────────────────────────────────────────────────────── */
+
+.cr-payout-now {
+  font-size: 0.88rem;
+  color: #8b949e;
+  text-align: center;
+}
+.cr-payout-now strong {
+  color: #22c55e;
+  font-weight: 800;
+}
+
+/* ── Betting panel ───────────────────────────────────────────────────────── */
+
+.cr-betting {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cr-input-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.cr-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cr-label {
+  font-size: 0.75rem;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-weight: 600;
+}
+
+.cr-input {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 9px;
+  color: #fff;
+  padding: 9px 12px;
+  font-size: 1rem;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  width: 100%;
+  transition: border-color 0.15s;
+}
+.cr-input:focus { border-color: rgba(52,211,153,0.5); background: rgba(255,255,255,0.08); }
+
+/* Quick-bet chips */
+.cr-quick-bets {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.cr-qb {
+  padding: 5px 13px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #bbb;
+  font-size: 0.83rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-weight: 600;
+}
+.cr-qb:hover { background: rgba(52,211,153,0.15); border-color: rgba(52,211,153,0.4); color: #fff; }
+.cr-qb.active { background: rgba(52,211,153,0.2); border-color: rgba(52,211,153,0.6); color: #34d399; }
+
+/* Difficulty buttons */
+.cr-diff-group { display: flex; flex-direction: column; gap: 6px; }
+.cr-diff-btns  { display: flex; gap: 8px; }
+.cr-diff-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 11px 6px;
+  border-radius: 11px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #888;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.cr-diff-btn:hover {
+  border-color: var(--diff-color);
+  background: rgba(255,255,255,0.07);
+  color: #ccc;
+}
+.cr-diff-btn.active {
+  border-color: var(--diff-color);
+  background: color-mix(in srgb, var(--diff-color) 14%, transparent);
+  color: #fff;
+}
+.cr-diff-emoji { font-size: 1.4rem; }
+.cr-diff-label { font-size: 0.82rem; font-weight: 700; letter-spacing: 0.3px; }
+.cr-diff-info  { font-size: 0.66rem; color: #8b949e; text-align: center; line-height: 1.3; }
+.cr-diff-btn.active .cr-diff-info { color: color-mix(in srgb, var(--diff-color) 80%, #aaa); }
+
+/* Preview block */
+.cr-preview {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.cr-preview-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #666;
+}
+.cr-preview-row span:last-child { color: #22c55e; font-weight: 700; font-size: 0.85rem; }
+.cr-preview-row.jackpot span:last-child { color: #FFD700; }
+
+/* ── Broke state ─────────────────────────────────────────────────────────── */
+.cr-broke { text-align: center; padding: 12px 0; }
+.cr-broke-title { font-size: 1.2rem; font-weight: 700; color: #ef4444; }
+.cr-broke-sub   { color: #8b949e; font-size: 0.84rem; margin: 6px 0 4px; }
+.cr-broke-timer { font-size: 1.5rem; font-weight: 800; color: #FFD700; font-variant-numeric: tabular-nums; }
+
+/* ── Terrain Grid ────────────────────────────────────────────────────────── */
+
+.cr-grid {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+}
+
+/* ── Individual row ─────────────────────────────────────────────────────── */
+
+.cr-row {
+  display: flex;
+  align-items: stretch;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  min-height: 56px;
+  transition: opacity 0.3s ease, transform 0.2s ease;
+}
+
+/* ── GRASS row ── */
+.cr-row--grass {
+  background: repeating-linear-gradient(
+    45deg,
+    #1c4f1c 0px, #1c4f1c 12px,
+    #163d16 12px, #163d16 24px
+  );
+  border: 1px solid rgba(40, 130, 40, 0.45);
+}
+
+/* Grass blades: swaying ::before layer */
+.cr-row--grass::before {
+  content: '🌱🌿🌱🌿🌱🌿🌱🌿🌱🌿🌱';
+  position: absolute;
+  bottom: 3px;
+  left: 42px;
+  right: 42px;
+  font-size: 0.65rem;
+  letter-spacing: 4px;
+  opacity: 0.35;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  animation: cr-grass-sway 2.8s ease-in-out infinite alternate;
+  transform-origin: bottom center;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.cr-row--grass.cr-row--next {
+  border-color: rgba(52,211,153,0.65);
+}
+
+/* ── ROAD row ── */
+.cr-row--road {
+  background: #1e2026;
+  border: 1px solid rgba(80,80,80,0.5);
+  position: relative;
+}
+
+/* Lane dashed center line */
+.cr-row--road::before {
+  content: '';
+  position: absolute;
+  left: 42px; right: 42px; top: 50%;
+  height: 3px;
+  background: repeating-linear-gradient(
+    90deg,
+    #f0f0f0 0px, #f0f0f0 14px,
+    transparent 14px, transparent 26px
+  );
+  transform: translateY(-50%);
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* Asphalt texture edge lines */
+.cr-row--road::after {
+  content: '';
+  position: absolute;
+  left: 42px; right: 42px; top: 6px;
+  height: 2px;
+  background: rgba(255,255,255,0.07);
+  pointer-events: none;
+}
+
+.cr-row--road.cr-row--next {
+  border-color: rgba(234,179,8,0.65);
+}
+
+/* ── RIVER row ── */
+.cr-row--river {
+  background: linear-gradient(
+    180deg,
+    #071830 0%,
+    #0a2050 40%,
+    #071830 100%
+  );
+  border: 1px solid rgba(30,80,180,0.55);
+  overflow: hidden;
+}
+
+.cr-row--river.cr-row--next {
+  border-color: rgba(59,130,246,0.75);
+}
+
+/* More intense animated water shimmer with wave crests */
+.cr-row--river::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      rgba(120,200,255,0.07) 18px,
+      rgba(180,230,255,0.12) 24px,
+      rgba(120,200,255,0.06) 28px,
+      transparent 44px
+    );
+  background-size: 88px 100%;
+  animation: cr-water-flow 2.5s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── RAILROAD row ── */
+.cr-row--rail {
+  background: #0e0904;
+  border: 1px solid rgba(80,60,20,0.55);
+  position: relative;
+}
+
+/* Railroad ties */
+.cr-row--rail::before {
+  content: '';
+  position: absolute;
+  left: 42px; right: 42px; top: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    #2a1c0c 0px, #2a1c0c 9px,
+    transparent 9px, transparent 22px
+  );
+  pointer-events: none;
+  opacity: 0.85;
+  z-index: 0;
+}
+
+/* Rails themselves */
+.cr-row--rail::after {
+  content: '';
+  position: absolute;
+  left: 42px; right: 42px;
+  top: calc(50% - 11px);
+  height: 3px;
+  background: linear-gradient(90deg, #888, #ccc, #888);
+  box-shadow: 0 21px 0 linear-gradient(90deg, #888, #ccc, #888), 0 0 4px rgba(200,200,200,0.2), 0 21px 4px rgba(200,200,200,0.2);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cr-row--rail.cr-row--next {
+  border-color: rgba(180,80,0,0.75);
+}
+
+.cr-row--rail.cr-row--dangerous {
+  animation: cr-rail-warning 0.65s ease infinite;
+}
+
+/* Red pulsing warning light ::after on dangerous rail */
+.cr-row--rail.cr-row--dangerous::before {
+  background: repeating-linear-gradient(
+    90deg,
+    #3a1208 0px, #3a1208 9px,
+    transparent 9px, transparent 22px
+  );
+}
+
+/* ── Cleared rows (already hopped) ── */
+.cr-row--cleared {
+  opacity: 0.5;
+  transform: scaleY(0.91);
+  transform-origin: top;
+}
+
+/* ── Future rows ── */
+.cr-row--future {
+  opacity: 0.38;
+}
+
+/* ── Next row highlight ── */
+.cr-row--next {
+  animation: cr-next-pulse 1.1s ease infinite;
+  opacity: 1 !important;
+}
+
+/* ── Row label (left side) ── */
+.cr-row-label {
+  width: 40px;
+  min-width: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 4px 0;
+  background: rgba(0,0,0,0.3);
+  border-right: 1px solid rgba(255,255,255,0.06);
+  z-index: 2;
+  position: relative;
+}
+
+.cr-row-num {
+  font-size: 0.62rem;
+  color: #555;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.cr-row-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+/* Terrain name below icon */
+.cr-row-terrain-name {
+  font-size: 0.44rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #444;
+  text-transform: uppercase;
+  line-height: 1;
+  animation: cr-terrain-name-in 0.3s ease;
+}
+
+.cr-row--grass  .cr-row-terrain-name { color: rgba(52,197,94,0.5); }
+.cr-row--road   .cr-row-terrain-name { color: rgba(234,179,8,0.5); }
+.cr-row--river  .cr-row-terrain-name { color: rgba(59,130,246,0.5); }
+.cr-row--rail   .cr-row-terrain-name { color: rgba(249,115,22,0.5); }
+
+/* ── Row multiplier label (right side) ── */
+.cr-row-mult {
+  width: 46px;
+  min-width: 46px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.3);
+  border-left: 1px solid rgba(255,255,255,0.06);
+  z-index: 2;
+  position: relative;
+}
+
+.cr-row-mult-val {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #22c55e;
+  line-height: 1;
+}
+.cr-row-mult-val.road   { color: #eab308; }
+.cr-row-mult-val.river  { color: #3b82f6; }
+.cr-row-mult-val.rail   { color: #f97316; }
+.cr-row-mult-val.grass  { color: #555; }
+.cr-row-mult-val.cleared { color: #555; font-size: 0.6rem; }
+
+/* ── Row columns area ── */
+.cr-row-cols {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Column cells ────────────────────────────────────────────────────────── */
+
+.cr-col {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 56px;
+  overflow: hidden;
+  transition: background-color 0.2s ease;
+}
+
+/* Column dividers colored by terrain */
+.cr-col:not(:last-child).cr-col-divider--grass  { border-right: 1px solid rgba(34,197,94,0.15); }
+.cr-col:not(:last-child).cr-col-divider--road   { border-right: 1px solid rgba(234,179,8,0.18); }
+.cr-col:not(:last-child).cr-col-divider--river  { border-right: 1px solid rgba(59,130,246,0.2); }
+.cr-col:not(:last-child).cr-col-divider--rail   { border-right: 1px solid rgba(249,115,22,0.15); }
+
+/* Safe column indicator */
+.cr-col--safe-indicator::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 6px;
+  background: rgba(34,197,94,0.1);
+  border: 1px solid rgba(34,197,94,0.25);
+  pointer-events: none;
+}
+
+/* Road unsafe column */
+.cr-col--road-unsafe {
+  background: rgba(239,68,68,0.06);
+}
+
+/* Rail all-unsafe column */
+.cr-col--rail-all-unsafe {
+  background: rgba(239,68,68,0.08);
+}
+
+/* Safe check mark on cleared cols */
+.cr-col-safe-check {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #22c55e;
+  font-size: 0.85rem;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* ── Character ───────────────────────────────────────────────────────────── */
+
+.cr-character {
+  font-size: 1.65rem;
+  line-height: 1;
+  user-select: none;
+  position: relative;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+/* Bigger, more impactful character */
+.cr-character--large {
+  font-size: 2.2rem;
+  width: 46px;
+  height: 46px;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+}
+
+.cr-character--idle {
+  animation: cr-idle-bob 1.4s ease-in-out infinite;
+}
+.cr-character--hopping {
+  animation: cr-hop 0.32s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+}
+.cr-character--dead {
+  animation: cr-squish 0.55s ease forwards;
+  filter: drop-shadow(0 0 12px rgba(255,0,0,0.6));
+}
+
+/* ── Character in its starting zone ── */
+.cr-start-zone {
+  width: 100%;
+  max-width: 500px;
+  height: 54px;
+  background: linear-gradient(180deg, #1c2e1c, #0f1f0f);
+  border: 1px solid rgba(52,211,153,0.22);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.cr-start-zone::before {
+  content: 'START';
+  position: absolute;
+  left: 12px;
+  font-size: 0.65rem;
+  color: #444;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+.cr-start-zone::after {
+  content: '▲';
+  position: absolute;
+  right: 12px;
+  font-size: 0.65rem;
+  color: #444;
+}
+
+/* ── Finish zone ── */
+.cr-finish-zone {
+  width: 100%;
+  max-width: 500px;
+  height: 36px;
+  background: linear-gradient(180deg, rgba(255,215,0,0.09), rgba(255,215,0,0.03));
+  border: 1px dashed rgba(255,215,0,0.28);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: rgba(255,215,0,0.45);
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* ── Animated hazards ────────────────────────────────────────────────────── */
+
+/* ── CARS ── */
+
+/* Primary car */
+.cr-car {
+  position: absolute;
+  font-size: 1.4rem;
+  transform: translateY(-50%);
+  z-index: 3;
+  line-height: 1;
+  pointer-events: none;
+  will-change: transform;
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.6));
+}
+.cr-car--left  { animation: cr-car-left  linear infinite; }
+.cr-car--right { animation: cr-car-right linear infinite; }
+
+/* Headlight glow effect on car body */
+.cr-car-body {
+  position: relative;
+  display: inline-block;
+}
+.cr-car-body::before {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 6px;
+  background: rgba(255,255,180,0.7);
+  border-radius: 50%;
+  filter: blur(4px);
+  top: 50%;
+  transform: translateY(-50%);
+  animation: cr-headlight-glow 0.8s ease-in-out infinite;
+}
+/* Headlight on right side for right-facing cars */
+.cr-car--right .cr-car-body::before {
+  left: -6px;
+}
+/* Headlight on left side for left-facing cars */
+.cr-car--left .cr-car-body::before {
+  right: -6px;
+}
+
+/* Second car — going opposite direction, slightly different styling */
+.cr-car-2 {
+  position: absolute;
+  font-size: 1.2rem;
+  transform: translateY(-50%);
+  z-index: 3;
+  line-height: 1;
+  pointer-events: none;
+  will-change: transform;
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5)) brightness(0.9);
+  opacity: 0.88;
+}
+.cr-car-2.cr-car--left  { animation: cr-car2-left  linear infinite; }
+.cr-car-2.cr-car--right { animation: cr-car2-right linear infinite; }
+
+/* Second car headlight glow */
+.cr-car-2 .cr-car-body::before {
+  width: 8px;
+  height: 5px;
+  background: rgba(255,230,150,0.6);
+}
+
+/* ── ROAD DUST PARTICLES ── */
+.cr-dust {
+  position: absolute;
+  top: 50%;
+  width: 20px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(180,160,120,0.3);
+  filter: blur(3px);
+  pointer-events: none;
+  z-index: 2;
+}
+.cr-dust--left {
+  right: 20%;
+  animation: cr-dust-drift-left 1.8s ease-out infinite;
+}
+.cr-dust--right {
+  left: 20%;
+  animation: cr-dust-drift-right 1.8s ease-out infinite;
+}
+.cr-dust-2 {
+  width: 14px;
+  height: 6px;
+  opacity: 0.6;
+  animation-delay: 0.7s !important;
+  animation-duration: 2.2s !important;
+}
+
+/* ── RIVER: LOG COLUMN ── */
+
+/* Wrapper occupies full column, absolutely inside cr-row-cols flex */
+.cr-log-col-wrapper {
+  flex: 1;
+  position: relative;
+  min-height: 56px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cr-log-col {
+  position: absolute;
+  inset: 5px;
+  border-radius: 7px;
+  background: linear-gradient(
+    180deg,
+    #a0631a 0%,
+    #7a4912 55%,
+    #5c3509 100%
+  );
+  border: 1px solid rgba(80,40,5,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.5),
+    inset 0 1px 2px rgba(255,200,100,0.15);
+  animation: cr-log-neon 2s ease-in-out infinite, cr-log-rock 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* Wood grain highlight on log */
+.cr-log-col::before {
+  content: '';
+  position: absolute;
+  top: 4px; left: 4px; right: 4px;
+  height: 3px;
+  background: rgba(255,210,120,0.2);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* Second wood grain line */
+.cr-log-col::after {
+  content: '';
+  position: absolute;
+  top: 10px; left: 6px; right: 6px;
+  height: 2px;
+  background: rgba(255,200,100,0.1);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.cr-log-col-emoji {
+  font-size: 1.1rem;
+  line-height: 1;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4));
+  position: relative;
+  z-index: 2;
+}
+
+/* Log direction animation */
+.cr-log-col--left {
+  animation: cr-log-neon 2s ease-in-out infinite, cr-log-col-left 4s ease-in-out infinite alternate;
+}
+.cr-log-col--right {
+  animation: cr-log-neon 2s ease-in-out infinite, cr-log-col-right 4s ease-in-out infinite alternate;
+}
+
+/* ── RIVER: WATER COLUMN (unsafe) ── */
+
+.cr-water-col-wrapper {
+  flex: 1;
+  position: relative;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.cr-water-col {
+  position: absolute;
+  inset: 4px;
+  border-radius: 6px;
+  background: linear-gradient(
+    135deg,
+    #0d3a7a 0%,
+    #103d88 30%,
+    #0a2a60 60%,
+    #081e4a 100%
+  );
+  background-size: 200% 200%;
+  border: 1px solid rgba(59,130,246,0.4);
+  overflow: hidden;
+  animation: cr-water-col-shimmer 4s linear infinite;
+  pointer-events: none;
+  z-index: 4;
+  box-shadow: inset 0 0 12px rgba(30,100,200,0.3);
+}
+
+/* Ripple wave 1 */
+.cr-water-ripple {
+  position: absolute;
+  bottom: 6px;
+  left: 10%;
+  right: 10%;
+  height: 3px;
+  background: rgba(120,200,255,0.5);
+  border-radius: 4px;
+  animation: cr-ripple 1.8s ease-out infinite;
+}
+
+/* Ripple wave 2 (offset) */
+.cr-water-ripple--2 {
+  bottom: 12px;
+  left: 15%;
+  right: 5%;
+  height: 2px;
+  background: rgba(100,180,255,0.3);
+  animation: cr-ripple-2 2.2s ease-out 0.6s infinite;
+}
+
+/* Water droplet indicator inside water col */
+.cr-water-col::after {
+  content: '💧';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.1rem;
+  opacity: 0.75;
+  filter: drop-shadow(0 0 4px rgba(59,130,246,0.5));
+}
+
+/* ── LOG (legacy floating, kept for compatibility) ── */
+.cr-log {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 28px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #8B4513, #6B3410);
+  border: 1px solid #3d1a05;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.3);
+  font-weight: 700;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  pointer-events: none;
+  will-change: transform;
+}
+.cr-log::before {
+  content: '';
+  position: absolute;
+  top: 4px; left: 4px; right: 4px;
+  height: 3px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 2px;
+}
+.cr-log--left  { animation: cr-log-left  linear infinite; }
+.cr-log--right { animation: cr-log-right linear infinite; }
+
+/* ── Water gap (unsafe, legacy) ── */
+.cr-water-gap {
+  position: absolute;
+  inset: 4px;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #1a4a8a, #0a2a5a);
+  border: 1px solid rgba(59,130,246,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+}
+.cr-water-gap::after {
+  content: '💧';
+  font-size: 1.1rem;
+}
+
+/* ── TRAIN ── */
+.cr-train {
+  position: absolute;
+  top: 50%;
+  font-size: 2.1rem;
+  z-index: 5;
+  pointer-events: none;
+  will-change: transform;
+  line-height: 1;
+  filter: drop-shadow(0 0 8px rgba(255,150,0,0.5));
+}
+.cr-train--left  { animation: cr-train-left  linear infinite; }
+.cr-train--right { animation: cr-train-right linear infinite; }
+
+/* ── RAIL SPARKS (on dangerous rows) ── */
+.cr-rail-spark {
+  position: absolute;
+  top: 35%;
+  width: 6px;
+  height: 10px;
+  background: linear-gradient(180deg, #ffee44, #ff8800, #ff4400);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 4;
+  box-shadow: 0 0 6px rgba(255,160,0,0.8), 0 0 14px rgba(255,100,0,0.5);
+  animation: cr-rail-spark 0.55s ease-in-out infinite;
+}
+
+/* Alternating spark colors */
+.cr-rail-spark:nth-child(odd) {
+  background: linear-gradient(180deg, #ffffff, #ffcc00, #ff6600);
+  animation-duration: 0.48s;
+}
+.cr-rail-spark:nth-child(even) {
+  background: linear-gradient(180deg, #ffff88, #ffaa00, #ff3300);
+  animation-duration: 0.63s;
+  height: 8px;
+}
+
+/* ── Unsafe / safe column markers ── */
+
+.cr-col-danger {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* Road unsafe */
+.cr-col--road-unsafe .cr-col-danger {
+  background: rgba(239,68,68,0.09);
+}
+
+/* Rail all unsafe */
+.cr-col--rail-all-unsafe .cr-col-danger {
+  background: rgba(239,68,68,0.14);
+}
+
+.cr-col-danger--rail {
+  font-size: 1.1rem;
+  animation: cr-rail-danger-pulse 0.7s ease-in-out infinite;
+}
+
+/* ── Hop column buttons (row of 3) ─────────────────────────────────────── */
+
+.cr-hop-area {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cr-hop-btns {
+  display: flex;
+  gap: 10px;
+}
+
+.cr-hop-btn {
+  flex: 1;
+  height: 72px;
+  border-radius: 13px;
+  border: 2px solid rgba(234,179,8,0.35);
+  background: rgba(234,179,8,0.07);
+  color: #eab308;
+  font-size: 1rem;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  transition: all 0.15s;
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 0.3px;
+  animation: cr-hop-road-pulse 2s ease-in-out infinite;
+}
+
+.cr-hop-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(234,179,8,0);
+  transition: background 0.12s;
+}
+
+.cr-hop-btn:hover:not(:disabled) {
+  background: rgba(234,179,8,0.2);
+  border-color: rgba(234,179,8,0.75);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 22px rgba(234,179,8,0.3);
+}
+.cr-hop-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+  animation: cr-btn-ripple 0.4s ease;
+}
+.cr-hop-btn:disabled {
+  opacity: 0.22;
+  cursor: not-allowed;
+  border-color: rgba(255,255,255,0.1);
+  color: #555;
+  background: rgba(255,255,255,0.02);
+  animation: none;
+}
+
+/* Terrain-specific button styles */
+.cr-hop-btn--terrain-grass {
+  border-color: rgba(34,197,94,0.4);
+  background: rgba(34,197,94,0.06);
+  color: #34d399;
+  animation: cr-safe-glow 1.5s ease infinite;
+}
+
+.cr-hop-btn--terrain-road {
+  border-color: rgba(234,179,8,0.4);
+  background: rgba(234,179,8,0.07);
+  color: #eab308;
+  animation: cr-hop-road-pulse 1.8s ease-in-out infinite;
+}
+
+.cr-hop-btn--terrain-river {
+  border-color: rgba(59,130,246,0.45);
+  background: rgba(59,130,246,0.07);
+  color: #60a5fa;
+  animation: cr-hop-river-pulse 2s ease-in-out infinite;
+}
+
+.cr-hop-btn--terrain-rail {
+  border-color: rgba(249,115,22,0.45);
+  background: rgba(249,115,22,0.07);
+  color: #fb923c;
+  animation: cr-hop-rail-pulse 1.4s ease-in-out infinite;
+}
+
+.cr-hop-btn--safe {
+  border-color: rgba(34,197,94,0.55);
+  background: rgba(34,197,94,0.1);
+  color: #22c55e;
+  animation: cr-safe-glow 1.4s ease infinite;
+}
+.cr-hop-btn--dangerous {
+  border-color: rgba(239,68,68,0.45) !important;
+  background: rgba(239,68,68,0.07) !important;
+  color: #ef4444 !important;
+}
+
+/* Button content elements */
+.cr-hop-btn-arrow {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.cr-hop-btn-label-main {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  opacity: 0.9;
+}
+
+/* Terrain hint shown at bottom of hop button */
+.cr-hop-btn-hint {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  opacity: 0.85;
+  margin-top: 1px;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.cr-hop-btn-hint--grass  {
+  color: #34d399;
+  background: rgba(34,197,94,0.1);
+}
+.cr-hop-btn-hint--road   {
+  color: #fbbf24;
+  background: rgba(234,179,8,0.1);
+}
+.cr-hop-btn-hint--river  {
+  color: #60a5fa;
+  background: rgba(59,130,246,0.1);
+}
+.cr-hop-btn-hint--rail   {
+  color: #fb923c;
+  background: rgba(249,115,22,0.1);
+}
+
+/* Animated question mark for river hint */
+.cr-hop-btn-hint--animated {
+  animation: cr-question-spin 1.5s ease-in-out infinite;
+  display: inline-block;
+}
+
+/* ── Cash Out button ─────────────────────────────────────────────────────── */
+
+.cr-cashout-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  border: 2px solid rgba(34,197,94,0.55);
+  background: linear-gradient(135deg, rgba(34,197,94,0.16), rgba(22,163,74,0.11));
+  color: #22c55e;
+  font-size: 1.12rem;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  letter-spacing: 0.4px;
+  transition: all 0.15s;
+  /* Use CSS variable --pulse-speed set inline from JS */
+  animation: cr-cashout-pulse var(--pulse-speed, 1.4s) ease infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Shimmer sweep on cash-out button */
+.cr-cashout-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,0.06),
+    transparent
+  );
+  transform: skewX(-15deg);
+  transition: none;
+  animation: cr-cashout-shimmer 3s ease-in-out infinite;
+}
+
+@keyframes cr-cashout-shimmer {
+  0%   { left: -80%; }
+  50%  { left: 120%; }
+  100% { left: 120%; }
+}
+
+.cr-cashout-btn:hover {
+  background: linear-gradient(135deg, rgba(34,197,94,0.3), rgba(22,163,74,0.22));
+  border-color: rgba(34,197,94,0.85);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(34,197,94,0.35);
+}
+.cr-cashout-btn:active {
+  transform: scale(0.98);
+}
+.cr-cashout-payout {
+  font-size: 1.25rem;
+  color: #fff;
+  font-weight: 900;
+  text-shadow: 0 0 10px rgba(34,197,94,0.5);
+}
+
+/* ── Play / reset buttons ────────────────────────────────────────────────── */
+
+.cr-btn {
+  width: 100%;
+  max-width: 500px;
+  padding: 16px;
+  border-radius: 13px;
+  border: none;
+  font-size: 1.07rem;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.cr-btn:active { transform: scale(0.98); }
+.cr-btn--go {
+  background: linear-gradient(135deg, #34d399, #059669);
+  color: #000;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 20px rgba(52,211,153,0.35);
+}
+.cr-btn--go:hover { opacity: 0.9; box-shadow: 0 6px 26px rgba(52,211,153,0.45); }
+.cr-btn--reset {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(99,102,241,0.3);
+}
+.cr-btn--reset:hover { opacity: 0.9; }
+
+/* ── Result banners ──────────────────────────────────────────────────────── */
+
+.cr-banner {
+  width: 100%;
+  max-width: 500px;
+  padding: 14px 20px;
+  border-radius: 13px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: center;
+  animation: cr-banner-in 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.cr-banner--win {
+  background: rgba(34,197,94,0.12);
+  border: 1px solid rgba(34,197,94,0.38);
+  color: #22c55e;
+}
+.cr-banner--jackpot {
+  background: rgba(255,215,0,0.13);
+  border: 1px solid rgba(255,215,0,0.48);
+  color: #FFD700;
+  font-size: 1.26rem;
+  text-shadow: 0 0 22px rgba(255,215,0,0.55);
+}
+.cr-banner--lose {
+  background: rgba(239,68,68,0.12);
+  border: 1px solid rgba(239,68,68,0.38);
+  color: #ef4444;
+}
+
+/* ── Hint text ───────────────────────────────────────────────────────────── */
+
+.cr-hint {
+  font-size: 0.82rem;
+  color: #8b949e;
+  text-align: center;
+}
+
+/* ── Rows cleared counter ────────────────────────────────────────────────── */
+
+.cr-progress-bar-wrap {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cr-progress-label {
+  font-size: 0.72rem;
+  color: #666;
+  white-space: nowrap;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 60px;
+}
+.cr-progress-track {
+  flex: 1;
+  height: 7px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.cr-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #22c55e, #34d399, #86efac);
+  transition: width 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 0 8px rgba(34,197,94,0.4);
+}
+
+/* ── Row cleared flash ───────────────────────────────────────────────────── */
+
+.cr-row--just-cleared {
+  animation: cr-row-clear 0.6s ease forwards;
+}
+
+/* ── Confetti coins ──────────────────────────────────────────────────────── */
+
+.cr-confetti-wrap {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9997;
+  overflow: hidden;
+}
+
+.cr-confetti-piece {
+  position: absolute;
+  top: -10px;
+  font-size: 1.25rem;
+  animation: cr-confetti-fall linear forwards;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+
+.cr-footer {
+  font-size: 0.74rem;
+  color: #444;
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+  .cr-hop-btn         { height: 64px; font-size: 0.9rem; }
+  .cr-mult            { font-size: 3rem; }
+  .cr-title           { font-size: 1.3rem; }
+  .cr-row             { min-height: 50px; }
+  .cr-col             { min-height: 50px; }
+  .cr-log-col-wrapper { min-height: 50px; }
+  .cr-water-col-wrapper { min-height: 50px; }
+  .cr-character       { font-size: 1.4rem; width: 34px; height: 34px; }
+  .cr-character--large { font-size: 1.9rem; width: 40px; height: 40px; }
+  .cr-diff-btns       { flex-direction: column; }
+  .cr-row-label       { width: 34px; min-width: 34px; }
+  .cr-row-mult        { width: 40px; min-width: 40px; }
+  .cr-hop-btn-arrow   { font-size: 1.1rem; }
+  .cr-hop-btn-hint    { font-size: 0.58rem; }
+  .cr-float-text      { font-size: 0.95rem; right: -40px; }
+  .cr-car             { font-size: 1.15rem; }
+  .cr-car-2           { font-size: 1rem; }
+  .cr-train           { font-size: 1.75rem; }
+}
+
+@media (max-width: 380px) {
+  .cr-hop-btns        { gap: 6px; }
+  .cr-hop-btn         { height: 58px; }
+  .cr-mult            { font-size: 2.5rem; }
+  .cr-row-terrain-name { display: none; }
+}
+
+/* ── High-multiplier urgency state overrides ─────────────────────────────── */
+
+/* When multiplier >= 4 (orange): more vibrant cashout */
+.cr-mult--orange ~ * .cr-cashout-btn,
+.cr-cashout-btn:has(~ .cr-mult--orange) {
+  border-color: rgba(249,115,22,0.65);
+  color: #fb923c;
+}
+
+/* ── Focus / accessibility ───────────────────────────────────────────────── */
+
+.cr-hop-btn:focus-visible {
+  outline: 2px solid rgba(234,179,8,0.8);
+  outline-offset: 2px;
+}
+.cr-cashout-btn:focus-visible {
+  outline: 2px solid rgba(34,197,94,0.8);
+  outline-offset: 2px;
+}
+.cr-btn:focus-visible {
+  outline: 2px solid rgba(52,211,153,0.7);
+  outline-offset: 2px;
+}

@@ -14,6 +14,8 @@ const BAD_WORDS = [
   'faggot','fag','dyke','tranny','shemale','homo',
   'kill','murder','rape','lynch','genocide','nazi','hitler','kkk',
   'heil','14words','1488','rahowa','whitepride','whitesupremacy',
+  // Reserved admin name — no impersonation allowed
+  'jasper',
 ];
 
 function normalise(str) {

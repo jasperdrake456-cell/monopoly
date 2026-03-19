@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { TOKENS, TOKEN_COLORS } from '../boardData';
+import { useAuth } from '../contexts/AuthContext';
 import './Lobby.css';
 
 const ALL_TOKENS = Object.keys(TOKENS);
 
 export default function Lobby({ roomState, myId, emit, sessionId, savedSession, onClearSession }) {
+  const { token: authToken } = useAuth();
   const [playerName, setPlayerName] = useState('');
   const [token, setToken] = useState(ALL_TOKENS[0]);
   const [roomCode, setRoomCode] = useState('');
@@ -29,14 +31,14 @@ export default function Lobby({ roomState, myId, emit, sessionId, savedSession, 
   function handleCreate(e) {
     e.preventDefault();
     if (!playerName.trim()) { setError('Enter your name'); return; }
-    emit('createRoom', { playerName: playerName.trim(), token: selectedToken, freeParkingEnabled, boardType });
+    emit('createRoom', { playerName: playerName.trim(), token: selectedToken, freeParkingEnabled, boardType, authToken });
   }
 
   function handleJoin(e) {
     e.preventDefault();
     if (!playerName.trim()) { setError('Enter your name'); return; }
     if (!roomCode.trim()) { setError('Enter room code'); return; }
-    emit('joinRoom', { roomCode: roomCode.trim().toUpperCase(), playerName: playerName.trim(), token: selectedToken });
+    emit('joinRoom', { roomCode: roomCode.trim().toUpperCase(), playerName: playerName.trim(), token: selectedToken, authToken });
   }
 
   function handleTokenSelect(t) {

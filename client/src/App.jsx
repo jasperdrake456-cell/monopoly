@@ -41,6 +41,7 @@ import TexasHoldemPage from './pages/TexasHoldemPage';
 import SlotsPage from './pages/SlotsPage';
 import CasinoLeaderboardPage from './pages/CasinoLeaderboardPage';
 import ChickenCrossPage from './pages/ChickenCrossPage';
+import CrossyRoadPage from './pages/CrossyRoadPage';
 import HiloPage from './pages/HiloPage';
 import TowerPage from './pages/TowerPage';
 import WheelPage from './pages/WheelPage';
@@ -50,6 +51,7 @@ import DragonTigerPage from './pages/DragonTigerPage';
 import RequireAuth from './components/RequireAuth';
 import SuggestionsPage from './pages/SuggestionsPage';
 import ChampionPage from './pages/ChampionPage';
+import UnoPage from './pages/UnoPage';
 import './App.css';
 
 // Convenience wrapper: RequireAuth + GameGuard for a given slug
@@ -73,6 +75,7 @@ export default function App() {
             <Route path="/champion-panel" element={<ChampionPage />} />
 
             {/* Multiplayer */}
+            <Route path="/uno"         element={<GR slug="uno"><UnoPage /></GR>} />
             <Route path="/monopoly"    element={<GR slug="monopoly"><MonopolyPage /></GR>} />
             <Route path="/chess"       element={<GR slug="chess"><ChessPage /></GR>} />
             <Route path="/connect4"    element={<GR slug="connect4"><Connect4Page /></GR>} />
@@ -106,6 +109,7 @@ export default function App() {
             <Route path="/texas-holdem"  element={<GR slug="texas-holdem"><TexasHoldemPage /></GR>} />
             <Route path="/slots"         element={<GR slug="slots"><SlotsPage /></GR>} />
             <Route path="/chicken-cross" element={<GR slug="chicken-cross"><ChickenCrossPage /></GR>} />
+            <Route path="/crossy-road"  element={<GR slug="crossy-road"><CrossyRoadPage /></GR>} />
             <Route path="/hilo"          element={<GR slug="hilo"><HiloPage /></GR>} />
             <Route path="/tower"         element={<GR slug="tower"><TowerPage /></GR>} />
             <Route path="/wheel"         element={<GR slug="wheel"><WheelPage /></GR>} />
