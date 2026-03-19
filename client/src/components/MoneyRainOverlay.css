@@ -1,0 +1,117 @@
+.mr-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: all;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  animation: mr-fade-in 0.25s ease;
+  overflow: hidden;
+}
+
+@keyframes mr-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Falling bills ────────────────────────────────────────── */
+.mr-bill {
+  position: absolute;
+  top: -80px;
+  animation: mr-fall linear infinite;
+  transform-origin: center;
+  user-select: none;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+
+@keyframes mr-fall {
+  0%   { transform: translateY(0)      rotate(0deg); opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(110vh)  rotate(var(--rotate, 360deg)); opacity: 0; }
+}
+
+/* ── Centre card ──────────────────────────────────────────── */
+.mr-card {
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+  border: 2px solid #ffd700;
+  border-radius: 20px;
+  padding: 36px 48px;
+  text-align: center;
+  box-shadow:
+    0 0 40px rgba(255, 215, 0, 0.5),
+    0 0 80px rgba(255, 215, 0, 0.2),
+    0 20px 60px rgba(0,0,0,0.6);
+  animation: mr-card-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes mr-card-pop {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.mr-card-icon {
+  font-size: 4rem;
+  animation: mr-bounce 0.6s ease infinite alternate;
+}
+
+@keyframes mr-bounce {
+  from { transform: translateY(0) rotate(-8deg); }
+  to   { transform: translateY(-10px) rotate(8deg); }
+}
+
+.mr-card-title {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #ffd700;
+  letter-spacing: 3px;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+  margin: 8px 0 4px;
+  animation: mr-shimmer 1.5s linear infinite;
+  background: linear-gradient(90deg, #ffd700, #fff8a0, #ffd700, #ff9900, #ffd700);
+  background-size: 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@keyframes mr-shimmer {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+
+.mr-card-amount {
+  font-size: 3rem;
+  font-weight: 900;
+  color: #00ff88;
+  text-shadow: 0 0 20px rgba(0, 255, 136, 0.7);
+  margin: 8px 0;
+  animation: mr-pulse 0.8s ease infinite alternate;
+}
+
+@keyframes mr-pulse {
+  from { transform: scale(1);    text-shadow: 0 0 20px rgba(0, 255, 136, 0.7); }
+  to   { transform: scale(1.06); text-shadow: 0 0 40px rgba(0, 255, 136, 1);   }
+}
+
+.mr-card-from {
+  font-size: 1.1rem;
+  color: #ccc;
+  margin-top: 6px;
+}
+
+.mr-card-from strong {
+  color: #fff;
+}
+
+.mr-card-tap {
+  margin-top: 18px;
+  font-size: 0.75rem;
+  color: #666;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}

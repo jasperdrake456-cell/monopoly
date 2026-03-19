@@ -41,6 +41,11 @@ export function AuthProvider({ children }) {
   const [balance, setBalanceState] = useState(0);
   const [loading, setLoading] = useState(true);
   const forceLogoutSocketRef  = useRef(null);
+  const userRef               = useRef(null);
+  const [moneyAlert, setMoneyAlert] = useState(null); // { from, amount }
+
+  // Keep userRef in sync so socket handlers can read current user
+  useEffect(() => { userRef.current = user; }, [user]);
 
   // ── Push local balance to server ─────────────────────────────────────────
   const pushBalance = useCallback(async (tk, bal) => {
@@ -120,19 +125,27 @@ export function AuthProvider({ children }) {
       .catch(() => {});
   }, [token]);
 
-  // ── Listen for server-forced logout (weekly reset) ───────────────────────
+  // ── Listen for server-forced logout (weekly reset) & money alerts ────────
   useEffect(() => {
     const sock = io(SERVER_URL, { autoConnect: true });
     forceLogoutSocketRef.current = sock;
+
     sock.on('forceLogout', () => {
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
       setToken(null);
       setUser(null);
       setAuthToken(null);
-      // Hard redirect to login page
       window.location.href = '/auth';
     });
+
+    sock.on('moneyReceived', ({ to, from, amount }) => {
+      if (userRef.current?.username === to) {
+        setMoneyAlert({ from, amount });
+        setTimeout(() => setMoneyAlert(null), 5000);
+      }
+    });
+
     return () => sock.disconnect();
   }, []);
 
@@ -230,6 +243,7 @@ export function AuthProvider({ children }) {
     isAdmin: user?.username === 'jasper',
     register, login, logout, transfer, syncNow, claimDailyServer,
     refreshBalance: () => pullBalance(token),
+    moneyAlert, clearMoneyAlert: () => setMoneyAlert(null),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

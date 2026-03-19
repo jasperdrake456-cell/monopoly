@@ -139,9 +139,17 @@ app.post('/api/accounts/daily', (req, res) => {
   res.json(us.claimDaily(getToken(req)));
 });
 
-app.post('/api/accounts/transfer', (req, res) => {
+app.post('/api/accounts/transfer', requireAuth, (req, res) => {
   const { toUsername, amount } = req.body || {};
-  res.json(us.transfer(getToken(req), toUsername, amount));
+  const result = us.transfer(getToken(req), toUsername, amount);
+  if (result.ok && Number(amount) >= 10000) {
+    io.emit('moneyReceived', {
+      to:     (toUsername || '').toLowerCase(),
+      from:   req.user.username,
+      amount: Number(amount),
+    });
+  }
+  res.json(result);
 });
 
 app.get('/api/accounts/exists/:username', (req, res) => {

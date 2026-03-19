@@ -6,6 +6,7 @@ import GameGuard from './components/GameGuard';
 import ChatPanel from './components/ChatPanel';
 import PasswordGate from './components/PasswordGate';
 import AnnouncementOverlay from './components/AnnouncementOverlay';
+import MoneyRainOverlay from './components/MoneyRainOverlay';
 import HomePage from './pages/HomePage';
 import AuthPage from './pages/AuthPage';
 import TransferPage from './pages/TransferPage';
@@ -69,6 +70,7 @@ export default function App() {
       <SiteConfigProvider>
         <ChatPanel />
         <AnnouncementOverlay />
+        <MoneyRainOverlay />
         <PasswordGate>
           <Routes>
             <Route path="/" element={<HomePage />} />
