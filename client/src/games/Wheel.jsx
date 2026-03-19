@@ -44,13 +44,14 @@ const RISK_MODES = {
     label: 'High Risk',
     emoji: '🔴',
     color: '#ef4444',
-    // total weight=50; house edge per segment: Green 7.6%, Blue 7.6%, Purple 10%, Red 10%, Gold 4%
+    // total weight=200; Gold is 1/200 = 0.5% chance at 100×
+    // house edge per segment: Green ~6%, Blue ~7%, Purple ~10%, Red ~3%, Gold 50%
     segments: [
-      { color: '#22c55e', label: 'Green',  mult: 1.65,  weight: 28 },
-      { color: '#3b82f6', label: 'Blue',   mult: 3.85,  weight: 12 },
-      { color: '#a855f7', label: 'Purple', mult: 7.5,   weight: 6  },
-      { color: '#ef4444', label: 'Red',    mult: 15.0,  weight: 3  },
-      { color: '#FFD700', label: 'Gold',   mult: 48.0,  weight: 1  },
+      { color: '#22c55e', label: 'Green',  mult: 1.65,  weight: 114 },
+      { color: '#3b82f6', label: 'Blue',   mult: 3.85,  weight: 48  },
+      { color: '#a855f7', label: 'Purple', mult: 7.5,   weight: 24  },
+      { color: '#ef4444', label: 'Red',    mult: 15.0,  weight: 13  },
+      { color: '#FFD700', label: 'Gold',   mult: 100.0, weight: 1   },
     ],
   },
 };
