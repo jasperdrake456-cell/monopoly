@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { io } from 'socket.io-client';
 import AccountWidget from '../components/AccountWidget';
 import { useAuth } from '../contexts/AuthContext';
-import { useChampion } from '../hooks/useChampion';
+import { useChampion, invalidateChampionCache } from '../hooks/useChampion';
 import './HomePage.css';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
@@ -52,21 +53,56 @@ const MULTI_GAMES = [
   { path: '/tic-tac-toe', name: 'Tic-Tac-Toe', desc: 'Get 3 in a row to win', icon: '❌', players: '2 players' },
 ];
 
+// Slug → display name lookup (must stay in sync with CASINO_GAMES below)
+const SLUG_NAMES = {
+  crash: 'Crash', plinko: 'Plinko', dice: 'Dice', roulette: 'Roulette',
+  blackjack: 'Blackjack', baccarat: 'Baccarat', mines: 'Mines',
+  'ride-the-bus': 'Ride the Bus', slots: 'Slots', 'chicken-cross': 'Chicken Cross',
+  'texas-holdem': "Texas Hold'em", hilo: 'HiLo', tower: 'Tower',
+  wheel: 'Wheel', 'video-poker': 'Video Poker', keno: 'Keno',
+  'dragon-tiger': 'Dragon Tiger',
+};
+
 export default function HomePage() {
   const { user } = useAuth();
   const isAdmin = user?.username === 'jasper';
-  const { champion, happyHourActive } = useChampion();
+  const [champData, setChampData] = useState({ champion: null, happyHourActive: false });
+  const { champion, happyHourActive } = champData;
   const isChampion = user && champion?.username === user.username?.toLowerCase();
 
   const [wildcard, setWildcard] = useState(null);
-  useEffect(() => {
+
+  const fetchWildcard = useCallback(() => {
     fetch(`${SERVER_URL}/api/game-config`)
       .then(r => r.json())
-      .then(data => {
-        if (data.wildcard) setWildcard(data);
-      })
+      .then(data => { if (data.wildcard) setWildcard(data); })
       .catch(() => {});
   }, []);
+
+  const fetchChampion = useCallback(() => {
+    invalidateChampionCache();
+    fetch(`${SERVER_URL}/api/champion`)
+      .then(r => r.json())
+      .then(d => { if (d.ok) setChampData(d); })
+      .catch(() => {});
+  }, []);
+
+  // Initial fetch
+  useEffect(() => {
+    fetchWildcard();
+    fetchChampion();
+  }, [fetchWildcard, fetchChampion]);
+
+  // Real-time updates: listen to /chat announcements (fired on GOTD + HH changes)
+  useEffect(() => {
+    const socket = io(SERVER_URL + '/chat', { autoConnect: false });
+    socket.connect();
+    socket.on('announcement', () => {
+      fetchWildcard();
+      fetchChampion();
+    });
+    return () => socket.disconnect();
+  }, [fetchWildcard, fetchChampion]);
 
   return (
     <div className="home">
@@ -91,14 +127,16 @@ export default function HomePage() {
             <div className="gotd-banner" style={{ background: 'linear-gradient(135deg,rgba(255,215,0,0.12),rgba(255,152,0,0.12))', borderColor: 'rgba(255,215,0,0.4)' }}>
               <span className="gotd-star">🎉</span>
               <span className="gotd-label" style={{ color: '#FFD700' }}>HAPPY HOUR</span>
-              <span className="gotd-boost" style={{ color: '#FFD700' }}>All casino games pay 2× right now!</span>
+              <span className="gotd-boost" style={{ color: '#FFD700' }}>All casino games pay 1.5× right now!</span>
             </div>
           )}
           {wildcard && (
             <div className="gotd-banner">
               <span className="gotd-star">⭐</span>
               <span className="gotd-label">Game of the Day:</span>
-              <span className="gotd-name">{wildcard.wildcardOverride || wildcard.wildcard}</span>
+              <span className="gotd-name">
+                {SLUG_NAMES[wildcard.wildcardOverride || wildcard.wildcard] || wildcard.wildcardOverride || wildcard.wildcard}
+              </span>
               <span className="gotd-boost">{wildcard.wildcardBoost}× better odds today!</span>
             </div>
           )}
