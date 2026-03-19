@@ -13,8 +13,8 @@ const IS_RED   = { hearts: true, diamonds: true, clubs: false, spades: false };
 const VALUES   = [2,3,4,5,6,7,8,9,10,11,12,13,14];
 const VAL_LBL  = { 2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A' };
 
-// Schedule 1 multipliers: round 1=2.3x, 2=3.5x, 3=4.6x, 4=23x (~15% boost)
-const MULTIPLIERS = [0, 2.3, 3.5, 4.6, 23];
+// Schedule 1 multipliers: round 1=2x, 2=3x, 3=4x, 4=20x
+const MULTIPLIERS = [0, 2, 3, 4, 20];
 
 function createDeck() {
   const cards = [];
@@ -215,7 +215,7 @@ export default function RideTheBus() {
     }
   }
 
-  const ROUND_MULTS = ['', '2.3×', '3.5×', '4.6×', '23×'];
+  const ROUND_MULTS = ['', '2×', '3×', '4×', '20×'];
 
   if (loading) return null;
   if (banned) {
@@ -276,7 +276,7 @@ export default function RideTheBus() {
               </div>
             </div>
             <div className="rtb-potential">
-              Win all 4: <span className="rtb-potential-val">${bet * 23}</span>
+              Win all 4: <span className="rtb-potential-val">${bet * 20}</span>
             </div>
             <button className="rtb-btn rtb-btn--start" onClick={startGame}>
               🚌 Ride the Bus!
