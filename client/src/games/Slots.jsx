@@ -47,6 +47,7 @@ function initReelDisplays() {
 function evaluate(mids) {
   const [r0, r1, r2] = mids;
 
+  // Three-of-a-kind (non-cherry)
   if (r0 === '💎' && r1 === '💎' && r2 === '💎') return { mult: 600, label: '💎 💎 💎 JACKPOT!' };
   if (r0 === '7️⃣' && r1 === '7️⃣' && r2 === '7️⃣') return { mult: 300, label: '7️⃣ 7️⃣ 7️⃣ LUCKY SEVENS!' };
   if (r0 === '⭐' && r1 === '⭐' && r2 === '⭐') return { mult: 50, label: '⭐ ⭐ ⭐ STARS!' };
@@ -54,9 +55,12 @@ function evaluate(mids) {
   if (r0 === '🍇' && r1 === '🍇' && r2 === '🍇') return { mult: 18, label: '🍇 🍇 🍇 GRAPES!' };
   if (r0 === '🍊' && r1 === '🍊' && r2 === '🍊') return { mult: 12, label: '🍊 🍊 🍊 ORANGES!' };
   if (r0 === '🍋' && r1 === '🍋' && r2 === '🍋') return { mult: 6, label: '🍋 🍋 🍋 LEMONS!' };
-  if (r0 === '🍒' && r1 === '🍒' && r2 === '🍒') return { mult: 4, label: '🍒 🍒 🍒 CHERRIES!' };
-  if (r0 === '🍒' && r1 === '🍒' && r2 !== '🍒') return { mult: 2, label: '🍒 🍒 — Double Cherry!' };
-  if (r0 === '🍒' && r1 !== '🍒') return { mult: 1.2, label: '🍒 — Single Cherry' };
+
+  // Cherry combos — count by total, any position (fixes 🍒❌🍒 and ❌🍒🍒 cases)
+  const cherries = mids.filter(s => s === '🍒').length;
+  if (cherries === 3) return { mult: 4,   label: '🍒 🍒 🍒 CHERRIES!' };
+  if (cherries === 2) return { mult: 2,   label: '🍒 🍒 — Double Cherry!' };
+  if (cherries === 1) return { mult: 1.2, label: '🍒 — Single Cherry' };
 
   return { mult: 0, label: 'No match. Better luck next time!' };
 }
