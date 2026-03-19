@@ -162,13 +162,14 @@ export default function ChampionPage() {
           <div className="champ-card-title">Site-Wide Broadcast</div>
           <div className="champ-card-desc">
             Send a message that pops up for every player on the site.
+            Resets daily at midnight.
           </div>
           <div className="champ-uses">
             {Array.from({ length: broadcasts.limit }).map((_, i) => (
               <span key={i} className={`champ-pip ${i < broadcasts.used ? 'champ-pip--used' : 'champ-pip--free'}`} />
             ))}
             <span className="champ-uses-label">
-              {broadcasts.limit - broadcasts.used} / {broadcasts.limit} left
+              {broadcasts.limit - broadcasts.used} / {broadcasts.limit} left today
             </span>
           </div>
           {broadcasts.used < broadcasts.limit ? (
@@ -185,7 +186,7 @@ export default function ChampionPage() {
               </button>
             </>
           ) : (
-            <div className="champ-exhausted">All broadcasts used this week.</div>
+            <div className="champ-exhausted">All broadcasts used today — resets at midnight.</div>
           )}
         </div>
 
@@ -195,13 +196,14 @@ export default function ChampionPage() {
           <div className="champ-card-title">Mute a Player</div>
           <div className="champ-card-desc">
             Silence any player from chat for 1 hour.
+            Resets daily at midnight.
           </div>
           <div className="champ-uses">
             {Array.from({ length: mutes.limit }).map((_, i) => (
               <span key={i} className={`champ-pip ${i < mutes.used ? 'champ-pip--used' : 'champ-pip--free'}`} />
             ))}
             <span className="champ-uses-label">
-              {mutes.limit - mutes.used} / {mutes.limit} left
+              {mutes.limit - mutes.used} / {mutes.limit} left today
             </span>
           </div>
           {mutes.used < mutes.limit ? (
@@ -219,7 +221,7 @@ export default function ChampionPage() {
               </button>
             </>
           ) : (
-            <div className="champ-exhausted">All mutes used this week.</div>
+            <div className="champ-exhausted">All mutes used today — resets at midnight.</div>
           )}
         </div>
 
@@ -228,8 +230,8 @@ export default function ChampionPage() {
           <div className="champ-card-icon">🎁</div>
           <div className="champ-card-title">Happy Hour</div>
           <div className="champ-card-desc">
-            Activate 2× payouts on all casino games for everyone — for 30 minutes.
-            One use per week.
+            Activate 1.5× payouts on all casino games for everyone — for 30 minutes.
+            One use per day, resets at midnight.
           </div>
           {happyHour.active ? (
             <div className="champ-hh-active">
@@ -237,7 +239,7 @@ export default function ChampionPage() {
               <div className="champ-hh-countdown">{hhCountdown}</div>
             </div>
           ) : happyHour.used ? (
-            <div className="champ-exhausted">Happy hour already used this week.</div>
+            <div className="champ-exhausted">Happy hour already used today — resets at midnight.</div>
           ) : (
             <button className="champ-btn champ-btn--gold" onClick={startHappyHour}>
               🎁 Start Happy Hour

@@ -202,6 +202,7 @@ export default function AdminPage() {
   const [gameBoostEdits, setGameBoostEdits] = useState({}); // slug → string input value
   const [rigTarget, setRigTarget]       = useState('');
   const [weeklyResetAmt, setWeeklyResetAmt] = useState('5000');
+  const [currentChampion, setCurrentChampion] = useState(null); // username string or null
 
   const ALL_GAMES = [
     'crash','plinko','dice','roulette','blackjack','baccarat',
@@ -277,6 +278,13 @@ export default function AdminPage() {
     authFetch('/api/admin/rigged', token).then(d => { if (d.ok) setRiggedUsers(d.users); }).catch(() => {});
   }, [token]);
 
+  const loadChampion = useCallback(() => {
+    fetch((import.meta.env.VITE_SERVER_URL || '') + '/api/champion')
+      .then(r => r.json())
+      .then(d => { if (d.ok) setCurrentChampion(d.champion?.username || null); })
+      .catch(() => {});
+  }, []);
+
   const loadGameOdds = useCallback(() => {
     authFetch('/api/game-config', token).then(d => {
       if (d.ok) {
@@ -315,11 +323,11 @@ export default function AdminPage() {
   // Load data when tab changes
   useEffect(() => {
     if (tab === 'overview')    { loadStats(); loadUsers(); loadAuditLog(); }
-    if (tab === 'users')       { loadUsers(); loadActivity(); loadIPBans(); loadUserBans(); loadRiggedUsers(); }
+    if (tab === 'users')       { loadUsers(); loadActivity(); loadIPBans(); loadUserBans(); loadRiggedUsers(); loadChampion(); }
     if (tab === 'games')       { loadBigWins(); loadLeaderboards(); loadGameOdds(); loadSuggestions(); }
     if (tab === 'moderation')  { loadReports(); loadUsers(); loadChat(); }
     if (tab === 'settings')    { refreshConfig(); }
-  }, [tab, loadStats, loadUsers, loadAuditLog, loadActivity, loadIPBans, loadUserBans, loadBigWins, loadLeaderboards, loadReports, loadChat, refreshConfig, loadSuggestions, loadRiggedUsers, loadGameOdds]);
+  }, [tab, loadStats, loadUsers, loadAuditLog, loadActivity, loadIPBans, loadUserBans, loadBigWins, loadLeaderboards, loadReports, loadChat, refreshConfig, loadSuggestions, loadRiggedUsers, loadGameOdds, loadChampion]);
 
   // Poll activity every 10s on users tab
   useEffect(() => {
@@ -450,7 +458,7 @@ export default function AdminPage() {
   function reloadTab() {
     setStatus('↻ Refreshed');
     if (tab === 'overview')   { loadStats(); loadUsers(); loadAuditLog(); }
-    if (tab === 'users')      { loadUsers(); loadActivity(); loadIPBans(); loadUserBans(); loadRiggedUsers(); }
+    if (tab === 'users')      { loadUsers(); loadActivity(); loadIPBans(); loadUserBans(); loadRiggedUsers(); loadChampion(); }
     if (tab === 'games')      { loadBigWins(); loadLeaderboards(); loadGameOdds(); loadSuggestions(); }
     if (tab === 'moderation') { loadReports(); loadUsers(); loadChat(); }
     if (tab === 'settings')   { refreshConfig(); setSiteStatus('↻ Refreshed'); }
@@ -660,6 +668,7 @@ export default function AdminPage() {
                   {(u.balance || 0) >= BAL_HIGH && (u.balance || 0) < BAL_VERY_HIGH && <span className="admin-user-flag admin-user-flag--yellow" title="High balance">🟡</span>}
                   {isSuspectUsername(u.username) && <span className="admin-user-flag" title="Suspicious username">🚩</span>}
                   {riggedUsers.includes(u.username) && <span className="admin-user-flag" title="Rigged — always loses" style={{color:'#f87171'}}>🎲 RIGGED</span>}
+                  {currentChampion === u.username && <span className="admin-user-flag" title="Weekly Champion" style={{color:'#FFD700'}}>👑 CHAMPION</span>}
                   {editingBal?.username === u.username ? (
                     <span className="admin-user-bal-edit">
                       <span className="admin-bal-dollar">$</span>
@@ -735,6 +744,17 @@ export default function AdminPage() {
                         setStatus(d.ok ? `🎲 @${u.username} is now rigged — they'll always lose.` : (d.error || 'Failed'));
                         if (d.ok) loadRiggedUsers();
                       }}>🎲 Rig</button>
+                    )}
+                    {currentChampion === u.username ? (
+                      <button className="admin-btn admin-btn--ghost admin-btn--sm" style={{borderColor:'#FFD700',color:'#FFD700'}} title="Currently the weekly champion" disabled>👑 Champion</button>
+                    ) : (
+                      <button className="admin-btn admin-btn--ghost admin-btn--sm" style={{borderColor:'#b45309',color:'#d97706'}} onClick={async () => {
+                        const d = await authFetch('/api/admin/champion', token, {
+                          method: 'POST', body: JSON.stringify({ username: u.username }),
+                        });
+                        setStatus(d.ok ? `👑 @${u.username} is now the weekly champion.` : (d.error || 'Failed'));
+                        if (d.ok) loadChampion();
+                      }}>👑 Crown</button>
                     )}
                     <button className="admin-btn admin-btn--ghost admin-btn--sm" onClick={() => deleteUser(u.username)}>🗑 Delete</button>
                   </div>

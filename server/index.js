@@ -809,10 +809,10 @@ app.get('/api/champion/panel', requireAuth, (req, res) => {
   res.json({
     ok: true,
     champion:   state.champion,
-    broadcasts: { used: state.broadcastsUsed,  limit: ch.BROADCAST_LIMIT },
-    mutes:      { used: state.mutesUsed,        limit: ch.MUTE_LIMIT },
+    broadcasts: { used: state.broadcasts.used,  limit: ch.BROADCAST_LIMIT },
+    mutes:      { used: state.mutes.used,        limit: ch.MUTE_LIMIT },
     happyHour:  {
-      used:   state.happyHourUsed,
+      used:   state.happyHour.used,
       active: state.happyHourActive && state.happyHourEndsAt > Date.now(),
       endsAt: state.happyHourEndsAt,
     },
