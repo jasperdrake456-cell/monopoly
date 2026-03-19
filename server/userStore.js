@@ -520,29 +520,19 @@ function kickUser(adminToken, targetUsername) {
   return { ok: true, sessionsKilled: killed };
 }
 
-const BROKE_TTL_MS    = 5  * 60 * 1000; // balance must be $0 for this long
-const OFFLINE_TTL_MS  = 30 * 60 * 1000; // AND user must have been offline this long
-
 /**
- * Delete accounts that have BOTH:
- *   1. Been at $0 for 5+ minutes (brokeAt set by syncBalance)
- *   2. Been offline for 30+ minutes (lastSeen not updated recently)
- *
- * Condition 2 prevents deleting players who:
- *   - Are mid-bet (balance is temporarily $0 while a round resolves)
- *   - Close the tab briefly and come back
- *   - Have a sync race where the $0 is stale
+ * Delete all accounts with a zero balance (runs every 5 minutes).
+ * Requires brokeAt to be set (only happens via real syncBalance call)
+ * so brand-new $0 accounts and mid-bet edge cases aren't swept up.
  *
  * Returns the number of accounts deleted.
  */
 function pruneZeroBalanceAccounts() {
-  const now   = Date.now();
   const users = readUsers();
   const toDelete = Object.values(users).filter(u =>
     u.username !== ADMIN_USERNAME &&
     (u.casinoBalance || 0) <= 0 &&
-    u.brokeAt && (now - u.brokeAt) >= BROKE_TTL_MS &&
-    (!u.lastSeen || (now - u.lastSeen) >= OFFLINE_TTL_MS) // must also be offline 30+ min
+    u.brokeAt  // set by syncBalance when balance genuinely hits 0
   );
   if (toDelete.length === 0) return 0;
 
