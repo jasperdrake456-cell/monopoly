@@ -855,17 +855,17 @@ app.post('/api/champion/mute', requireAuth, (req, res) => {
   res.json({ ok: true, mutesLeft: ch.MUTE_LIMIT - result.used });
 });
 
-// Champion-only: trigger happy hour (2× payout boost, 30 min, once per week)
+// Champion-only: trigger happy hour (1.5× payout boost, 30 min, once per day)
 app.post('/api/champion/happy-hour', requireAuth, (req, res) => {
   const result = ch.triggerHappyHour(req.user.username);
   if (!result.ok) return res.status(403).json(result);
 
   const state = ch.getState();
   const name  = state.champion?.displayName || req.user.username;
-  const msg   = chatStore.addSystemMessage(`🎉 HAPPY HOUR started by ${name}! ALL casino games pay 2× for 30 minutes!`);
+  const msg   = chatStore.addSystemMessage(`🎉 HAPPY HOUR started by ${name}! ALL casino games pay 1.5× for 30 minutes!`);
   io.of('/chat').emit('newMessage', msg);
   io.of('/chat').emit('announcement', {
-    text: `🎉 HAPPY HOUR! 2× payouts on ALL casino games for 30 minutes!`,
+    text: `🎉 HAPPY HOUR! 1.5× payouts on ALL casino games for 30 minutes!`,
     timestamp: Date.now(),
   });
 
