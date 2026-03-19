@@ -5,16 +5,16 @@ import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 import { useGameBoost } from '../hooks/useGameBoost';
 
-// Near-impossible pool — each winning symbol only 1 in 60, cherries ~1.6% per reel.
-// Distribution: 💎×1, 7️⃣×1, ⭐×1, 🔔×1, 🍇×1, 🍊×1, 🍒×1, 🍋×54 (61 total)
+// Near-impossible pool — paying symbols 1 each out of 68, filler is 5 mixed non-paying fruits.
+// Paying: 💎×1, 7️⃣×1, ⭐×1, 🔔×1, 🍇×1, 🍊×1, 🍋×1, 🍒×1 (8 total)
+// Filler (no payout): 🍑×12, 🫐×12, 🥝×12, 🍈×12, 🫒×12 (60 filler, 68 total)
 const REEL_POOL = [
-  '💎','7️⃣','⭐','🔔','🍇','🍊','🍒',
-  '🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋',
-  '🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋',
-  '🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋',
-  '🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋',
-  '🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋','🍋',
-  '🍋','🍋','🍋','🍋',
+  '💎','7️⃣','⭐','🔔','🍇','🍊','🍋','🍒',
+  '🍑','🍑','🍑','🍑','🍑','🍑','🍑','🍑','🍑','🍑','🍑','🍑',
+  '🫐','🫐','🫐','🫐','🫐','🫐','🫐','🫐','🫐','🫐','🫐','🫐',
+  '🥝','🥝','🥝','🥝','🥝','🥝','🥝','🥝','🥝','🥝','🥝','🥝',
+  '🍈','🍈','🍈','🍈','🍈','🍈','🍈','🍈','🍈','🍈','🍈','🍈',
+  '🫒','🫒','🫒','🫒','🫒','🫒','🫒','🫒','🫒','🫒','🫒','🫒',
 ];
 
 const PAYTABLE = [
