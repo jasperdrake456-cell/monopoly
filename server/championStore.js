@@ -10,6 +10,7 @@ const BROADCAST_LIMIT  = 3;    // per day
 const MUTE_LIMIT       = 2;    // per day
 const HAPPY_HOUR_MS    = 30 * 60 * 1000; // 30 minutes
 const HAPPY_HOUR_BOOST = 1.5;
+const AIRDROP_MAX      = 50000; // max coins per airdrop
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -23,9 +24,11 @@ function defaultState() {
   return {
     champion:        null,  // { username, displayName, startedAt }
     // Daily-reset counters — each has a date stamp
-    broadcasts:      { date: '', used: 0 },   // 3/day
-    mutes:           { date: '', used: 0 },   // 2/day
+    broadcasts:      { date: '', used: 0 },     // 3/day
+    mutes:           { date: '', used: 0 },     // 2/day
     happyHour:       { date: '', used: false }, // 1/day
+    gotd:            { date: '', used: false }, // 1/day
+    airdrop:         { date: '', used: false }, // 1/day
     // Live happy-hour state
     happyHourActive: false,
     happyHourEndsAt: null,
@@ -62,6 +65,8 @@ function getState() {
   if (!data.broadcasts) data.broadcasts = { date: '', used: 0 };
   if (!data.mutes)      data.mutes      = { date: '', used: 0 };
   if (!data.happyHour)  data.happyHour  = { date: '', used: false };
+  if (!data.gotd)       data.gotd       = { date: '', used: false };
+  if (!data.airdrop)    data.airdrop    = { date: '', used: false };
 
   // Daily resets
   let dirty = false;
@@ -69,6 +74,8 @@ function getState() {
   if (data.broadcasts.date !== t) { data.broadcasts = { date: t, used: 0 };        dirty = true; }
   if (data.mutes.date      !== t) { data.mutes      = { date: t, used: 0 };        dirty = true; }
   if (data.happyHour.date  !== t) { data.happyHour  = { date: t, used: false };    dirty = true; }
+  if (data.gotd.date       !== t) { data.gotd       = { date: t, used: false };    dirty = true; }
+  if (data.airdrop.date    !== t) { data.airdrop    = { date: t, used: false };    dirty = true; }
 
   // Happy hour expiry
   if (data.happyHourActive && data.happyHourEndsAt && Date.now() > data.happyHourEndsAt) {
@@ -135,6 +142,24 @@ function useMute(username) {
   return { ok: true, used: data.mutes.used, limit: MUTE_LIMIT };
 }
 
+function useGotd(username) {
+  if (!isChampion(username)) return { ok: false, error: 'Not the current champion' };
+  const data = getState();
+  if (data.gotd.used) return { ok: false, error: 'Game of the Day override already used today — resets at midnight' };
+  data.gotd.used = true;
+  write(data);
+  return { ok: true };
+}
+
+function useAirdrop(username) {
+  if (!isChampion(username)) return { ok: false, error: 'Not the current champion' };
+  const data = getState();
+  if (data.airdrop.used) return { ok: false, error: 'Airdrop already used today — resets at midnight' };
+  data.airdrop.used = true;
+  write(data);
+  return { ok: true };
+}
+
 function triggerHappyHour(username) {
   if (!isChampion(username)) return { ok: false, error: 'Not the current champion' };
   const data = getState();
@@ -155,7 +180,10 @@ module.exports = {
   useBroadcast,
   useMute,
   triggerHappyHour,
+  useGotd,
+  useAirdrop,
   BROADCAST_LIMIT,
   MUTE_LIMIT,
   HAPPY_HOUR_MS,
+  AIRDROP_MAX,
 };

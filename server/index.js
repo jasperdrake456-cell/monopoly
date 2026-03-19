@@ -816,6 +816,8 @@ app.get('/api/champion/panel', requireAuth, (req, res) => {
       active: state.happyHourActive && state.happyHourEndsAt > Date.now(),
       endsAt: state.happyHourEndsAt,
     },
+    gotd:    { used: state.gotd?.used    || false },
+    airdrop: { used: state.airdrop?.used || false },
   });
 });
 
@@ -875,6 +877,72 @@ app.post('/api/champion/happy-hour', requireAuth, (req, res) => {
   }, ch.HAPPY_HOUR_MS);
 
   res.json({ ok: true, endsAt: result.endsAt });
+});
+
+// Champion-only: override the Game of the Day (once per day)
+const CHAMPION_GOTD_SLUGS = [
+  'crash','plinko','dice','roulette','blackjack','baccarat','mines',
+  'ride-the-bus','slots','chicken-cross','texas-holdem','hilo','tower',
+  'wheel','video-poker','keno','dragon-tiger',
+];
+const CHAMPION_GOTD_NAMES = {
+  'crash': 'Crash', 'plinko': 'Plinko', 'dice': 'Dice', 'roulette': 'Roulette',
+  'blackjack': 'Blackjack', 'baccarat': 'Baccarat', 'mines': 'Mines',
+  'ride-the-bus': 'Ride the Bus', 'slots': 'Slots', 'chicken-cross': 'Chicken Cross',
+  'texas-holdem': "Texas Hold'em", 'hilo': 'HiLo', 'tower': 'Tower',
+  'wheel': 'Wheel', 'video-poker': 'Video Poker', 'keno': 'Keno', 'dragon-tiger': 'Dragon Tiger',
+};
+app.post('/api/champion/gotd', requireAuth, (req, res) => {
+  const { game } = req.body || {};
+  if (!game || !CHAMPION_GOTD_SLUGS.includes(game)) {
+    return res.status(400).json({ ok: false, error: 'Invalid game slug' });
+  }
+  const result = ch.useGotd(req.user.username);
+  if (!result.ok) return res.status(403).json(result);
+
+  go.setWildcardOverride(game);
+
+  const state    = ch.getState();
+  const name     = state.champion?.displayName || req.user.username;
+  const gameName = CHAMPION_GOTD_NAMES[game] || game;
+  const msg      = chatStore.addSystemMessage(`👑 Champion ${name} has declared ${gameName} as today's Game of the Day!`);
+  io.of('/chat').emit('newMessage', msg);
+  io.of('/chat').emit('announcement', {
+    text: `👑 ${name} set today's Game of the Day to ${gameName}! Check the homepage for bonus odds!`,
+    timestamp: Date.now(),
+  });
+
+  res.json({ ok: true });
+});
+
+// Champion-only: airdrop coins to a player (once per day, max $50k)
+app.post('/api/champion/airdrop', requireAuth, (req, res) => {
+  const { username, amount } = req.body || {};
+  if (!username) return res.status(400).json({ ok: false, error: 'Missing username' });
+  const target = (username || '').trim().toLowerCase();
+  if (target === req.user.username) return res.status(400).json({ ok: false, error: 'Cannot airdrop yourself' });
+
+  const amt = Math.floor(Number(amount));
+  if (!amt || amt < 1 || amt > ch.AIRDROP_MAX) {
+    return res.status(400).json({ ok: false, error: `Amount must be $1 – $${ch.AIRDROP_MAX.toLocaleString()}` });
+  }
+  if (!us.userExists(target)) return res.status(404).json({ ok: false, error: 'User not found' });
+
+  const result = ch.useAirdrop(req.user.username);
+  if (!result.ok) return res.status(403).json(result);
+
+  us.addBonusByAdmin(target, amt);
+
+  const state = ch.getState();
+  const name  = state.champion?.displayName || req.user.username;
+  const msg   = chatStore.addSystemMessage(`💸 Champion ${name} airdropped $${amt.toLocaleString()} to @${target}! 🎁`);
+  io.of('/chat').emit('newMessage', msg);
+  io.of('/chat').emit('announcement', {
+    text: `💸 @${target} just received a $${amt.toLocaleString()} airdrop from Champion ${name}! 🎁`,
+    timestamp: Date.now(),
+  });
+
+  res.json({ ok: true });
 });
 
 // Admin: manually set champion (for testing or overriding)

@@ -5,6 +5,26 @@ import './ChampionPage.css';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
 
+const CASINO_GAMES = [
+  { slug: 'crash',        name: 'Crash' },
+  { slug: 'plinko',       name: 'Plinko' },
+  { slug: 'dice',         name: 'Dice' },
+  { slug: 'roulette',     name: 'Roulette' },
+  { slug: 'blackjack',    name: 'Blackjack' },
+  { slug: 'baccarat',     name: 'Baccarat' },
+  { slug: 'mines',        name: 'Mines' },
+  { slug: 'ride-the-bus', name: 'Ride the Bus' },
+  { slug: 'slots',        name: 'Slots' },
+  { slug: 'chicken-cross',name: 'Chicken Cross' },
+  { slug: 'texas-holdem', name: "Texas Hold'em" },
+  { slug: 'hilo',         name: 'HiLo' },
+  { slug: 'tower',        name: 'Tower' },
+  { slug: 'wheel',        name: 'Wheel' },
+  { slug: 'video-poker',  name: 'Video Poker' },
+  { slug: 'keno',         name: 'Keno' },
+  { slug: 'dragon-tiger', name: 'Dragon Tiger' },
+];
+
 function authFetch(path, token, options = {}) {
   return fetch(SERVER_URL + path, {
     ...options,
@@ -29,6 +49,13 @@ export default function ChampionPage() {
 
   // Mute power state
   const [muteUser, setMuteUser] = useState('');
+
+  // GOTD override state
+  const [gotdGame, setGotdGame] = useState('crash');
+
+  // Airdrop state
+  const [airdropUser,   setAirdropUser]   = useState('');
+  const [airdropAmount, setAirdropAmount] = useState('');
 
   // Countdown for active happy hour
   const [hhCountdown, setHhCountdown] = useState('');
@@ -113,10 +140,43 @@ export default function ChampionPage() {
   async function startHappyHour() {
     const data = await authFetch('/api/champion/happy-hour', token, { method: 'POST' });
     if (data.ok) {
-      flash(true, '🎉 Happy hour started! All casino games now pay 2× for 30 minutes.');
+      flash(true, '🎉 Happy hour started! All casino games now pay 1.5× for 30 minutes.');
       loadPanel();
     } else {
       flash(false, data.error || 'Happy hour failed.');
+    }
+  }
+
+  async function sendGotd() {
+    const data = await authFetch('/api/champion/gotd', token, {
+      method: 'POST',
+      body: JSON.stringify({ game: gotdGame }),
+    });
+    if (data.ok) {
+      const name = CASINO_GAMES.find(g => g.slug === gotdGame)?.name || gotdGame;
+      flash(true, `🎯 ${name} is now today's Game of the Day! Everyone on the homepage can see it.`);
+      loadPanel();
+    } else {
+      flash(false, data.error || 'Failed to set Game of the Day.');
+    }
+  }
+
+  async function sendAirdrop() {
+    if (!airdropUser.trim()) return flash(false, 'Enter a username.');
+    const amt = parseInt(airdropAmount, 10);
+    if (!amt || amt < 1 || amt > 50000) return flash(false, 'Enter an amount between $1 and $50,000.');
+    const data = await authFetch('/api/champion/airdrop', token, {
+      method: 'POST',
+      body: JSON.stringify({ username: airdropUser.trim(), amount: amt }),
+    });
+    if (data.ok) {
+      const who = airdropUser.trim();
+      setAirdropUser('');
+      setAirdropAmount('');
+      flash(true, `💸 Airdropped $${amt.toLocaleString()} to @${who}! It's announced in chat.`);
+      loadPanel();
+    } else {
+      flash(false, data.error || 'Airdrop failed.');
     }
   }
 
@@ -131,7 +191,7 @@ export default function ChampionPage() {
 
   if (!panel) return null;
 
-  const { broadcasts, mutes, happyHour, champion } = panel;
+  const { broadcasts, mutes, happyHour, champion, gotd, airdrop } = panel;
 
   return (
     <div className="champ-page">
@@ -226,7 +286,7 @@ export default function ChampionPage() {
         </div>
 
         {/* 🎁 Happy Hour */}
-        <div className="champ-card champ-card--wide">
+        <div className="champ-card">
           <div className="champ-card-icon">🎁</div>
           <div className="champ-card-title">Happy Hour</div>
           <div className="champ-card-desc">
@@ -244,6 +304,82 @@ export default function ChampionPage() {
             <button className="champ-btn champ-btn--gold" onClick={startHappyHour}>
               🎁 Start Happy Hour
             </button>
+          )}
+        </div>
+
+        {/* 🎯 Game of the Day Override */}
+        <div className="champ-card">
+          <div className="champ-card-icon">🎯</div>
+          <div className="champ-card-title">Game of the Day</div>
+          <div className="champ-card-desc">
+            Override today's featured game on the homepage. Everyone sees it with bonus odds.
+            One use per day, resets at midnight.
+          </div>
+          <div className="champ-uses">
+            <span className={`champ-pip ${gotd?.used ? 'champ-pip--used' : 'champ-pip--free'}`} />
+            <span className="champ-uses-label">
+              {gotd?.used ? '0 / 1 left today' : '1 / 1 left today'}
+            </span>
+          </div>
+          {gotd?.used ? (
+            <div className="champ-exhausted">Game of the Day already set today — resets at midnight.</div>
+          ) : (
+            <>
+              <select
+                className="champ-select"
+                value={gotdGame}
+                onChange={e => setGotdGame(e.target.value)}
+              >
+                {CASINO_GAMES.map(g => (
+                  <option key={g.slug} value={g.slug}>{g.name}</option>
+                ))}
+              </select>
+              <button className="champ-btn champ-btn--teal" onClick={sendGotd}>
+                🎯 Set Game of the Day
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* 💸 Airdrop */}
+        <div className="champ-card">
+          <div className="champ-card-icon">💸</div>
+          <div className="champ-card-title">Airdrop</div>
+          <div className="champ-card-desc">
+            Send up to $50,000 to any player. Announced publicly in chat — everyone
+            will know who you chose. One use per day, resets at midnight.
+          </div>
+          <div className="champ-uses">
+            <span className={`champ-pip ${airdrop?.used ? 'champ-pip--used' : 'champ-pip--free'}`} />
+            <span className="champ-uses-label">
+              {airdrop?.used ? '0 / 1 left today' : '1 / 1 left today'}
+            </span>
+          </div>
+          {airdrop?.used ? (
+            <div className="champ-exhausted">Airdrop already sent today — resets at midnight.</div>
+          ) : (
+            <>
+              <input
+                className="champ-input"
+                type="text"
+                placeholder="Username to airdrop"
+                value={airdropUser}
+                onChange={e => setAirdropUser(e.target.value)}
+              />
+              <input
+                className="champ-input"
+                type="number"
+                placeholder="Amount (max $50,000)"
+                min={1}
+                max={50000}
+                value={airdropAmount}
+                onChange={e => setAirdropAmount(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && sendAirdrop()}
+              />
+              <button className="champ-btn champ-btn--green" onClick={sendAirdrop}>
+                💸 Send Airdrop
+              </button>
+            </>
           )}
         </div>
 
