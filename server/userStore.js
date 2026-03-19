@@ -61,7 +61,12 @@ function _loadUsersFromDisk() {
 // Single in-memory source of truth for all user data at runtime
 let _usersCache = _loadUsersFromDisk();
 const _accountCount = Object.keys(_usersCache).length;
-console.log(`[userStore] Loaded ${_accountCount} accounts from ${DATA_DIR}`);
+console.log(`[userStore] DATA_DIR=${DATA_DIR}`);
+console.log(`[userStore] USERS_FILE=${USERS_FILE} (exists=${fs.existsSync(USERS_FILE)})`);
+console.log(`[userStore] Loaded ${_accountCount} accounts from disk`);
+if (_accountCount === 0) {
+  console.warn('[userStore] ⚠️  Zero accounts loaded — either fresh install or data loss!');
+}
 
 // ⚠️  PERSISTENCE WARNING
 // If DATA_DIR is not set to a Railway Volume (or equivalent persistent disk),
@@ -91,6 +96,11 @@ function readUsers() {
 }
 
 function writeUsers(users) {
+  // Safety guard: never replace a populated cache with an empty object
+  if (Object.keys(users).length === 0 && Object.keys(_usersCache).length > 0) {
+    console.error('[userStore] BLOCKED writeUsers({}) — would have wiped all accounts!');
+    return;
+  }
   _usersCache = users;
   _flushToDisk();
 }
@@ -98,6 +108,11 @@ function writeUsers(users) {
 // Atomic write: write to .tmp then fs.renameSync so a crash mid-write never
 // leaves users.json truncated/corrupt.
 function _flushToDisk() {
+  // Safety guard: never write an empty users object to disk
+  if (Object.keys(_usersCache).length === 0) {
+    console.error('[userStore] BLOCKED _flushToDisk — cache is empty, refusing to overwrite disk.');
+    return;
+  }
   const tmpFile = USERS_FILE + '.tmp';
   try {
     fs.writeFileSync(tmpFile, JSON.stringify(_usersCache, null, 2), 'utf8');
