@@ -333,7 +333,8 @@ export default function SportsBetting() {
                   {bet.status === 'lost'  && <span className="sb-bet-lost">-${bet.amount.toLocaleString()}</span>}
                 </div>
               </div>
-            );})}
+            );
+            })}
           </div>
         )}
       </div>
