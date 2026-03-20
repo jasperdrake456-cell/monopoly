@@ -184,7 +184,7 @@ export default function SportsBetting() {
 
   // Look up live score for a stored game by fuzzy team name match
   function getLiveScore(homeTeam, awayTeam) {
-    const norm = s => (s || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+    const norm = s => (s || '').toLowerCase().replace(/^\(\d+\)\s*/, '').replace(/\bst\./g, 'saint').replace(/[^a-z0-9 ]/g, '').replace(/\bstate\b/g, 'st').replace(/\s+/g, ' ').trim();
     const match = name => n => norm(n).includes(norm(name)) || norm(name).includes(norm(n));
     const g = scores.find(s =>
       (s.scores || []).length >= 2 &&

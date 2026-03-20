@@ -29,8 +29,9 @@ function normalizeTeam(name) {
   return (name || '')
     .toLowerCase()
     .replace(/^\(\d+\)\s*/, '')       // strip "(5) " seed prefix
-    .replace(/\bst\.?\b/g, 'saint')   // St. → saint
-    .replace(/[^a-z0-9 ]/g, '')
+    .replace(/\bst\./g, 'saint')      // St. (with period) → saint, e.g. "St. John's"
+    .replace(/[^a-z0-9 ]/g, '')       // remove special chars
+    .replace(/\bstate\b/g, 'st')      // "Wright State" → "wright st" to match "Wright St Raiders"
     .replace(/\s+/g, ' ')
     .trim();
 }
