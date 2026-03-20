@@ -1017,9 +1017,9 @@ app.get('/api/sports/games', requireAuth, (req, res) => {
 app.get('/api/sports/scores', requireAuth, async (req, res) => {
   if (!process.env.ODDS_API_KEY) return res.json({ ok: true, scores: [] });
 
-  // Get all open games + user's open bets to know which sports to fetch
+  // Fetch scores for all games that have started (open or settled) in the last 3 days
   const allGames  = sb.getGames(true);
-  const started   = allGames.filter(g => new Date(g.startTime).getTime() <= Date.now() && g.status === 'open');
+  const started   = allGames.filter(g => new Date(g.startTime).getTime() <= Date.now());
   const sportKeys = [...new Set(started.map(g => {
     const map = {
       'NCAAB': 'basketball_ncaab', 'NBA': 'basketball_nba',

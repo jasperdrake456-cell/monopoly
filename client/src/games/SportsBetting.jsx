@@ -301,8 +301,8 @@ export default function SportsBetting() {
             {myBets.length === 0 ? (
               <div className="sb-empty">No bets placed yet. Pick a game and place your first bet!</div>
             ) : myBets.map(bet => {
-              const live = bet.status === 'open' ? getLiveScore(bet.homeTeam, bet.awayTeam) : null;
-              const isLive = live && !live.completed;
+              const live = getLiveScore(bet.homeTeam, bet.awayTeam);
+              const isLive = live && !live.completed && bet.status === 'open';
               return (
               <div key={bet.betId} className={`sb-bet-card sb-bet-card--${bet.status}`}>
                 <div className="sb-bet-header">
