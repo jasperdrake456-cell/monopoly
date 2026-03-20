@@ -17,7 +17,7 @@ const CELL       = 64;
 const VIEW_ROWS  = 13;
 const BOARD_W    = COLS * CELL;        // 704
 const BOARD_H    = VIEW_ROWS * CELL;   // 832
-const INIT_LIVES = 3;
+const INIT_LIVES = 1;
 const IDLE_LIMIT = 5.5;
 const TRAIN_SPD  = 440;
 const WORLD_PAD  = 35;
@@ -270,7 +270,6 @@ export default function CrossyRoad() {
 
   // ── Die ───────────────────────────────────────────────────────────────────
   function die(g) {
-    g.lives--;
     g.idleTimer  = 0;
     g.deathFlash = 0.6;
 
@@ -278,20 +277,11 @@ export default function CrossyRoad() {
     saveHS(hs);
     setHighScore(hs);
 
-    if (g.lives <= 0) {
-      const payout = Math.floor((g.wager || 0) * g.mult);
-      g.coinReward = payout;
-      if (payout > 0) addBalance(payout); // return wager × mult
-      phaseRef.current = 'gameover';
-      setPhase('gameover');
-    } else {
-      for (let r = g.row; r >= 0; r--) {
-        if (g.rowMap.get(r)?.type === 'grass') { g.row = r; break; }
-        if (r === 0) g.row = 0;
-      }
-      g.col = CENTER_COL;
-      g.pxX = CENTER_COL * CELL;
-    }
+    const payout = Math.floor((g.wager || 0) * g.mult);
+    g.coinReward = payout;
+    if (payout > 0) addBalance(payout);
+    phaseRef.current = 'gameover';
+    setPhase('gameover');
     forceRender();
   }
 
@@ -428,11 +418,6 @@ export default function CrossyRoad() {
         >
           {g.mult.toFixed(1)}×
         </span>
-        <div className="cr-hud-lives">
-          {Array.from({ length: INIT_LIVES }, (_, i) => (
-            <span key={i} className={i < g.lives ? 'cr-heart' : 'cr-heart cr-heart-lost'}>❤️</span>
-          ))}
-        </div>
         <span className="cr-hud-hs">Best {highScore}</span>
       </div>
 
