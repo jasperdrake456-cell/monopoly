@@ -45,10 +45,15 @@ function register(ns) {
   ns.on('connection', (socket) => {
 
     socket.on('createRoom', ({ playerName, token, freeParkingEnabled, boardType, authToken }) => {
-      const { room, player, sessionId } = rm.createRoom(socket.id, playerName, token, freeParkingEnabled, boardType, authToken);
-      socket.join(roomChannel(room.code));
-      socket.emit('roomCreated', { roomCode: room.code, playerId: socket.id, sessionId });
-      broadcastState(ns, room);
+      try {
+        const { room, player, sessionId } = rm.createRoom(socket.id, playerName, token, freeParkingEnabled, boardType, authToken);
+        socket.join(roomChannel(room.code));
+        socket.emit('roomCreated', { roomCode: room.code, playerId: socket.id, sessionId });
+        broadcastState(ns, room);
+      } catch (err) {
+        console.error('[Monopoly] createRoom threw:', err);
+        socket.emit('error', { message: 'Failed to create room' });
+      }
     });
 
     socket.on('joinRoom', ({ roomCode, playerName, token, authToken }) => {
@@ -191,13 +196,18 @@ function register(ns) {
     });
 
     socket.on('restartGame', ({ roomCode }) => {
-      const room = rm.getRoom(roomCode);
-      if (!room) { socket.emit('error', { message: 'Room not found' }); return; }
-      if (room.hostId !== socket.id) { socket.emit('error', { message: 'Only the host can restart' }); return; }
-      const playerList = room.players.map(p => ({ id: p.id, name: p.name, token: p.token }));
-      room.gameState = gl.initGame(playerList, room.freeParkingEnabled, room.boardType);
-      room.status = 'playing';
-      broadcastState(ns, room);
+      try {
+        const room = rm.getRoom(roomCode);
+        if (!room) { socket.emit('error', { message: 'Room not found' }); return; }
+        if (room.hostId !== socket.id) { socket.emit('error', { message: 'Only the host can restart' }); return; }
+        const playerList = room.players.map(p => ({ id: p.id, name: p.name, token: p.token }));
+        room.gameState = gl.initGame(playerList, room.freeParkingEnabled, room.boardType);
+        room.status = 'playing';
+        broadcastState(ns, room);
+      } catch (err) {
+        console.error('[Monopoly] restartGame threw:', err);
+        socket.emit('error', { message: 'Failed to restart game' });
+      }
     });
 
     socket.on('declareBankruptcy', ({ roomCode }) => {

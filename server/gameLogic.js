@@ -542,6 +542,7 @@ function doResolveCard(state, playerId) {
   if (state.turnPhase !== 'card_action') return { error: 'No card to resolve' };
   const cp = currentPlayer(state);
   if (cp.id !== playerId) return { error: 'Not your turn' };
+  if (!state.activeCard) return { error: 'No card to resolve' };
 
   const card = state.activeCard.cardData;
   executeCard(state, playerId, card);
@@ -576,10 +577,13 @@ function doEndTurn(state, playerId) {
 }
 
 function advanceTurn(state) {
-  const ap = activePlayers(state);
+  const total = state.players.length;
   let idx = state.currentPlayerIndex;
+  let steps = 0;
   do {
-    idx = (idx + 1) % state.players.length;
+    idx = (idx + 1) % total;
+    steps++;
+    if (steps > total) return; // all players bankrupt — game should already be ended
   } while (state.players[idx].bankrupt);
   state.currentPlayerIndex = idx;
   state.turnPhase = 'roll';
