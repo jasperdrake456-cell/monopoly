@@ -46,14 +46,43 @@ function fmtRelative(iso) {
   return `In ${m}m`;
 }
 
-// Group flat games array into sport tabs
+// Display overrides: sport key → { label, emoji }
+const SPORT_DISPLAY = {
+  'NCAAB':                 { label: 'March Madness', emoji: '🏀' },
+  'NBA':                   { label: 'NBA',           emoji: '🏀' },
+  'NHL':                   { label: 'NHL',           emoji: '🏒' },
+  'Premier League':        { label: 'Premier League',emoji: '⚽' },
+  'UEFA Champions League': { label: 'Champions League', emoji: '⚽' },
+  'NFL':                   { label: 'NFL',           emoji: '🏈' },
+  'MLB':                   { label: 'MLB',           emoji: '⚾' },
+  'MMA':                   { label: 'MMA / UFC',     emoji: '🥊' },
+};
+
+// Preferred tab order
+const SPORT_ORDER = ['NCAAB','NBA','NHL','Premier League','UEFA Champions League','NFL','MLB','MMA'];
+
 function groupBySport(games) {
   const map = {};
   for (const g of games) {
-    if (!map[g.sport]) map[g.sport] = { key: g.sport, name: g.sport, emoji: g.sportEmoji || '🏆', games: [] };
+    if (!map[g.sport]) {
+      const disp = SPORT_DISPLAY[g.sport] || {};
+      map[g.sport] = {
+        key:   g.sport,
+        name:  disp.label || g.sport,
+        emoji: disp.emoji || g.sportEmoji || '🏆',
+        games: [],
+      };
+    }
     map[g.sport].games.push(g);
   }
-  return Object.values(map);
+  // Sort by preferred order, unknowns at end
+  return Object.values(map).sort((a, b) => {
+    const ai = SPORT_ORDER.indexOf(a.key), bi = SPORT_ORDER.indexOf(b.key);
+    if (ai === -1 && bi === -1) return a.key.localeCompare(b.key);
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
 }
 
 const STATUS_ICON  = { won: '✅', lost: '❌', push: '🔄', open: '⏳', void: '🚫', cancelled: '🚫' };

@@ -7,12 +7,14 @@ const BASE_URL = 'https://api.the-odds-api.com/v4';
 
 // Sports to track
 const SPORTS = [
-  { key: 'americanfootball_nfl',     name: 'NFL',            emoji: '🏈' },
-  { key: 'basketball_nba',           name: 'NBA',            emoji: '🏀' },
-  { key: 'baseball_mlb',             name: 'MLB',            emoji: '⚾' },
-  { key: 'icehockey_nhl',            name: 'NHL',            emoji: '🏒' },
-  { key: 'soccer_epl',               name: 'Premier League', emoji: '⚽' },
-  { key: 'mma_mixed_martial_arts',   name: 'MMA',            emoji: '🥊' },
+  { key: 'basketball_ncaab',           name: 'NCAAB',                   emoji: '🏀' },
+  { key: 'basketball_nba',             name: 'NBA',                     emoji: '🏀' },
+  { key: 'icehockey_nhl',              name: 'NHL',                     emoji: '🏒' },
+  { key: 'soccer_epl',                 name: 'Premier League',          emoji: '⚽' },
+  { key: 'soccer_uefa_champs_league',  name: 'UEFA Champions League',   emoji: '⚽' },
+  { key: 'americanfootball_nfl',       name: 'NFL',                     emoji: '🏈' },
+  { key: 'baseball_mlb',               name: 'MLB',                     emoji: '⚾' },
+  { key: 'mma_mixed_martial_arts',     name: 'MMA',                     emoji: '🥊' },
 ];
 
 // In-memory cache

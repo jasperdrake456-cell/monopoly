@@ -21,6 +21,7 @@ const go        = require('./gameOdds');
 const ch        = require('./championStore');
 const odds      = require('./oddsAPI');
 const sb        = require('./sportsStore');
+const autoSettle = require('./autoSettle');
 
 const app = express();
 const server = http.createServer(app);
@@ -197,6 +198,9 @@ setInterval(() => {
   }
   if (count > 0) console.log(`[Bonus] Gave $5,000 to ${count} online player(s)`);
 }, 5 * 60 * 1000);
+
+// Auto-settle sports games every 15 minutes using Odds API scores
+autoSettle.start(15 * 60 * 1000);
 
 // Game reports current activity (or null to clear)
 app.post('/api/accounts/activity', (req, res) => {
