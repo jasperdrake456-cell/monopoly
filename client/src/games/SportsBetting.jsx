@@ -30,9 +30,10 @@ function calcPayout(amount, odds) {
 
 function fmtTime(iso) {
   const d = new Date(iso);
-  return d.toLocaleString(undefined, {
+  return d.toLocaleString('en-US', {
     weekday: 'short', month: 'short', day: 'numeric',
     hour: 'numeric', minute: '2-digit',
+    timeZone: 'America/Los_Angeles',
   });
 }
 
