@@ -292,13 +292,15 @@ function syncBalance(token, balance) {
   const users = readUsers();
   if (!users[username]) return { ok: false, error: 'User not found' };
 
-  // If an admin recently set this balance, block the client from overwriting it
-  const lockedUntil = (users[username].adminSetAt || 0) + ADMIN_LOCK_MS;
-  if (Date.now() < lockedUntil) {
-    return { ok: true, balance: users[username].casinoBalance }; // return server value, ignore client
-  }
-
   const newBalance = Math.floor(balance);
+
+  // If an admin recently set this balance, only block syncs that would push
+  // the balance HIGHER than the server's value (stale pre-reset balance being
+  // pushed back). Always accept lower balances — those are real game losses.
+  const lockedUntil = (users[username].adminSetAt || 0) + ADMIN_LOCK_MS;
+  if (Date.now() < lockedUntil && newBalance > users[username].casinoBalance) {
+    return { ok: true, balance: users[username].casinoBalance }; // reject upward override only
+  }
 
   if (newBalance <= 0) {
     users[username].casinoBalance = 0;

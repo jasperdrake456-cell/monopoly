@@ -49,7 +49,7 @@ function getGames(includeSettled = false) {
   const data = read();
   const games = (data.games || []);
   // For the public (player) view: only show open games that haven't started yet
-  return includeSettled ? games : games.filter(g => g.status === 'open' && Date.now() < g.startTime);
+  return includeSettled ? games : games.filter(g => g.status === 'open' && Date.now() < new Date(g.startTime).getTime());
 }
 
 function updateGame(gameId, updates) {
@@ -137,7 +137,7 @@ function placeBet({ username, gameId, pick, odds, amount }) {
   const game = (data.games || []).find(g => g.gameId === gameId);
   if (!game)                  return { ok: false, error: 'Game not found' };
   if (game.status !== 'open') return { ok: false, error: 'Betting is closed for this game' };
-  if (Date.now() >= game.startTime) return { ok: false, error: 'Betting is closed — this game has already started' };
+  if (Date.now() >= new Date(game.startTime).getTime()) return { ok: false, error: 'Betting is closed — this game has already started' };
 
   const amt = Math.floor(Number(amount));
   if (!amt || amt < 100)  return { ok: false, error: 'Minimum bet is $100' };
