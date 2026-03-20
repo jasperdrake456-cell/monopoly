@@ -772,7 +772,7 @@ app.delete('/api/admin/game-odds/:slug', requireAdmin, (req, res) => {
 // Admin: set wildcard override
 app.post('/api/admin/game-odds/wildcard/override', requireAdmin, (req, res) => {
   const { slug, boost } = req.body || {};
-  if (slug !== undefined) go.setWildcardOverride(slug || null);
+  if (slug !== undefined) go.setWildcardOverride(slug || null, true); // admin override is permanent
   if (boost !== undefined) go.setWildcardBoost(boost);
   al.log('set_wildcard', { slug, boost });
   res.json({ ok: true });
@@ -849,7 +849,7 @@ app.get('/api/champion/panel', requireAuth, (req, res) => {
       active: state.happyHourActive && state.happyHourEndsAt > Date.now(),
       endsAt: state.happyHourEndsAt,
     },
-    gotd:    { used: state.gotd?.used    || false },
+    gotd:    { used: state.gotd?.used    || false, game: state.gotd?.used ? go.getDailyWildcard() : null },
     airdrop: { used: state.airdrop?.used || false },
   });
 });

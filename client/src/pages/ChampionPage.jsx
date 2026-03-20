@@ -322,7 +322,9 @@ export default function ChampionPage() {
             </span>
           </div>
           {gotd?.used ? (
-            <div className="champ-exhausted">Game of the Day already set today — resets at midnight.</div>
+            <div className="champ-exhausted">
+              Game of the Day set to <strong>{CASINO_GAMES.find(g => g.slug === gotd.game)?.name || gotd.game || 'a game'}</strong> — resets at midnight.
+            </div>
           ) : (
             <>
               <select

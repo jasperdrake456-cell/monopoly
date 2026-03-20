@@ -21,10 +21,22 @@ function write(data) {
   fs.writeFileSync(FILE, JSON.stringify(data, null, 2));
 }
 
-// Deterministic daily wildcard — picks based on date unless admin overrides
+// Returns "YYYY-MM-DD" in server local time
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// Deterministic daily wildcard — picks based on date unless admin/champion overrides
+// Champion overrides are auto-expired at midnight (wildcardOverrideDate must match today)
 function getDailyWildcard() {
   const data = read();
-  if (data.wildcardOverride) return data.wildcardOverride;
+  // Admin overrides are permanent; champion GOTD overrides expire at midnight
+  if (data.wildcardOverride) {
+    if (data.wildcardOverridePermanent || data.wildcardOverrideDate === todayStr()) {
+      return data.wildcardOverride;
+    }
+  }
   const today = new Date();
   const seed  = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
   return CASINO_SLUGS[seed % CASINO_SLUGS.length];
@@ -56,9 +68,12 @@ function resetGameBoost(slug) {
   return { ok: true };
 }
 
-function setWildcardOverride(slug) {
+// permanent = true for admin overrides (never auto-expires); false for champion GOTD (expires at midnight)
+function setWildcardOverride(slug, permanent = false) {
   const data = read();
   data.wildcardOverride = slug || null;
+  data.wildcardOverridePermanent = slug ? permanent : false;
+  data.wildcardOverrideDate = (slug && !permanent) ? todayStr() : null;
   write(data);
   return { ok: true };
 }
