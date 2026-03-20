@@ -263,6 +263,7 @@ function landOnSpace(state, playerId) {
     case 'railroad':
     case 'utility': {
       const ps = state.propertyStates[space.id];
+      if (!ps) { state.turnPhase = 'end'; break; } // safety: unknown space id
       if (!ps.owner) {
         // Unowned — offer to buy
         state.turnPhase = 'buy_decision';
@@ -362,7 +363,7 @@ function checkBankruptcy(state, playerId, creditorId) {
   const p = getPlayer(state, playerId);
   if (p.cash < 0) {
     // Auto-bankrupt if truly unable to pay even mortgaging everything
-    const mortgageable = p.properties.filter(id => !state.propertyStates[id].mortgaged && state.propertyStates[id].houses === 0);
+    const mortgageable = p.properties.filter(id => state.propertyStates[id] && !state.propertyStates[id].mortgaged && state.propertyStates[id].houses === 0);
     if (mortgageable.length === 0 && p.getOutOfJailCards === 0) {
       declareBankruptcy(state, playerId, creditorId);
     }

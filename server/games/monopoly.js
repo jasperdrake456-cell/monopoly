@@ -211,34 +211,36 @@ function register(ns) {
     });
 
     socket.on('declareBankruptcy', ({ roomCode }) => {
-      const room = rm.getRoom(roomCode);
-      if (!room) { socket.emit('error', { message: 'Room not found' }); return; }
-      if (!room.gameState) { socket.emit('error', { message: 'No game' }); return; }
-      let result;
-      try { result = gl.doDeclareBankruptcy(room.gameState, socket.id); } catch (err) {
-        console.error('[Monopoly] declareBankruptcy threw:', err);
-        socket.emit('error', { message: 'Server error' }); return;
-      }
-      if (result && result.error) { socket.emit('error', { message: result.error }); return; }
+      try {
+        const room = rm.getRoom(roomCode);
+        if (!room) { socket.emit('error', { message: 'Room not found' }); return; }
+        if (!room.gameState) { socket.emit('error', { message: 'No game' }); return; }
 
-      // Pay winner $20k when the last player standing is determined
-      if (room.gameState.status === 'ended' && room.gameState.winner) {
-        const winnerId = room.gameState.winner;
-        const winnerPlayer = room.players.find(p => p.id === winnerId);
-        if (winnerPlayer?.authToken) {
-          const username = us.validateToken(winnerPlayer.authToken);
-          if (username) {
-            us.addBonus(username, MONOPOLY_WIN_BONUS);
-            broadcast(ns, roomCode, 'chatMessage', {
-              name: '🏆 Server',
-              text: `${winnerPlayer.name} wins the game and earns $${MONOPOLY_WIN_BONUS.toLocaleString()} in casino coins!`,
-              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            });
+        const result = gl.doDeclareBankruptcy(room.gameState, socket.id);
+        if (result && result.error) { socket.emit('error', { message: result.error }); return; }
+
+        // Pay winner $20k when the last player standing is determined
+        if (room.gameState.status === 'ended' && room.gameState.winner) {
+          const winnerId = room.gameState.winner;
+          const winnerPlayer = room.players.find(p => p.id === winnerId);
+          if (winnerPlayer?.authToken) {
+            const username = us.validateToken(winnerPlayer.authToken);
+            if (username) {
+              us.addBonus(username, MONOPOLY_WIN_BONUS);
+              broadcast(ns, roomCode, 'chatMessage', {
+                name: '🏆 Server',
+                text: `${winnerPlayer.name} wins the game and earns $${MONOPOLY_WIN_BONUS.toLocaleString()} in casino coins!`,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              });
+            }
           }
         }
-      }
 
-      broadcastState(ns, room);
+        broadcastState(ns, room);
+      } catch (err) {
+        console.error('[Monopoly] declareBankruptcy threw:', err);
+        socket.emit('error', { message: 'Server error during bankruptcy' });
+      }
     });
 
     socket.on('chatMessage', ({ roomCode, text }) => {
