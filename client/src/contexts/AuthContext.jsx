@@ -154,6 +154,11 @@ export function AuthProvider({ children }) {
       }
     });
 
+    // Jackpot won — forward to window so Slots component can show celebration
+    sock.on('jackpotWon', (data) => {
+      window.dispatchEvent(new CustomEvent('jackpotWon', { detail: data }));
+    });
+
     return () => sock.disconnect();
   }, []);
 

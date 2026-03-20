@@ -1,9 +1,23 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import './Slots.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 import { useGameBoost } from '../hooks/useGameBoost';
+import { useAuth } from '../contexts/AuthContext';
+
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
+
+function authFetch(path, token, options = {}) {
+  return fetch(SERVER_URL + path, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      ...(options.headers || {}),
+    },
+  }).then(r => r.json()).catch(() => ({ ok: false }));
+}
 
 // Near-impossible pool — paying symbols 1 each out of 68, filler is 5 mixed non-paying fruits.
 // Paying: 💎×1, 7️⃣×1, ⭐×1, 🔔×1, 🍇×1, 🍊×1, 🍋×1, 🍒×1 (8 total)
@@ -84,8 +98,11 @@ export default function Slots() {
   const { banned, reason, expiresAt, loading } = useBanCheck('slots');
   useGameActivity('slots');
   const boost = useGameBoost('slots');
+  const { token } = useAuth();
   const [balance, setBalance] = useState(getBalance);
   const [bet, setBet] = useState(10);
+  const [jackpotAmount, setJackpotAmount] = useState(10000);
+  const [jackpotModal, setJackpotModal] = useState(null); // { winner, amount } when someone wins
   // reelDisplays[i] = [top, mid, bot]
   const [reelDisplays, setReelDisplays] = useState(initReelDisplays);
   const [spinning, setSpinning] = useState([false, false, false]);
@@ -107,6 +124,35 @@ export default function Slots() {
     }
     return () => clearInterval(countdownRef.current);
   }, [broke]);
+
+  // ── Jackpot: load current amount + listen for wins ─────────────────────────
+  useEffect(() => {
+    fetch(SERVER_URL + '/api/jackpot')
+      .then(r => r.json())
+      .then(d => { if (d.ok) setJackpotAmount(d.amount); })
+      .catch(() => {});
+
+    // Poll jackpot amount every 10s
+    const pollId = setInterval(() => {
+      fetch(SERVER_URL + '/api/jackpot')
+        .then(r => r.json())
+        .then(d => { if (d.ok) setJackpotAmount(d.amount); })
+        .catch(() => {});
+    }, 10_000);
+
+    // Listen for jackpotWon socket event via window (fired by AuthContext socket)
+    function onJackpotWon(e) {
+      const { winner, amount, resetTo } = e.detail || {};
+      setJackpotAmount(resetTo || 10000);
+      setJackpotModal({ winner, amount });
+    }
+    window.addEventListener('jackpotWon', onJackpotWon);
+
+    return () => {
+      clearInterval(pollId);
+      window.removeEventListener('jackpotWon', onJackpotWon);
+    };
+  }, []);
 
   // Clamp bet when balance changes
   useEffect(() => {
@@ -170,6 +216,7 @@ export default function Slots() {
 
         // Last reel stopped — apply outcome
         if (reelIdx === 2) {
+          const isJackpotSpin = finalMids[0] === '7️⃣' && finalMids[1] === '7️⃣' && finalMids[2] === '7️⃣';
           let payout = 0;
           if (outcome.mult > 0) {
             payout = Math.floor(betSnapshot * outcome.mult * boost);
@@ -177,7 +224,30 @@ export default function Slots() {
             reportBigWin('slots', betSnapshot, payout, outcome.mult, `${outcome.label} · ${outcome.mult}×`);
           }
           setBalance(getBalance());
-          setResult({ ...outcome, payout, win: outcome.mult > 0 });
+
+          // Contribute 2% of wager to jackpot (fire-and-forget)
+          if (token) {
+            authFetch('/api/jackpot/contribute', token, {
+              method: 'POST',
+              body: JSON.stringify({ wager: betSnapshot }),
+            }).then(d => { if (d.ok) setJackpotAmount(d.amount); });
+          }
+
+          // Jackpot win: 7️⃣7️⃣7️⃣ — claim the pool in addition to normal 300× payout
+          if (isJackpotSpin && token) {
+            authFetch('/api/jackpot/claim', token, {
+              method: 'POST',
+              body: JSON.stringify({ wager: betSnapshot }),
+            }).then(d => {
+              if (d.ok) {
+                addBalance(d.amount);
+                setBalance(getBalance());
+                setJackpotAmount(d.resetTo || 10000);
+              }
+            });
+          }
+
+          setResult({ ...outcome, payout, win: outcome.mult > 0, isJackpot: isJackpotSpin });
           setDisabled(false);
         }
       }, SPIN_MS + reelIdx * REEL_GAP_MS);
@@ -208,6 +278,27 @@ export default function Slots() {
 
   return (
     <div className="slots-wrapper">
+      {/* ── Jackpot Won Modal ─────────────────────────────────────── */}
+      {jackpotModal && (
+        <div className="slots-jackpot-modal-overlay" onClick={() => setJackpotModal(null)}>
+          <div className="slots-jackpot-modal" onClick={e => e.stopPropagation()}>
+            <div className="slots-jackpot-modal-emoji">🎰🎉🎰</div>
+            <div className="slots-jackpot-modal-title">JACKPOT!</div>
+            <div className="slots-jackpot-modal-winner">{jackpotModal.winner}</div>
+            <div className="slots-jackpot-modal-amount">${jackpotModal.amount.toLocaleString()}</div>
+            <div className="slots-jackpot-modal-sub">hit 7️⃣ 7️⃣ 7️⃣ and won the jackpot!</div>
+            <button className="slots-jackpot-modal-btn" onClick={() => setJackpotModal(null)}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Jackpot Banner ───────────────────────────────────────── */}
+      <div className="slots-jackpot-banner">
+        <span className="slots-jackpot-label">🎰 JACKPOT POOL</span>
+        <span className="slots-jackpot-amount">${jackpotAmount.toLocaleString()}</span>
+        <span className="slots-jackpot-hint">Hit 7️⃣ 7️⃣ 7️⃣ to win!</span>
+      </div>
+
       <div className="slots-balance">
         Balance: <span className="slots-balance-amount">${balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
       </div>
@@ -242,11 +333,13 @@ export default function Slots() {
             </div>
 
             {result && (
-              <div className={`slots-result ${result.win ? 'slots-result--win' : 'slots-result--lose'}`}>
+              <div className={`slots-result ${result.win ? 'slots-result--win' : 'slots-result--lose'} ${result.isJackpot ? 'slots-result--jackpot' : ''}`}>
+                {result.isJackpot && <div className="slots-result-jackpot-badge">🎰 JACKPOT! 🎰</div>}
                 <div className="slots-result-label">{result.label}</div>
                 {result.win && (
                   <div className="slots-result-payout">
                     +${result.payout.toLocaleString()} ({result.mult}×)
+                    {result.isJackpot && <span className="slots-result-jackpot-extra"> + JACKPOT POOL!</span>}
                   </div>
                 )}
               </div>

@@ -174,6 +174,169 @@ function getUserBets(username) {
     .slice(0, 50);
 }
 
+// ── Parlays ───────────────────────────────────────────────────────────────────
+
+/**
+ * Convert American odds to decimal multiplier.
+ * e.g. +150 → 2.5, -110 → 1.909
+ */
+function americanToDecimal(odds) {
+  if (odds > 0) return 1 + odds / 100;
+  return 1 + 100 / Math.abs(odds);
+}
+
+/**
+ * Convert combined decimal odds back to American odds.
+ */
+function decimalToAmerican(decimal) {
+  if (decimal >= 2) return Math.round((decimal - 1) * 100);
+  return Math.round(-100 / (decimal - 1));
+}
+
+/**
+ * Place a parlay bet.
+ * picks = [{ gameId, pick, odds }]
+ * Returns { ok, betId, combinedOdds (American), potentialPayout }
+ */
+function placeParlayBet({ username, picks, amount }) {
+  if (!picks || picks.length < 2) return { ok: false, error: 'A parlay requires at least 2 picks' };
+  if (picks.length > 12)           return { ok: false, error: 'Maximum 12 legs in a parlay' };
+
+  const data  = read();
+  const games = data.games || [];
+  const now   = Date.now();
+
+  // Validate each pick
+  let combinedDecimal = 1;
+  const resolvedPicks = [];
+  const usedGameIds   = new Set();
+
+  for (const p of picks) {
+    if (usedGameIds.has(p.gameId)) return { ok: false, error: 'Cannot bet the same game twice in a parlay' };
+    usedGameIds.add(p.gameId);
+
+    const game = games.find(g => g.gameId === p.gameId);
+    if (!game)                  return { ok: false, error: `Game not found: ${p.gameId}` };
+    if (game.status !== 'open') return { ok: false, error: `Game already closed: ${game.homeTeam} vs ${game.awayTeam}` };
+    if (now >= new Date(game.startTime).getTime()) return { ok: false, error: `Betting closed — ${game.homeTeam} vs ${game.awayTeam} has started` };
+
+    const odds = Number(p.odds);
+    if (!odds || isNaN(odds)) return { ok: false, error: `Invalid odds for ${p.pick}` };
+
+    combinedDecimal *= americanToDecimal(odds);
+    resolvedPicks.push({
+      gameId:   game.gameId,
+      pick:     p.pick,
+      odds:     odds,
+      sport:    game.sport,
+      homeTeam: game.homeTeam,
+      awayTeam: game.awayTeam,
+      startTime: game.startTime,
+      status:   'open', // open | won | lost | push | cancelled
+    });
+  }
+
+  const amt = Math.floor(Number(amount));
+  if (!amt || amt < 100)  return { ok: false, error: 'Minimum parlay bet is $100' };
+  if (amt > 500_000)      return { ok: false, error: 'Maximum parlay bet is $500,000' };
+
+  const combinedOdds     = decimalToAmerican(combinedDecimal);
+  const potentialPayout  = Math.floor(amt * combinedDecimal);
+  const betId            = crypto.randomBytes(8).toString('hex');
+
+  if (!data.bets) data.bets = [];
+  data.bets.push({
+    betId,
+    username,
+    type:            'parlay',
+    picks:           resolvedPicks,
+    amount:          amt,
+    combinedOdds,
+    combinedDecimal,
+    potentialPayout,
+    status:          'open',
+    placedAt:        now,
+    settledAt:       null,
+    payout:          null,
+  });
+
+  write(data);
+  return { ok: true, betId, combinedOdds, potentialPayout };
+}
+
+/**
+ * Settle all open parlay bets that have a game just settled.
+ * Called internally after settleGame() so settlement is automatic.
+ * Returns map { username → payout } for crediting.
+ */
+function settleParlayBets(gameId, winner) {
+  const data    = read();
+  const parlays = (data.bets || []).filter(b => b.type === 'parlay' && b.status === 'open');
+  const payouts = {};
+
+  for (const bet of parlays) {
+    const leg = bet.picks.find(p => p.gameId === gameId);
+    if (!leg) continue;
+
+    // Update this leg's status
+    if (winner === 'cancelled') {
+      leg.status = 'push'; // cancelled game: leg is void, recalculate odds without it
+    } else if (leg.pick === winner) {
+      leg.status = 'won';
+    } else {
+      leg.status = 'lost';
+    }
+
+    // Check if all legs are resolved
+    const openLegs      = bet.picks.filter(p => p.status === 'open');
+    if (openLegs.length > 0) continue; // more legs still pending
+
+    // All legs resolved — determine parlay outcome
+    const lostLegs = bet.picks.filter(p => p.status === 'lost');
+
+    bet.settledAt = Date.now();
+
+    if (lostLegs.length > 0) {
+      // Any loss = parlay lost
+      bet.status = 'lost';
+      bet.payout = 0;
+    } else {
+      // No losses — check for pushes (cancelled games)
+      const pushLegs = bet.picks.filter(p => p.status === 'push');
+      if (pushLegs.length === bet.picks.length) {
+        // All legs pushed — full refund
+        bet.status = 'push';
+        bet.payout = bet.amount;
+      } else {
+        // Some pushes: recalculate decimal odds without pushed legs
+        const wonLegs     = bet.picks.filter(p => p.status === 'won');
+        const effectiveDec = wonLegs.reduce((acc, p) => acc * americanToDecimal(p.odds), 1);
+        const payout      = Math.floor(bet.amount * effectiveDec);
+        bet.status = 'won';
+        bet.payout = payout;
+        payouts[bet.username] = (payouts[bet.username] || 0) + payout;
+      }
+    }
+
+    if (bet.status === 'push' && bet.payout > 0) {
+      payouts[bet.username] = (payouts[bet.username] || 0) + bet.payout;
+    }
+  }
+
+  if (Object.keys(payouts).length > 0 || parlays.some(b => b.settledAt)) {
+    write(data);
+  }
+  return payouts;
+}
+
+function getUserParlays(username) {
+  const data = read();
+  return (data.bets || [])
+    .filter(b => b.username === username && b.type === 'parlay')
+    .sort((a, b) => b.placedAt - a.placedAt)
+    .slice(0, 50);
+}
+
 // Legacy — kept so settlement job still compiles
 function getOpenBetsByGame()     { return {}; }
 function getSportsWithOpenBets() { return []; }
@@ -183,7 +346,8 @@ module.exports = {
   createGame, getGames, updateGame, settleGame, cancelGame, deleteGame,
   getGameBetStats, getAllBets,
   placeBet, getUserBets,
-  calcPayout,
+  placeParlayBet, settleParlayBets, getUserParlays,
+  calcPayout, americanToDecimal, decimalToAmerican,
   // legacy stubs
   getOpenBetsByGame, getSportsWithOpenBets, settleBet,
 };

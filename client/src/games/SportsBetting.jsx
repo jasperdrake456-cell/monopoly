@@ -89,6 +89,32 @@ function groupBySport(games) {
 const STATUS_ICON  = { won: '✅', lost: '❌', push: '🔄', open: '⏳', void: '🚫', cancelled: '🚫' };
 const STATUS_LABEL = { won: 'WON', lost: 'LOST', push: 'PUSH', open: 'OPEN', void: 'VOID', cancelled: 'VOID' };
 
+// ── Parlay helpers ────────────────────────────────────────────────────────────
+
+function americanToDecimal(odds) {
+  if (odds > 0) return 1 + odds / 100;
+  return 1 + 100 / Math.abs(odds);
+}
+
+function decimalToAmerican(dec) {
+  if (dec >= 2) return Math.round((dec - 1) * 100);
+  return Math.round(-100 / (dec - 1));
+}
+
+function parlayDecimal(picks) {
+  return picks.reduce((acc, p) => acc * americanToDecimal(p.odds), 1);
+}
+
+function parlayOdds(picks) {
+  if (!picks.length) return null;
+  return decimalToAmerican(parlayDecimal(picks));
+}
+
+function parlayPayout(picks, amount) {
+  if (!picks.length || !amount) return 0;
+  return Math.floor(amount * parlayDecimal(picks));
+}
+
 export default function SportsBetting() {
   const { token } = useAuth();
 
@@ -104,6 +130,13 @@ export default function SportsBetting() {
   const [betAmt,   setBetAmt]   = useState('');
   const [placing,  setPlacing]  = useState(false);
   const [slipMsg,  setSlipMsg]  = useState(null);
+
+  // Parlay state
+  const [parlayPicks,  setParlayPicks]  = useState([]); // [{ gameId, game, pick, odds }]
+  const [parlayAmt,    setParlayAmt]    = useState('');
+  const [parlayMsg,    setParlayMsg]    = useState(null);
+  const [placingParlay, setPlacingParlay] = useState(false);
+  const [myParlays,    setMyParlays]    = useState([]);
 
   const loadScores = useCallback(async () => {
     if (!token) return;
@@ -139,11 +172,17 @@ export default function SportsBetting() {
     if (data.ok) setMyBets(data.bets || []);
   }, [token]);
 
-  useEffect(() => { loadGames(); loadMyBets(); loadScores(); }, [loadGames, loadMyBets, loadScores]);
+  const loadMyParlays = useCallback(async () => {
+    if (!token) return;
+    const data = await authFetch('/api/sports/my-parlays', token);
+    if (data.ok) setMyParlays(data.parlays || []);
+  }, [token]);
+
+  useEffect(() => { loadGames(); loadMyBets(); loadScores(); loadMyParlays(); }, [loadGames, loadMyBets, loadScores, loadMyParlays]);
   useEffect(() => {
-    const id = setInterval(() => { loadGames(); loadMyBets(); loadScores(); }, 60_000);
+    const id = setInterval(() => { loadGames(); loadMyBets(); loadScores(); loadMyParlays(); }, 60_000);
     return () => clearInterval(id);
-  }, [loadGames, loadMyBets, loadScores]);
+  }, [loadGames, loadMyBets, loadScores, loadMyParlays]);
 
   async function placeBet() {
     if (!slip) return;
@@ -175,10 +214,58 @@ export default function SportsBetting() {
   }
 
   function selectPick(game, pick, pickOdds) {
+    if (activeTab === 'parlay') {
+      // Parlay mode: add/remove from parlay slip
+      const existing = parlayPicks.findIndex(p => p.gameId === game.gameId);
+      if (existing >= 0) {
+        // Replace pick for this game, or remove if same pick
+        const cur = parlayPicks[existing];
+        if (cur.pick === pick) {
+          setParlayPicks(prev => prev.filter(p => p.gameId !== game.gameId));
+        } else {
+          setParlayPicks(prev => prev.map(p => p.gameId === game.gameId ? { ...p, pick, odds: pickOdds } : p));
+        }
+      } else {
+        setParlayPicks(prev => [...prev, { gameId: game.gameId, game, pick, odds: pickOdds }]);
+      }
+      setParlayMsg(null);
+      return;
+    }
     if (slip?.game?.gameId === game.gameId && slip?.pick === pick) {
       setSlip(null); setBetAmt(''); setSlipMsg(null);
     } else {
       setSlip({ game, pick, odds: pickOdds }); setBetAmt(''); setSlipMsg(null);
+    }
+  }
+
+  async function placeParlay() {
+    const amt = Math.floor(parseFloat(parlayAmt) || 0);
+    if (parlayPicks.length < 2) return setParlayMsg({ ok: false, text: 'Add at least 2 picks to your parlay' });
+    if (amt < 100)              return setParlayMsg({ ok: false, text: 'Minimum parlay bet is $100' });
+    if (amt > 500_000)          return setParlayMsg({ ok: false, text: 'Max bet is $500,000' });
+    if (amt > getBalance())     return setParlayMsg({ ok: false, text: 'Insufficient balance' });
+
+    setPlacingParlay(true);
+    setParlayMsg(null);
+    try {
+      const picks = parlayPicks.map(p => ({ gameId: p.gameId, pick: p.pick, odds: p.odds }));
+      const data  = await authFetch('/api/sports/parlay', token, {
+        method: 'POST',
+        body: JSON.stringify({ picks, amount: amt }),
+      });
+      if (data.ok) {
+        subtractBalance(amt);
+        const payout = data.potentialPayout;
+        setParlayMsg({ ok: true, text: `Parlay placed! Potential win: $${(payout - amt).toLocaleString()}` });
+        setParlayAmt('');
+        setTimeout(() => { setParlayPicks([]); setParlayMsg(null); loadMyParlays(); }, 2500);
+      } else {
+        setParlayMsg({ ok: false, text: data.error || 'Parlay failed' });
+      }
+    } catch {
+      setParlayMsg({ ok: false, text: 'Network error' });
+    } finally {
+      setPlacingParlay(false);
     }
   }
 
@@ -202,8 +289,10 @@ export default function SportsBetting() {
     };
   }
 
-  const openCount     = myBets.filter(b => b.status === 'open').length;
-  const currentGames  = sports.find(s => s.key === activeTab)?.games || [];
+  const openCount      = myBets.filter(b => b.status === 'open').length;
+  const openParlays    = myParlays.filter(b => b.status === 'open').length;
+  const currentGames   = sports.find(s => s.key === activeTab)?.games || [];
+  const isParlaySport  = activeTab !== 'mybets' && activeTab !== 'parlay' && activeTab !== null;
 
   return (
     <div className="sb-root">
@@ -226,9 +315,13 @@ export default function SportsBetting() {
             {s.games.length > 0 && <span className="sb-tab-count">{s.games.length}</span>}
           </button>
         ))}
+        <button className={`sb-tab ${activeTab === 'parlay' ? 'sb-tab--active' : ''}`}
+          onClick={() => setActiveTab('parlay')}>
+          🎰 Parlay {parlayPicks.length > 0 && <span className="sb-tab-count sb-tab-count--open">{parlayPicks.length}</span>}
+        </button>
         <button className={`sb-tab ${activeTab === 'mybets' ? 'sb-tab--active' : ''}`}
           onClick={() => setActiveTab('mybets')}>
-          📋 My Bets {openCount > 0 && <span className="sb-tab-count sb-tab-count--open">{openCount}</span>}
+          📋 My Bets {(openCount + openParlays) > 0 && <span className="sb-tab-count sb-tab-count--open">{openCount + openParlays}</span>}
         </button>
       </div>
 
@@ -249,15 +342,19 @@ export default function SportsBetting() {
           </div>
         )}
 
-        {!loading && !error && activeTab !== 'mybets' && currentGames.length > 0 && (
+        {!loading && !error && activeTab !== 'mybets' && activeTab !== 'parlay' && currentGames.length > 0 && (
           <div className="sb-games">
             {currentGames.map(game => {
+              const parlayLeg  = parlayPicks.find(p => p.gameId === game.gameId);
               const selHome = slip?.game?.gameId === game.gameId && slip?.pick === game.homeTeam;
               const selAway = slip?.game?.gameId === game.gameId && slip?.pick === game.awayTeam;
               const selDraw = slip?.game?.gameId === game.gameId && slip?.pick === 'Draw';
               const alreadyBet = myBets.some(b => b.gameId === game.gameId && b.status === 'open');
+              const parlaySelHome = parlayLeg?.pick === game.homeTeam;
+              const parlaySelAway = parlayLeg?.pick === game.awayTeam;
+              const parlaySelDraw = parlayLeg?.pick === 'Draw';
               return (
-                <div key={game.gameId} className={`sb-game-card ${alreadyBet ? 'sb-game-card--bet' : ''}`}>
+                <div key={game.gameId} className={`sb-game-card ${alreadyBet ? 'sb-game-card--bet' : ''} ${parlayLeg ? 'sb-game-card--parlay' : ''}`}>
                   <div className="sb-game-time">
                     {fmtTime(game.startTime)}
                     <span className="sb-game-countdown">{fmtRelative(game.startTime)}</span>
@@ -268,22 +365,23 @@ export default function SportsBetting() {
                     <div className="sb-game-team">{game.awayTeam}</div>
                   </div>
                   {alreadyBet && <div className="sb-already-bet">✓ Bet placed</div>}
+                  {parlayLeg && <div className="sb-parlay-badge">🎰 In Parlay: {parlayLeg.pick}</div>}
                   <div className="sb-game-odds">
-                    <button className={`sb-odds-btn ${selHome ? 'sb-odds-btn--selected' : ''}`}
+                    <button className={`sb-odds-btn ${selHome || parlaySelHome ? 'sb-odds-btn--selected' : ''}`}
                       onClick={() => !alreadyBet && selectPick(game, game.homeTeam, game.odds.home)}
                       disabled={alreadyBet}>
                       <span className="sb-odds-label">{game.homeTeam.split(' ').slice(-1)[0]}</span>
                       <span className="sb-odds-val">{fmtOdds(game.odds.home)}</span>
                     </button>
                     {game.odds.draw != null && (
-                      <button className={`sb-odds-btn sb-odds-btn--draw ${selDraw ? 'sb-odds-btn--selected' : ''}`}
+                      <button className={`sb-odds-btn sb-odds-btn--draw ${selDraw || parlaySelDraw ? 'sb-odds-btn--selected' : ''}`}
                         onClick={() => !alreadyBet && selectPick(game, 'Draw', game.odds.draw)}
                         disabled={alreadyBet}>
                         <span className="sb-odds-label">Draw</span>
                         <span className="sb-odds-val">{fmtOdds(game.odds.draw)}</span>
                       </button>
                     )}
-                    <button className={`sb-odds-btn ${selAway ? 'sb-odds-btn--selected' : ''}`}
+                    <button className={`sb-odds-btn ${selAway || parlaySelAway ? 'sb-odds-btn--selected' : ''}`}
                       onClick={() => !alreadyBet && selectPick(game, game.awayTeam, game.odds.away)}
                       disabled={alreadyBet}>
                       <span className="sb-odds-label">{game.awayTeam.split(' ').slice(-1)[0]}</span>
@@ -296,11 +394,145 @@ export default function SportsBetting() {
           </div>
         )}
 
+        {/* ── Parlay Builder Tab ──────────────────────────────────────────── */}
+        {activeTab === 'parlay' && (
+          <div className="sb-parlay-tab">
+            <div className="sb-parlay-instructions">
+              <strong>How to build a parlay:</strong> Switch to any sport tab, then click odds to add legs. Come back here to place your combined bet.
+            </div>
+
+            {parlayPicks.length === 0 ? (
+              <div className="sb-empty">
+                <div style={{ fontSize: '2.5rem', marginBottom: 10 }}>🎰</div>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>No legs added yet</div>
+                <div>Switch to a sport tab and click the odds buttons to add games to your parlay.</div>
+              </div>
+            ) : (
+              <>
+                <div className="sb-parlay-legs">
+                  {parlayPicks.map((p, i) => (
+                    <div key={p.gameId} className="sb-parlay-leg">
+                      <div className="sb-parlay-leg-num">Leg {i + 1}</div>
+                      <div className="sb-parlay-leg-info">
+                        <div className="sb-parlay-leg-game">{p.game.homeTeam} vs {p.game.awayTeam}</div>
+                        <div className="sb-parlay-leg-pick">
+                          <strong>{p.pick}</strong>
+                          <span className="sb-parlay-leg-odds" style={{ color: p.odds > 0 ? '#22c55e' : '#ef4444' }}>
+                            {fmtOdds(p.odds)}
+                          </span>
+                        </div>
+                      </div>
+                      <button className="sb-parlay-leg-remove"
+                        onClick={() => setParlayPicks(prev => prev.filter(x => x.gameId !== p.gameId))}>
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="sb-parlay-summary">
+                  <div className="sb-parlay-summary-row">
+                    <span>Combined Odds</span>
+                    <span className="sb-parlay-combined-odds" style={{ color: parlayOdds(parlayPicks) > 0 ? '#22c55e' : '#ef4444' }}>
+                      {parlayOdds(parlayPicks) !== null ? fmtOdds(parlayOdds(parlayPicks)) : '—'}
+                    </span>
+                  </div>
+                  {parlayAmt && parseFloat(parlayAmt) >= 100 && (
+                    <div className="sb-parlay-summary-row">
+                      <span>Potential Payout</span>
+                      <span className="sb-parlay-potential">${parlayPayout(parlayPicks, parseFloat(parlayAmt)).toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="sb-slip-row" style={{ marginTop: 12 }}>
+                  <label className="sb-slip-label">Parlay wager</label>
+                  <div className="sb-slip-input-row">
+                    <span className="sb-slip-dollar">$</span>
+                    <input className="sb-slip-input" type="number" min="100" max="500000"
+                      placeholder="100" value={parlayAmt} onChange={e => setParlayAmt(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && placeParlay()} />
+                  </div>
+                  <div className="sb-slip-quick">
+                    {[500, 1000, 5000, 10000].map(v => (
+                      <button key={v} className="sb-slip-quick-btn" onClick={() => setParlayAmt(String(v))}>
+                        ${v.toLocaleString()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {parlayMsg && (
+                  <div className={`sb-slip-msg ${parlayMsg.ok ? 'sb-slip-msg--ok' : 'sb-slip-msg--err'}`}>
+                    {parlayMsg.text}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+                  <button className="sb-slip-place-btn" onClick={placeParlay}
+                    disabled={placingParlay || !parlayAmt || parseFloat(parlayAmt) < 100 || parlayPicks.length < 2}>
+                    {placingParlay ? 'Placing…' : `Place Parlay · $${(parseFloat(parlayAmt) || 0).toLocaleString()}`}
+                  </button>
+                  <button className="sb-parlay-clear-btn" onClick={() => { setParlayPicks([]); setParlayMsg(null); }}>
+                    Clear
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {activeTab === 'mybets' && (
           <div className="sb-mybets">
-            {myBets.length === 0 ? (
+            {/* Straight bets */}
+            {myBets.length === 0 && myParlays.length === 0 ? (
               <div className="sb-empty">No bets placed yet. Pick a game and place your first bet!</div>
-            ) : myBets.map(bet => {
+            ) : null}
+
+            {/* Parlay bets section */}
+            {myParlays.length > 0 && (
+              <div className="sb-mybets-section">
+                <div className="sb-mybets-section-title">🎰 Parlay Bets</div>
+                {myParlays.map(bet => (
+                  <div key={bet.betId} className={`sb-bet-card sb-bet-card--${bet.status} sb-bet-card--parlay`}>
+                    <div className="sb-bet-header">
+                      <span className="sb-bet-status-icon">{STATUS_ICON[bet.status] || '⏳'}</span>
+                      <span className={`sb-bet-status-label sb-bet-status--${bet.status}`}>
+                        {STATUS_LABEL[bet.status] || bet.status.toUpperCase()} · PARLAY
+                      </span>
+                      <span className="sb-bet-time">{new Date(bet.placedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+                    </div>
+                    <div className="sb-parlay-legs-summary">
+                      {bet.picks.map((leg, i) => (
+                        <div key={leg.gameId} className={`sb-parlay-leg-mini sb-parlay-leg-mini--${leg.status}`}>
+                          <span className="sb-parlay-leg-mini-num">{i + 1}</span>
+                          <span className="sb-parlay-leg-mini-teams">{leg.homeTeam} vs {leg.awayTeam}</span>
+                          <span className="sb-parlay-leg-mini-pick">{leg.pick}</span>
+                          <span className="sb-parlay-leg-mini-odds">{fmtOdds(leg.odds)}</span>
+                          <span className="sb-parlay-leg-mini-status">
+                            {leg.status === 'open' ? '⏳' : leg.status === 'won' ? '✅' : leg.status === 'lost' ? '❌' : leg.status === 'push' ? '🔄' : '🚫'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="sb-bet-amounts">
+                      <span className="sb-bet-wagered">Wagered: ${bet.amount.toLocaleString()}</span>
+                      <span style={{ color: '#7a8a9a', fontSize: '0.8rem' }}>Combined: {fmtOdds(bet.combinedOdds)}</span>
+                      {bet.status === 'open'  && <span className="sb-bet-potential">To win: ${(bet.potentialPayout - bet.amount).toLocaleString()}</span>}
+                      {bet.status === 'won'   && <span className="sb-bet-won">+${bet.payout.toLocaleString()}</span>}
+                      {bet.status === 'push'  && <span className="sb-bet-push">Returned ${bet.payout.toLocaleString()}</span>}
+                      {bet.status === 'lost'  && <span className="sb-bet-lost">-${bet.amount.toLocaleString()}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Straight bets section */}
+            {myBets.length > 0 && (
+              <div className="sb-mybets-section">
+                {myParlays.length > 0 && <div className="sb-mybets-section-title">📋 Straight Bets</div>}
+                {myBets.map(bet => {
               const live = getLiveScore(bet.homeTeam, bet.awayTeam);
               const isLive = live && !live.completed && bet.status === 'open';
               return (
@@ -335,6 +567,8 @@ export default function SportsBetting() {
               </div>
             );
             })}
+              </div>
+            )}
           </div>
         )}
       </div>

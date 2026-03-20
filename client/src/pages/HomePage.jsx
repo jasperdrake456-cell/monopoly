@@ -40,6 +40,7 @@ const CASINO_GAMES = [
   { path: '/keno',         name: 'Keno',            desc: 'Pick up to 10 numbers — match as many as you can from the draw!', icon: '🎱', players: '1 player' },
   { path: '/dragon-tiger', name: 'Dragon Tiger',    desc: 'One card each — Dragon vs Tiger. Highest card wins. Simple & fast!', icon: '🐉', players: '1 player' },
   { path: '/crossy-road',    name: 'Crossy Road',   desc: 'Hop across roads, rivers and rails — how far can you go?', icon: '🐔', players: '1 player' },
+  { path: '/horse-racing',   name: 'Horse Racing',  desc: 'Pick a horse, place your wager, watch the race — 8 horses with real odds!', icon: '🏇', players: '1 player' },
   { path: '/sports-betting', name: 'Sports Betting', desc: 'Bet on real NFL, NBA, MLB, NHL, EPL & MMA games with live odds!', icon: '🏆', players: '1 player' },
 ];
 

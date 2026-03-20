@@ -22,6 +22,7 @@ const ch        = require('./championStore');
 const odds      = require('./oddsAPI');
 const sb        = require('./sportsStore');
 const autoSettle = require('./autoSettle');
+const jp        = require('./jackpotStore');
 
 const app = express();
 const server = http.createServer(app);
@@ -1005,6 +1006,59 @@ app.post('/api/admin/champion', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+// ── Jackpot (shared pool for Slots) ──────────────────────────────────────────
+
+// Public: get current jackpot amount
+app.get('/api/jackpot', (req, res) => {
+  res.json({ ok: true, amount: jp.getJackpot() });
+});
+
+// Auth: contribute 2% of wager to jackpot after each spin
+app.post('/api/jackpot/contribute', requireAuth, (req, res) => {
+  const { wager } = req.body || {};
+  const amt = Math.floor(Number(wager) || 0);
+  if (amt <= 0) return res.status(400).json({ ok: false, error: 'Invalid wager' });
+  const contribution = Math.floor(amt * 0.02);
+  const newAmount    = jp.contribute(contribution);
+  res.json({ ok: true, amount: newAmount, contribution });
+});
+
+// Auth: claim the jackpot (called when 7️⃣7️⃣7️⃣ hit)
+app.post('/api/jackpot/claim', requireAuth, (req, res) => {
+  const { wager } = req.body || {};
+  const { won, resetTo } = jp.claim();
+
+  // Credit winner
+  const token = getToken(req);
+  us.addBonusByAdmin(req.user.username, won);
+
+  // Push updated balance to client
+  const me = us.getMe(token);
+  if (me.ok) {
+    io.emit('balanceReset', { username: req.user.username, balance: me.balance });
+  }
+
+  // Broadcast jackpot won event to ALL connected clients
+  io.emit('jackpotWon', {
+    winner:  req.user.username,
+    amount:  won,
+    resetTo,
+    wager:   Math.floor(Number(wager) || 0),
+  });
+
+  al.log('jackpot_won', { winner: req.user.username, amount: won });
+  console.log(`[jackpot] 🎰 JACKPOT! ${req.user.username} won $${won.toLocaleString()}! Pool reset to $${resetTo.toLocaleString()}`);
+
+  res.json({ ok: true, amount: won, resetTo });
+});
+
+// Admin: reset jackpot pool manually
+app.post('/api/admin/jackpot/reset', requireAdmin, (req, res) => {
+  const amount = jp.reset();
+  al.log('jackpot_reset', {});
+  res.json({ ok: true, amount });
+});
+
 // ── Sports Betting (player routes) ───────────────────────────────────────────
 
 // List all open games (created by admin via desktop app)
@@ -1073,6 +1127,26 @@ app.get('/api/sports/bets', requireAuth, (req, res) => {
   res.json({ ok: true, bets: sb.getUserBets(req.user.username) });
 });
 
+// Place a parlay bet
+app.post('/api/sports/parlay', requireAuth, (req, res) => {
+  const { picks, amount } = req.body || {};
+  const amt = Math.floor(Number(amount));
+  const me  = us.getMe(getToken(req));
+  if (!me.ok) return res.status(401).json({ ok: false, error: 'Not authenticated' });
+  if ((me.balance || 0) < amt) return res.status(400).json({ ok: false, error: 'Insufficient balance' });
+
+  const result = sb.placeParlayBet({ username: req.user.username, picks, amount: amt });
+  if (!result.ok) return res.status(400).json(result);
+
+  us.syncBalance(getToken(req), (me.balance || 0) - amt);
+  res.json(result);
+});
+
+// Get my parlays
+app.get('/api/sports/my-parlays', requireAuth, (req, res) => {
+  res.json({ ok: true, parlays: sb.getUserParlays(req.user.username) });
+});
+
 // ── Sports Betting (admin routes — used by desktop Electron app) ──────────────
 
 // List ALL games (open + settled) with bet stats
@@ -1109,14 +1183,21 @@ app.post('/api/admin/sports/games/:id/settle', requireAdmin, (req, res) => {
   const result = sb.settleGame(req.params.id, winner);
   if (!result.ok) return res.status(400).json(result);
 
-  // Credit all winners
+  // Credit all straight-bet winners
   for (const [username, amount] of Object.entries(result.payouts)) {
     us.addBonusByAdmin(username, amount);
     console.log(`[sports] Payout: ${username} +$${amount}`);
   }
 
+  // Settle any parlays that include this game
+  const parlayPayouts = sb.settleParlayBets(req.params.id, winner);
+  for (const [username, amount] of Object.entries(parlayPayouts)) {
+    us.addBonusByAdmin(username, amount);
+    console.log(`[sports] Parlay payout: ${username} +$${amount}`);
+  }
+
   al.log('sports_settle_game', { gameId: req.params.id, winner, betsSettled: result.settled.length });
-  res.json({ ok: true, settled: result.settled.length, payouts: result.payouts });
+  res.json({ ok: true, settled: result.settled.length, payouts: { ...result.payouts, ...parlayPayouts } });
 });
 
 // Cancel & refund a game

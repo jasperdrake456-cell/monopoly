@@ -54,6 +54,7 @@ import SuggestionsPage from './pages/SuggestionsPage';
 import ChampionPage from './pages/ChampionPage';
 import SportsBettingPage from './pages/SportsBettingPage';
 import UnoPage from './pages/UnoPage';
+import HorseRacingPage from './pages/HorseRacingPage';
 import './App.css';
 
 // Convenience wrapper: RequireAuth + GameGuard for a given slug
@@ -119,6 +120,7 @@ export default function App() {
             <Route path="/video-poker"   element={<GR slug="video-poker"><VideoPokerPage /></GR>} />
             <Route path="/keno"          element={<GR slug="keno"><KenoPage /></GR>} />
             <Route path="/dragon-tiger"  element={<GR slug="dragon-tiger"><DragonTigerPage /></GR>} />
+            <Route path="/horse-racing"  element={<GR slug="horse-racing"><HorseRacingPage /></GR>} />
 
             {/* Non-game pages */}
             <Route path="/leaderboard"        element={<LeaderboardPage />} />

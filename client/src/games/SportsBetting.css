@@ -439,3 +439,144 @@
 }
 .sb-slip-place-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
 .sb-slip-place-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Parlay game-card badge ───────────────────────────────────────────────── */
+.sb-game-card--parlay { border-color: #7c3aed !important; }
+.sb-parlay-badge {
+  display: inline-block;
+  background: rgba(124,58,237,0.2);
+  color: #c084fc;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 2px 8px;
+  margin-bottom: 4px;
+}
+
+/* ── Parlay tab ───────────────────────────────────────────────────────────── */
+.sb-parlay-tab {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.sb-parlay-instructions {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  color: #8b949e;
+}
+
+/* Parlay legs list (builder) */
+.sb-parlay-legs { display: flex; flex-direction: column; gap: 8px; }
+.sb-parlay-leg {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.sb-parlay-leg-num {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #7c3aed;
+  background: rgba(124,58,237,0.15);
+  border-radius: 4px;
+  padding: 2px 6px;
+  flex-shrink: 0;
+}
+.sb-parlay-leg-info { flex: 1; min-width: 0; }
+.sb-parlay-leg-game { font-size: 0.78rem; color: #8b949e; margin-bottom: 2px; }
+.sb-parlay-leg-pick { font-size: 0.88rem; color: #e6edf3; }
+.sb-parlay-leg-odds { font-weight: 700; margin-left: 8px; }
+.sb-parlay-leg-remove {
+  background: none;
+  border: none;
+  color: #8b949e;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+}
+.sb-parlay-leg-remove:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+
+/* Parlay summary box */
+.sb-parlay-summary {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sb-parlay-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #8b949e;
+}
+.sb-parlay-combined-odds { font-size: 1.1rem; font-weight: 700; }
+.sb-parlay-potential { font-size: 1.1rem; font-weight: 700; color: #22c55e; }
+
+.sb-parlay-clear-btn {
+  background: #161b22;
+  border: 1px solid #30363d;
+  color: #8b949e;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.sb-parlay-clear-btn:hover { border-color: #ef4444; color: #ef4444; }
+
+/* ── My Bets sections ─────────────────────────────────────────────────────── */
+.sb-mybets-section { margin-bottom: 20px; }
+.sb-mybets-section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #7c3aed;
+  margin-bottom: 10px;
+  padding: 0 20px;
+}
+.sb-bet-card--parlay { border-left: 3px solid #7c3aed; }
+
+/* Parlay legs summary in My Bets */
+.sb-parlay-legs-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+  padding: 8px;
+  background: #0d1117;
+  border-radius: 6px;
+}
+.sb-parlay-leg-mini {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  padding: 3px 0;
+  border-bottom: 1px solid #21262d;
+}
+.sb-parlay-leg-mini:last-child { border-bottom: none; }
+.sb-parlay-leg-mini--won { color: #22c55e; }
+.sb-parlay-leg-mini--lost { color: #ef4444; opacity: 0.8; }
+.sb-parlay-leg-mini--push { color: #f59e0b; }
+.sb-parlay-leg-mini--open { color: #e6edf3; }
+.sb-parlay-leg-mini-num { color: #7c3aed; font-weight: 700; flex-shrink: 0; }
+.sb-parlay-leg-mini-teams { flex: 1; color: #8b949e; }
+.sb-parlay-leg-mini-pick { font-weight: 600; }
+.sb-parlay-leg-mini-odds { color: #8b949e; }
+.sb-parlay-leg-mini-status { flex-shrink: 0; }

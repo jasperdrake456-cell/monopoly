@@ -131,10 +131,17 @@ async function runAutoSettle() {
         continue;
       }
 
-      // Credit all winners
+      // Credit all straight-bet winners
       for (const [username, amount] of Object.entries(result.payouts)) {
         us.addBonusByAdmin(username, amount);
         console.log(`[autoSettle] 💸 ${username} +$${amount.toLocaleString()} — ${match.homeTeam} vs ${match.awayTeam} (winner: ${winner})`);
+      }
+
+      // Settle any parlays that include this game
+      const parlayPayouts = sb.settleParlayBets(match.gameId, winner);
+      for (const [username, amount] of Object.entries(parlayPayouts)) {
+        us.addBonusByAdmin(username, amount);
+        console.log(`[autoSettle] 🎲 parlay payout: ${username} +$${amount.toLocaleString()} (game: ${match.homeTeam} vs ${match.awayTeam})`);
       }
 
       al.log('sports_auto_settle', {
