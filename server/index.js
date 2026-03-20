@@ -990,104 +990,95 @@ app.post('/api/admin/champion', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
-// ── Sports Betting ────────────────────────────────────────────────────────────
+// ── Sports Betting (player routes) ───────────────────────────────────────────
 
-// Public: list upcoming games with odds (cached 30 min)
-app.get('/api/sports/games', requireAuth, async (req, res) => {
-  try {
-    const sports = await odds.fetchAllGames();
-    res.json({ ok: true, sports });
-  } catch (err) {
-    if (err.message === 'NO_API_KEY') {
-      return res.json({ ok: false, error: 'NO_API_KEY' });
-    }
-    console.error('[sports] fetchAllGames error:', err.message);
-    res.json({ ok: false, error: 'Failed to fetch games' });
-  }
+// List all open games (created by admin via desktop app)
+app.get('/api/sports/games', requireAuth, (req, res) => {
+  const games = sb.getGames(false); // open only
+  res.json({ ok: true, games });
 });
 
-// Place a bet — deducts balance immediately
+// Place a bet
 app.post('/api/sports/bet', requireAuth, (req, res) => {
-  const { gameId, sport, homeTeam, awayTeam, commenceTime, pick, odds: betOdds, amount } = req.body || {};
+  const { gameId, pick, odds: betOdds, amount } = req.body || {};
   const amt = Math.floor(Number(amount));
-
-  // Deduct from user balance first
-  const me = us.getMe(getToken(req));
+  const me  = us.getMe(getToken(req));
   if (!me.ok) return res.status(401).json({ ok: false, error: 'Not authenticated' });
   if ((me.balance || 0) < amt) return res.status(400).json({ ok: false, error: 'Insufficient balance' });
 
-  // Place the bet in the store
-  const result = sb.placeBet({
-    username: req.user.username,
-    gameId, sport, homeTeam, awayTeam, commenceTime, pick,
-    odds: betOdds, amount: amt,
-  });
+  const result = sb.placeBet({ username: req.user.username, gameId, pick, odds: betOdds, amount: amt });
   if (!result.ok) return res.status(400).json(result);
 
-  // Deduct from server balance
   us.syncBalance(getToken(req), (me.balance || 0) - amt);
-
   res.json(result);
 });
 
 // Get my bets
 app.get('/api/sports/bets', requireAuth, (req, res) => {
-  const bets = sb.getUserBets(req.user.username);
-  res.json({ ok: true, bets });
+  res.json({ ok: true, bets: sb.getUserBets(req.user.username) });
 });
 
-// ── Sports auto-settlement (runs every 10 minutes) ───────────────────────────
-async function settleSportsBets() {
-  const sportsWithBets = sb.getSportsWithOpenBets();
-  if (sportsWithBets.length === 0) return;
+// ── Sports Betting (admin routes — used by desktop Electron app) ──────────────
 
-  for (const sportKey of sportsWithBets) {
-    try {
-      const scores      = await odds.fetchScoresForSport(sportKey);
-      const openByGame  = sb.getOpenBetsByGame();
+// List ALL games (open + settled) with bet stats
+app.get('/api/admin/sports/games', requireAdmin, (req, res) => {
+  const games    = sb.getGames(true);
+  const enriched = games.map(g => ({ ...g, ...sb.getGameBetStats(g.gameId) }));
+  res.json({ ok: true, games: enriched });
+});
 
-      for (const score of scores) {
-        if (!score.completed) continue;
-        const gameBets = openByGame[score.id];
-        if (!gameBets || gameBets.length === 0) continue;
-
-        // Determine the winner from scores
-        let winner = null;
-        const sc = score.scores || [];
-        if (sc.length >= 2) {
-          const s0 = parseInt(sc[0].score, 10);
-          const s1 = parseInt(sc[1].score, 10);
-          if (!isNaN(s0) && !isNaN(s1)) {
-            if (s0 === s1) winner = 'push';
-            else winner = s0 > s1 ? sc[0].name : sc[1].name;
-          }
-        }
-        if (!winner) continue;
-
-        // Settle each bet and credit winners
-        for (const bet of gameBets) {
-          const settled = sb.settleBet(bet.betId, winner);
-          if (!settled) continue;
-
-          if (settled.status === 'won' || settled.status === 'push') {
-            // Credit payout to user's balance
-            us.addBonusByAdmin(settled.username, settled.payout);
-            console.log(`[sports] Settled WIN  — ${settled.username} +$${settled.payout} (${bet.pick} vs ${winner})`);
-          } else {
-            console.log(`[sports] Settled LOSS — ${settled.username} -$${settled.amount} (picked ${bet.pick}, winner ${winner})`);
-          }
-        }
-      }
-    } catch (err) {
-      console.error(`[sports] Settlement error for ${sportKey}:`, err.message);
-    }
+// Create a new game
+app.post('/api/admin/sports/games', requireAdmin, (req, res) => {
+  const { sport, sportEmoji, homeTeam, awayTeam, odds: gameOdds, startTime } = req.body || {};
+  if (!sport || !homeTeam || !awayTeam || !gameOdds || !startTime) {
+    return res.status(400).json({ ok: false, error: 'Missing required fields' });
   }
-}
+  const result = sb.createGame({ sport, sportEmoji, homeTeam, awayTeam, odds: gameOdds, startTime });
+  al.log('sports_create_game', { sport, homeTeam, awayTeam });
+  res.json(result);
+});
 
-// Run settlement every 10 minutes
-setInterval(settleSportsBets, 10 * 60 * 1000);
-// Also run once at startup (after 30 sec delay to let server warm up)
-setTimeout(settleSportsBets, 30_000);
+// Update odds / details on an open game
+app.put('/api/admin/sports/games/:id', requireAdmin, (req, res) => {
+  const result = sb.updateGame(req.params.id, req.body || {});
+  if (!result.ok) return res.status(400).json(result);
+  al.log('sports_update_game', { gameId: req.params.id });
+  res.json(result);
+});
+
+// Settle a game — winner = exact team name or 'cancelled'
+app.post('/api/admin/sports/games/:id/settle', requireAdmin, (req, res) => {
+  const { winner } = req.body || {};
+  if (!winner) return res.status(400).json({ ok: false, error: 'Missing winner' });
+
+  const result = sb.settleGame(req.params.id, winner);
+  if (!result.ok) return res.status(400).json(result);
+
+  // Credit all winners
+  for (const [username, amount] of Object.entries(result.payouts)) {
+    us.addBonusByAdmin(username, amount);
+    console.log(`[sports] Payout: ${username} +$${amount}`);
+  }
+
+  al.log('sports_settle_game', { gameId: req.params.id, winner, betsSettled: result.settled.length });
+  res.json({ ok: true, settled: result.settled.length, payouts: result.payouts });
+});
+
+// Cancel & refund a game
+app.delete('/api/admin/sports/games/:id', requireAdmin, (req, res) => {
+  const result = sb.cancelGame(req.params.id);
+  if (!result.ok) return res.status(400).json(result);
+  for (const [username, amount] of Object.entries(result.payouts)) {
+    us.addBonusByAdmin(username, amount);
+  }
+  al.log('sports_cancel_game', { gameId: req.params.id });
+  res.json({ ok: true });
+});
+
+// All bets across all games (for admin overview)
+app.get('/api/admin/sports/bets', requireAdmin, (req, res) => {
+  res.json({ ok: true, bets: sb.getAllBets() });
+});
 
 // ── Static client ─────────────────────────────────────────────────────────────
 
