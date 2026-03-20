@@ -82,12 +82,11 @@ function determineWinner(storedGame, apiGame) {
 
 // ── Core settle run ───────────────────────────────────────────────────────────
 async function runAutoSettle() {
-  const openGames = sb.getGames(false);  // open only
-  if (!openGames.length) return;
-
+  // Get ALL games (including settled) then filter to open ones that have started
+  const allGames = sb.getGames(true);
   const now = Date.now();
-  // Only check games whose start time has already passed (give 10 min grace)
-  const eligible = openGames.filter(g => new Date(g.startTime).getTime() < now - 10 * 60_000);
+  // Only settle open games whose start time has already passed (give 10 min grace)
+  const eligible = allGames.filter(g => g.status === 'open' && new Date(g.startTime).getTime() < now - 10 * 60_000);
   if (!eligible.length) return;
 
   // Group by API sport key
