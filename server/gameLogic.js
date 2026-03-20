@@ -375,16 +375,18 @@ function declareBankruptcy(state, playerId, creditorId) {
   const p = getPlayer(state, playerId);
   p.bankrupt = true;
 
-  const creditor = creditorId ? getPlayer(state, creditorId) : null;
+  const isMultiplayer = state.players.length > 2;
+  const creditor = (!isMultiplayer && creditorId) ? getPlayer(state, creditorId) : null;
 
   // Transfer assets
   p.properties.forEach(propId => {
     const ps = state.propertyStates[propId];
     if (creditor) {
+      // 2-player: give properties to the creditor
       ps.owner = creditorId;
       creditor.properties.push(propId);
     } else {
-      // Return to bank
+      // Multiplayer: return properties to the market so anyone can buy them
       ps.owner = null;
       ps.houses = 0;
       ps.mortgaged = false;
@@ -392,19 +394,26 @@ function declareBankruptcy(state, playerId, creditorId) {
   });
   p.properties = [];
 
+  // Cash always goes to creditor (compensation for unpaid debt), or lost to bank
   if (creditor) {
     creditor.cash += p.cash;
   }
   p.cash = 0;
 
-  addLog(state, `${p.name} has gone bankrupt!`);
+  if (isMultiplayer) {
+    addLog(state, `${p.name} has gone bankrupt and has been eliminated! Their properties return to the market.`);
+  } else {
+    addLog(state, `${p.name} has gone bankrupt!`);
+  }
 
-  // Check win condition
+  // Check win condition — only end the game when one player is left standing
   const remaining = activePlayers(state);
   if (remaining.length === 1) {
     state.winner = remaining[0].id;
     state.status = 'ended';
     addLog(state, `${remaining[0].name} wins the game!`);
+  } else if (isMultiplayer) {
+    addLog(state, `${remaining.length} players remaining.`);
   }
 }
 

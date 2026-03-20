@@ -86,6 +86,24 @@ function register(ns) {
       rm.deleteRoom(roomCode);
     });
 
+    socket.on('kickPlayer', ({ roomCode, targetId }) => {
+      const room = rm.getRoom(roomCode);
+      if (!room) return;
+      if (room.hostId !== socket.id) return; // only host can kick
+      if (targetId === socket.id) return;    // can't kick yourself
+      // Notify the kicked player
+      const ns_ = socket.nsp;
+      ns_.to(targetId).emit('kicked', { message: 'You have been kicked from the room by the host.' });
+      // Remove them from the room
+      rm.leaveRoom(roomCode, targetId);
+      // Disconnect their socket from this room
+      const targetSocket = ns_.sockets.get(targetId);
+      if (targetSocket) targetSocket.leave(roomCode);
+      // Broadcast updated room state to remaining players
+      const updated = rm.getRoom(roomCode);
+      if (updated) broadcastState(ns_, updated);
+    });
+
     socket.on('startGame', ({ roomCode }) => {
       handleAction(ns, socket, roomCode, (room) => {
         if (room.hostId !== socket.id) return { error: 'Only the host can start the game' };

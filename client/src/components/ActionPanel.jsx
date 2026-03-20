@@ -207,7 +207,7 @@ export default function ActionPanel({ gameState, myId, roomCode, emit, board: bo
               {isMoving ? 'Moving…' : doublesCount > 0 ? 'Continue → Roll Again 🎲' : 'End Turn ➡️'}
             </button>
             <button className="ap-btn danger-subtle" disabled={acting || isMoving}
-              onClick={() => { if (window.confirm('Declare bankruptcy? This permanently ends your game.')) act('declareBankruptcy', { roomCode }); }}>
+              onClick={() => { const multi = players.filter(p => !p.bankrupt).length > 2; const msg = multi ? 'Declare bankruptcy? You will be eliminated and your properties returned to the market. The game continues for the other players.' : 'Declare bankruptcy? This permanently ends your game.'; if (window.confirm(msg)) act('declareBankruptcy', { roomCode }); }}>
               Declare Bankruptcy
             </button>
           </div>

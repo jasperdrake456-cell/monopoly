@@ -66,7 +66,15 @@ export default function MonopolyPage() {
       setMyId(null);
       setSessionId(null);
     });
-    return () => { offRoomCreated(); offRoomJoined(); offReconnected(); offGameState(); offError(); offChat(); offRoomClosed(); };
+    const offKicked = on('kicked', ({ message }) => {
+      alert(message || 'You have been kicked from the room.');
+      localStorage.removeItem(SESSION_KEY);
+      setSavedSession(null);
+      setRoomState(null);
+      setMyId(null);
+      setSessionId(null);
+    });
+    return () => { offRoomCreated(); offRoomJoined(); offReconnected(); offGameState(); offError(); offChat(); offRoomClosed(); offKicked(); };
   }, [on, sessionId]);
 
   const handleEmit = useCallback((event, data) => {

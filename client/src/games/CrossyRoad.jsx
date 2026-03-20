@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { addBalance } from '../utils/casinoBalance';
+import { addBalance, getBalance, subtractBalance } from '../utils/casinoBalance';
 import './CrossyRoad.css';
 
 // Multiplier: +0.1× every 15 forward hops (score 0→1.0×, 15→1.1×, 150→2.0×, 300→3.0×)
 const MULT_STEP     = 15;   // hops per tier
 const MULT_INC      = 0.1;  // increase per tier
-const COIN_BASE     = 3;    // coins per score point (before mult)
+
+// Wager-based payout: wager × mult returned at game over
+// mult ≥ 1.0 so you always get at least your bet back; score hard pushes it higher
+const BET_OPTIONS   = [10, 50, 100, 500, 1000, 5000];
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const COLS       = 11;
@@ -111,6 +114,8 @@ export default function CrossyRoad() {
   const [phase,     setPhase]     = useState('menu');
   const [,          setTick]      = useState(0);
   const [highScore, setHighScore] = useState(getHS);
+  const [wager,     setWager]     = useState(50);
+  const [betErr,    setBetErr]    = useState('');
   const forceRender = useCallback(() => setTick(t => t + 1), []);
 
   const G        = useRef(null);
@@ -122,6 +127,11 @@ export default function CrossyRoad() {
 
   // ── Init ─────────────────────────────────────────────────────────────────
   function startGame() {
+    const bal = getBalance();
+    if (wager < 1) { setBetErr('Enter a wager to play.'); return; }
+    if (wager > bal) { setBetErr(`Not enough balance (you have $${bal.toLocaleString()}).`); return; }
+    setBetErr('');
+    subtractBalance(wager); // deduct bet upfront
     const rows = generateChunk(0, WORLD_PAD, 0);
     const entities = {};
     const rowMap = new Map();
@@ -132,6 +142,7 @@ export default function CrossyRoad() {
       rows, rowMap, entities,
       idleTimer: 0, deathFlash: 0,
       mult: 1.0, multChanged: false, coinReward: 0,
+      wager,
     };
     phaseRef.current = 'playing';
     lastTs.current   = null;
@@ -268,9 +279,9 @@ export default function CrossyRoad() {
     setHighScore(hs);
 
     if (g.lives <= 0) {
-      const coins = Math.floor(g.score * COIN_BASE * g.mult);
-      g.coinReward = coins;
-      if (coins > 0) addBalance(coins);
+      const payout = Math.floor((g.wager || 0) * g.mult);
+      g.coinReward = payout;
+      if (payout > 0) addBalance(payout); // return wager × mult
       phaseRef.current = 'gameover';
       setPhase('gameover');
     } else {
@@ -352,9 +363,36 @@ export default function CrossyRoad() {
       <div className="cr-wrap cr-menu-screen">
         <div className="cr-menu-chicken">🐔</div>
         <h1 className="cr-menu-title">Crossy Road</h1>
-        <p className="cr-menu-sub">How far can you go?</p>
+        <p className="cr-menu-sub">Bet big, hop far, win more!</p>
         <div className="cr-menu-hs">🏆 Best: {highScore}</div>
-        <button className="cr-menu-play" onClick={startGame}>▶ Play</button>
+
+        <div className="cr-bet-section">
+          <div className="cr-bet-label">Your Wager</div>
+          <div className="cr-bet-options">
+            {BET_OPTIONS.map(v => (
+              <button
+                key={v}
+                className={`cr-bet-btn${wager === v ? ' cr-bet-btn--active' : ''}`}
+                onClick={() => { setWager(v); setBetErr(''); }}
+              >${v.toLocaleString()}</button>
+            ))}
+          </div>
+          <div className="cr-bet-custom">
+            <input
+              type="number" min="1" step="1"
+              placeholder="Custom amount"
+              className="cr-bet-input"
+              value={wager || ''}
+              onChange={e => { setWager(Math.max(1, parseInt(e.target.value) || 0)); setBetErr(''); }}
+            />
+          </div>
+          <div className="cr-bet-info">
+            Score 15 hops → 1.1× · 30 hops → 1.2× · Keep going for more!
+          </div>
+          {betErr && <div className="cr-bet-err">{betErr}</div>}
+        </div>
+
+        <button className="cr-menu-play" onClick={startGame}>▶ Play — Bet ${wager.toLocaleString()}</button>
         <div className="cr-menu-keys">
           <span>Arrow keys / WASD to move</span>
           <span>Tap / swipe on mobile</span>
@@ -503,9 +541,17 @@ export default function CrossyRoad() {
           <div className="cr-go-icon">💀</div>
           <div className="cr-go-title">Game Over</div>
           <div className="cr-go-score">Score: {g.score} · {g.mult.toFixed(1)}×</div>
-          {g.coinReward > 0 && <div className="cr-go-coins">+${g.coinReward.toLocaleString()} coins 🪙</div>}
+          <div className="cr-go-coins">
+            {g.coinReward > g.wager
+              ? <span className="cr-go-win">+${(g.coinReward - g.wager).toLocaleString()} profit! 🎉</span>
+              : g.coinReward === g.wager
+              ? <span className="cr-go-push">Broke even — got ${ g.coinReward.toLocaleString()} back</span>
+              : <span className="cr-go-loss">Lost ${(g.wager - g.coinReward).toLocaleString()} 💸</span>
+            }
+          </div>
+          <div className="cr-go-payout">Payout: ${g.coinReward.toLocaleString()} (bet ${g.wager.toLocaleString()} × {g.mult.toFixed(1)}×)</div>
           <div className="cr-go-hs">Best: {highScore}</div>
-          <button className="cr-menu-play" onClick={startGame}>▶ Play Again</button>
+          <button className="cr-menu-play" onClick={startGame}>▶ Play Again (${wager.toLocaleString()})</button>
           <button className="cr-go-menu" onClick={() => { phaseRef.current = 'menu'; setPhase('menu'); }}>
             Menu
           </button>

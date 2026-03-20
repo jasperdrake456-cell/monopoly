@@ -80,6 +80,13 @@ export default function Lobby({ roomState, myId, emit, sessionId, savedSession, 
                 <span className="player-name">{p.name}</span>
                 {p.id === roomState.hostId && <span className="host-badge">HOST</span>}
                 {!p.connected && <span className="offline-badge">Offline</span>}
+                {isHost && p.id !== myId && (
+                  <button
+                    className="kick-btn"
+                    title={`Kick ${p.name}`}
+                    onClick={() => { if (window.confirm(`Kick ${p.name} from the room?`)) emit('kickPlayer', { roomCode: roomState.roomCode, targetId: p.id }); }}
+                  >✕</button>
+                )}
               </div>
             ))}
           </div>

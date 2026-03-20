@@ -47,6 +47,13 @@ export default function MultiplayerLobby({ gameName, roomState, myId, emit, onBa
                 <span className="ml-player-name">{p.name}</span>
                 {p.id === roomState.hostId && <span className="ml-host-badge">HOST</span>}
                 {p.id === myId && <span className="ml-you-badge">YOU</span>}
+                {isHost && p.id !== myId && (
+                  <button
+                    className="ml-kick-btn"
+                    title={`Kick ${p.name}`}
+                    onClick={() => { if (window.confirm(`Kick ${p.name}?`)) emit('kickPlayer', { roomCode: roomState.roomCode, targetId: p.id }); }}
+                  >✕</button>
+                )}
               </div>
             ))}
             {roomState.players.length < 2 && (
