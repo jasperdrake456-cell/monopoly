@@ -1013,6 +1013,16 @@ app.get('/api/sports/games', requireAuth, (req, res) => {
   res.json({ ok: true, games });
 });
 
+// Manual trigger for auto-settle (admin only)
+app.post('/api/admin/settle-now', requireAdmin, async (req, res) => {
+  try {
+    await autoSettle.runAutoSettle();
+    res.json({ ok: true, message: 'Auto-settle run complete — check server logs' });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // Live scores for all games that have started (open + all sports with bets)
 app.get('/api/sports/scores', requireAuth, async (req, res) => {
   if (!process.env.ODDS_API_KEY) return res.json({ ok: true, scores: [] });
