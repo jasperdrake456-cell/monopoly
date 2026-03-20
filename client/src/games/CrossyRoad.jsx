@@ -2,12 +2,12 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { addBalance, getBalance, subtractBalance } from '../utils/casinoBalance';
 import './CrossyRoad.css';
 
-// Multiplier: +0.1× every 15 forward hops (score 0→1.0×, 15→1.1×, 150→2.0×, 300→3.0×)
+// Multiplier: starts at 0.75×, +0.1× every 15 forward hops (score 0→0.75×, 15→0.85×, ~38→1.0×, 150→1.75×, 300→2.75×)
+const MULT_BASE     = 0.75; // starting multiplier (house edge)
 const MULT_STEP     = 15;   // hops per tier
 const MULT_INC      = 0.1;  // increase per tier
 
 // Wager-based payout: wager × mult returned at game over
-// mult ≥ 1.0 so you always get at least your bet back; score hard pushes it higher
 const BET_OPTIONS   = [10, 50, 100, 500, 1000, 5000];
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -141,7 +141,7 @@ export default function CrossyRoad() {
       col: CENTER_COL, row: 0, pxX: CENTER_COL * CELL,
       rows, rowMap, entities,
       idleTimer: 0, deathFlash: 0,
-      mult: 1.0, multChanged: false, coinReward: 0,
+      mult: MULT_BASE, multChanged: false, coinReward: 0,
       wager,
     };
     phaseRef.current = 'playing';
@@ -315,7 +315,7 @@ export default function CrossyRoad() {
     g.idleTimer = 0;
     if (newRow > g.score) {
       g.score = newRow;
-      const newMult = parseFloat((1.0 + Math.floor(newRow / MULT_STEP) * MULT_INC).toFixed(1));
+      const newMult = parseFloat((MULT_BASE + Math.floor(newRow / MULT_STEP) * MULT_INC).toFixed(2));
       if (newMult !== g.mult) { g.mult = newMult; g.multChanged = true; }
       else g.multChanged = false;
     } else {
@@ -387,7 +387,7 @@ export default function CrossyRoad() {
             />
           </div>
           <div className="cr-bet-info">
-            Score 15 hops → 1.1× · 30 hops → 1.2× · Keep going for more!
+            Start at 0.75× · Score ~4 hops → 0.85× · ~38 hops → 1.0× · Go further to profit!
           </div>
           {betErr && <div className="cr-bet-err">{betErr}</div>}
         </div>
