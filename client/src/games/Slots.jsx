@@ -19,16 +19,23 @@ function authFetch(path, token, options = {}) {
   }).then(r => r.json()).catch(() => ({ ok: false }));
 }
 
-// Near-impossible pool — paying symbols 1 each out of 68, filler is 5 mixed non-paying fruits.
-// Paying: 💎×1, 7️⃣×1, ⭐×1, 🔔×1, 🍇×1, 🍊×1, 🍋×1, 🍒×1 (8 total)
-// Filler (no payout): 🍑×12, 🫐×12, 🥝×12, 🍈×12, 🫒×12 (60 filler, 68 total)
+// Balanced pool — paying symbols weighted so wins happen reasonably often.
+// 💎×1, 7️⃣×1, ⭐×2, 🔔×3, 🍇×3, 🍊×4, 🍋×5, 🍒×8 (27 paying)
+// Filler: 🍑×4, 🫐×4, 🥝×4, 🍈×4, 🫒×4 (20 filler) — total 47
 const REEL_POOL = [
-  '💎','7️⃣','⭐','🔔','🍇','🍊','🍋','🍒',
-  '🍑','🍑','🍑','🍑','🍑','🍑','🍑','🍑','🍑','🍑','🍑','🍑',
-  '🫐','🫐','🫐','🫐','🫐','🫐','🫐','🫐','🫐','🫐','🫐','🫐',
-  '🥝','🥝','🥝','🥝','🥝','🥝','🥝','🥝','🥝','🥝','🥝','🥝',
-  '🍈','🍈','🍈','🍈','🍈','🍈','🍈','🍈','🍈','🍈','🍈','🍈',
-  '🫒','🫒','🫒','🫒','🫒','🫒','🫒','🫒','🫒','🫒','🫒','🫒',
+  '💎',
+  '7️⃣',
+  '⭐','⭐',
+  '🔔','🔔','🔔',
+  '🍇','🍇','🍇',
+  '🍊','🍊','🍊','🍊',
+  '🍋','🍋','🍋','🍋','🍋',
+  '🍒','🍒','🍒','🍒','🍒','🍒','🍒','🍒',
+  '🍑','🍑','🍑','🍑',
+  '🫐','🫐','🫐','🫐',
+  '🥝','🥝','🥝','🥝',
+  '🍈','🍈','🍈','🍈',
+  '🫒','🫒','🫒','🫒',
 ];
 
 const PAYTABLE = [
@@ -73,7 +80,7 @@ function evaluate(mids) {
   const cherries = mids.filter(s => s === '🍒').length;
   if (cherries === 3) return { mult: 3,   label: '🍒 🍒 🍒 CHERRIES!' };
   if (cherries === 2) return { mult: 1.5, label: '🍒 🍒 — Double Cherry!' };
-  if (cherries === 1) return { mult: 0.8, label: '🍒 — Single Cherry' };
+  if (cherries === 1) return { mult: 1.0, label: '🍒 — Single Cherry!' };
 
   return { mult: 0, label: 'No match. Better luck next time!' };
 }

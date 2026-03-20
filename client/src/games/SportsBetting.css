@@ -580,3 +580,177 @@
 .sb-parlay-leg-mini-pick { font-weight: 600; }
 .sb-parlay-leg-mini-odds { color: #8b949e; }
 .sb-parlay-leg-mini-status { flex-shrink: 0; }
+
+/* ── Parlay Add Row (on game cards) ─────────────────────────────────────────── */
+.sb-parlay-add-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #21262d;
+  flex-wrap: wrap;
+}
+.sb-parlay-add-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #7c3aed;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+.sb-parlay-add-btn {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1.5px solid #30363d;
+  background: #161b22;
+  color: #8b949e;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sb-parlay-add-btn:hover {
+  border-color: #7c3aed;
+  color: #c4b5fd;
+  background: #1e1a2e;
+}
+.sb-parlay-add-btn--active {
+  border-color: #7c3aed;
+  background: #2d1b69;
+  color: #c4b5fd;
+}
+
+/* ── Floating Parlay Slip ────────────────────────────────────────────────────── */
+.sb-parlay-float {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  background: #0d1117;
+  border: 1.5px solid #7c3aed;
+  border-radius: 14px;
+  box-shadow: 0 8px 40px rgba(124, 58, 237, 0.35);
+  z-index: 1000;
+  overflow: hidden;
+}
+.sb-parlay-float-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  background: #1a0e3a;
+  border-bottom: 1px solid #2d1b69;
+}
+.sb-parlay-float-header span:first-child {
+  flex: 1;
+  font-size: 0.85rem;
+  color: #e6edf3;
+}
+.sb-parlay-float-odds {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #22c55e;
+}
+.sb-parlay-float-clear {
+  background: none;
+  border: none;
+  color: #8b949e;
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+.sb-parlay-float-clear:hover { color: #ef4444; }
+.sb-parlay-float-legs {
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 8px 14px;
+}
+.sb-parlay-float-leg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid #21262d;
+}
+.sb-parlay-float-leg:last-child { border-bottom: none; }
+.sb-parlay-float-leg-num {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #7c3aed;
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+}
+.sb-parlay-float-leg-text {
+  flex: 1;
+  font-size: 0.78rem;
+  color: #e6edf3;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sb-parlay-float-leg-odds {
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.sb-parlay-float-leg-remove {
+  background: none;
+  border: none;
+  color: #4a5568;
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 0 2px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.sb-parlay-float-leg-remove:hover { color: #ef4444; }
+.sb-parlay-float-footer {
+  padding: 10px 14px 14px;
+  border-top: 1px solid #21262d;
+}
+.sb-parlay-float-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+.sb-parlay-float-input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: #e6edf3;
+  font-size: 0.9rem;
+  outline: none;
+  min-width: 0;
+}
+.sb-parlay-float-payout {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #22c55e;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .sb-parlay-float {
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    border-radius: 14px 14px 0 0;
+  }
+}

@@ -1052,10 +1052,11 @@ app.post('/api/jackpot/claim', requireAuth, (req, res) => {
   res.json({ ok: true, amount: won, resetTo });
 });
 
-// Admin: reset jackpot pool manually
+// Admin: reset jackpot pool manually (optional custom amount)
 app.post('/api/admin/jackpot/reset', requireAdmin, (req, res) => {
-  const amount = jp.reset();
-  al.log('jackpot_reset', {});
+  const custom = Number(req.body?.amount);
+  const amount = (!isNaN(custom) && custom > 0) ? jp.resetTo(custom) : jp.reset();
+  al.log('jackpot_reset', { amount });
   res.json({ ok: true, amount });
 });
 

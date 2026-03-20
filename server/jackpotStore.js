@@ -57,4 +57,10 @@ function reset() {
   return JACKPOT_START;
 }
 
-module.exports = { getJackpot, contribute, claim, reset, JACKPOT_START };
+function resetTo(amount) {
+  const val = Math.max(0, Math.floor(amount));
+  write({ amount: val });
+  return val;
+}
+
+module.exports = { getJackpot, contribute, claim, reset, resetTo, JACKPOT_START };

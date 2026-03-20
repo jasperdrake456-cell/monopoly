@@ -213,24 +213,23 @@ export default function SportsBetting() {
     }
   }
 
-  function selectPick(game, pick, pickOdds) {
-    if (activeTab === 'parlay') {
-      // Parlay mode: add/remove from parlay slip
-      const existing = parlayPicks.findIndex(p => p.gameId === game.gameId);
-      if (existing >= 0) {
-        // Replace pick for this game, or remove if same pick
-        const cur = parlayPicks[existing];
-        if (cur.pick === pick) {
-          setParlayPicks(prev => prev.filter(p => p.gameId !== game.gameId));
-        } else {
-          setParlayPicks(prev => prev.map(p => p.gameId === game.gameId ? { ...p, pick, odds: pickOdds } : p));
-        }
+  // Add/change/remove a game from the parlay slip (works from any sport tab)
+  function toggleParlay(game, pick, pickOdds) {
+    const existing = parlayPicks.findIndex(p => p.gameId === game.gameId);
+    if (existing >= 0) {
+      const cur = parlayPicks[existing];
+      if (cur.pick === pick) {
+        setParlayPicks(prev => prev.filter(p => p.gameId !== game.gameId));
       } else {
-        setParlayPicks(prev => [...prev, { gameId: game.gameId, game, pick, odds: pickOdds }]);
+        setParlayPicks(prev => prev.map(p => p.gameId === game.gameId ? { ...p, pick, odds: pickOdds } : p));
       }
-      setParlayMsg(null);
-      return;
+    } else {
+      setParlayPicks(prev => [...prev, { gameId: game.gameId, game, pick, odds: pickOdds }]);
     }
+    setParlayMsg(null);
+  }
+
+  function selectPick(game, pick, pickOdds) {
     if (slip?.game?.gameId === game.gameId && slip?.pick === pick) {
       setSlip(null); setBetAmt(''); setSlipMsg(null);
     } else {
@@ -315,10 +314,6 @@ export default function SportsBetting() {
             {s.games.length > 0 && <span className="sb-tab-count">{s.games.length}</span>}
           </button>
         ))}
-        <button className={`sb-tab ${activeTab === 'parlay' ? 'sb-tab--active' : ''}`}
-          onClick={() => setActiveTab('parlay')}>
-          🎰 Parlay {parlayPicks.length > 0 && <span className="sb-tab-count sb-tab-count--open">{parlayPicks.length}</span>}
-        </button>
         <button className={`sb-tab ${activeTab === 'mybets' ? 'sb-tab--active' : ''}`}
           onClick={() => setActiveTab('mybets')}>
           📋 My Bets {(openCount + openParlays) > 0 && <span className="sb-tab-count sb-tab-count--open">{openCount + openParlays}</span>}
@@ -365,27 +360,48 @@ export default function SportsBetting() {
                     <div className="sb-game-team">{game.awayTeam}</div>
                   </div>
                   {alreadyBet && <div className="sb-already-bet">✓ Bet placed</div>}
-                  {parlayLeg && <div className="sb-parlay-badge">🎰 In Parlay: {parlayLeg.pick}</div>}
+                  {/* Single-bet odds row */}
                   <div className="sb-game-odds">
-                    <button className={`sb-odds-btn ${selHome || parlaySelHome ? 'sb-odds-btn--selected' : ''}`}
+                    <button className={`sb-odds-btn ${selHome ? 'sb-odds-btn--selected' : ''}`}
                       onClick={() => !alreadyBet && selectPick(game, game.homeTeam, game.odds.home)}
                       disabled={alreadyBet}>
                       <span className="sb-odds-label">{game.homeTeam.split(' ').slice(-1)[0]}</span>
                       <span className="sb-odds-val">{fmtOdds(game.odds.home)}</span>
                     </button>
                     {game.odds.draw != null && (
-                      <button className={`sb-odds-btn sb-odds-btn--draw ${selDraw || parlaySelDraw ? 'sb-odds-btn--selected' : ''}`}
+                      <button className={`sb-odds-btn sb-odds-btn--draw ${selDraw ? 'sb-odds-btn--selected' : ''}`}
                         onClick={() => !alreadyBet && selectPick(game, 'Draw', game.odds.draw)}
                         disabled={alreadyBet}>
                         <span className="sb-odds-label">Draw</span>
                         <span className="sb-odds-val">{fmtOdds(game.odds.draw)}</span>
                       </button>
                     )}
-                    <button className={`sb-odds-btn ${selAway || parlaySelAway ? 'sb-odds-btn--selected' : ''}`}
+                    <button className={`sb-odds-btn ${selAway ? 'sb-odds-btn--selected' : ''}`}
                       onClick={() => !alreadyBet && selectPick(game, game.awayTeam, game.odds.away)}
                       disabled={alreadyBet}>
                       <span className="sb-odds-label">{game.awayTeam.split(' ').slice(-1)[0]}</span>
                       <span className="sb-odds-val">{fmtOdds(game.odds.away)}</span>
+                    </button>
+                  </div>
+                  {/* Parlay add row */}
+                  <div className="sb-parlay-add-row">
+                    <span className="sb-parlay-add-label">+ Parlay</span>
+                    <button
+                      className={`sb-parlay-add-btn ${parlaySelHome ? 'sb-parlay-add-btn--active' : ''}`}
+                      onClick={() => toggleParlay(game, game.homeTeam, game.odds.home)}>
+                      {game.homeTeam.split(' ').slice(-1)[0]} {fmtOdds(game.odds.home)}
+                    </button>
+                    {game.odds.draw != null && (
+                      <button
+                        className={`sb-parlay-add-btn ${parlaySelDraw ? 'sb-parlay-add-btn--active' : ''}`}
+                        onClick={() => toggleParlay(game, 'Draw', game.odds.draw)}>
+                        Draw {fmtOdds(game.odds.draw)}
+                      </button>
+                    )}
+                    <button
+                      className={`sb-parlay-add-btn ${parlaySelAway ? 'sb-parlay-add-btn--active' : ''}`}
+                      onClick={() => toggleParlay(game, game.awayTeam, game.odds.away)}>
+                      {game.awayTeam.split(' ').slice(-1)[0]} {fmtOdds(game.odds.away)}
                     </button>
                   </div>
                 </div>
@@ -394,93 +410,6 @@ export default function SportsBetting() {
           </div>
         )}
 
-        {/* ── Parlay Builder Tab ──────────────────────────────────────────── */}
-        {activeTab === 'parlay' && (
-          <div className="sb-parlay-tab">
-            <div className="sb-parlay-instructions">
-              <strong>How to build a parlay:</strong> Switch to any sport tab, then click odds to add legs. Come back here to place your combined bet.
-            </div>
-
-            {parlayPicks.length === 0 ? (
-              <div className="sb-empty">
-                <div style={{ fontSize: '2.5rem', marginBottom: 10 }}>🎰</div>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>No legs added yet</div>
-                <div>Switch to a sport tab and click the odds buttons to add games to your parlay.</div>
-              </div>
-            ) : (
-              <>
-                <div className="sb-parlay-legs">
-                  {parlayPicks.map((p, i) => (
-                    <div key={p.gameId} className="sb-parlay-leg">
-                      <div className="sb-parlay-leg-num">Leg {i + 1}</div>
-                      <div className="sb-parlay-leg-info">
-                        <div className="sb-parlay-leg-game">{p.game.homeTeam} vs {p.game.awayTeam}</div>
-                        <div className="sb-parlay-leg-pick">
-                          <strong>{p.pick}</strong>
-                          <span className="sb-parlay-leg-odds" style={{ color: p.odds > 0 ? '#22c55e' : '#ef4444' }}>
-                            {fmtOdds(p.odds)}
-                          </span>
-                        </div>
-                      </div>
-                      <button className="sb-parlay-leg-remove"
-                        onClick={() => setParlayPicks(prev => prev.filter(x => x.gameId !== p.gameId))}>
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="sb-parlay-summary">
-                  <div className="sb-parlay-summary-row">
-                    <span>Combined Odds</span>
-                    <span className="sb-parlay-combined-odds" style={{ color: parlayOdds(parlayPicks) > 0 ? '#22c55e' : '#ef4444' }}>
-                      {parlayOdds(parlayPicks) !== null ? fmtOdds(parlayOdds(parlayPicks)) : '—'}
-                    </span>
-                  </div>
-                  {parlayAmt && parseFloat(parlayAmt) >= 100 && (
-                    <div className="sb-parlay-summary-row">
-                      <span>Potential Payout</span>
-                      <span className="sb-parlay-potential">${parlayPayout(parlayPicks, parseFloat(parlayAmt)).toLocaleString()}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="sb-slip-row" style={{ marginTop: 12 }}>
-                  <label className="sb-slip-label">Parlay wager</label>
-                  <div className="sb-slip-input-row">
-                    <span className="sb-slip-dollar">$</span>
-                    <input className="sb-slip-input" type="number" min="100" max="500000"
-                      placeholder="100" value={parlayAmt} onChange={e => setParlayAmt(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && placeParlay()} />
-                  </div>
-                  <div className="sb-slip-quick">
-                    {[500, 1000, 5000, 10000].map(v => (
-                      <button key={v} className="sb-slip-quick-btn" onClick={() => setParlayAmt(String(v))}>
-                        ${v.toLocaleString()}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {parlayMsg && (
-                  <div className={`sb-slip-msg ${parlayMsg.ok ? 'sb-slip-msg--ok' : 'sb-slip-msg--err'}`}>
-                    {parlayMsg.text}
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
-                  <button className="sb-slip-place-btn" onClick={placeParlay}
-                    disabled={placingParlay || !parlayAmt || parseFloat(parlayAmt) < 100 || parlayPicks.length < 2}>
-                    {placingParlay ? 'Placing…' : `Place Parlay · $${(parseFloat(parlayAmt) || 0).toLocaleString()}`}
-                  </button>
-                  <button className="sb-parlay-clear-btn" onClick={() => { setParlayPicks([]); setParlayMsg(null); }}>
-                    Clear
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
 
         {activeTab === 'mybets' && (
           <div className="sb-mybets">
@@ -572,6 +501,61 @@ export default function SportsBetting() {
           </div>
         )}
       </div>
+
+      {/* ── Floating Parlay Slip ──────────────────────────────────────────── */}
+      {parlayPicks.length > 0 && (
+        <div className="sb-parlay-float">
+          <div className="sb-parlay-float-header">
+            <span>🎰 Parlay Slip <strong>{parlayPicks.length} leg{parlayPicks.length !== 1 ? 's' : ''}</strong></span>
+            <span className="sb-parlay-float-odds">
+              {parlayOdds(parlayPicks) !== null ? fmtOdds(parlayOdds(parlayPicks)) : '—'}
+            </span>
+            <button className="sb-parlay-float-clear" onClick={() => { setParlayPicks([]); setParlayMsg(null); }}>Clear ✕</button>
+          </div>
+          <div className="sb-parlay-float-legs">
+            {parlayPicks.map((p, i) => (
+              <div key={p.gameId} className="sb-parlay-float-leg">
+                <span className="sb-parlay-float-leg-num">{i + 1}</span>
+                <span className="sb-parlay-float-leg-text">
+                  <strong>{p.pick}</strong> · {p.game.homeTeam.split(' ').slice(-1)[0]} vs {p.game.awayTeam.split(' ').slice(-1)[0]}
+                </span>
+                <span className="sb-parlay-float-leg-odds" style={{ color: p.odds > 0 ? '#22c55e' : '#f87171' }}>{fmtOdds(p.odds)}</span>
+                <button className="sb-parlay-float-leg-remove" onClick={() => setParlayPicks(prev => prev.filter(x => x.gameId !== p.gameId))}>✕</button>
+              </div>
+            ))}
+          </div>
+          <div className="sb-parlay-float-footer">
+            <div className="sb-parlay-float-input-row">
+              <span className="sb-slip-dollar">$</span>
+              <input className="sb-parlay-float-input" type="number" min="100" max="500000"
+                placeholder="Wager (min $100)" value={parlayAmt}
+                onChange={e => setParlayAmt(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && placeParlay()} />
+              {parlayAmt && parseFloat(parlayAmt) >= 100 && (
+                <span className="sb-parlay-float-payout">
+                  → ${parlayPayout(parlayPicks, parseFloat(parlayAmt)).toLocaleString()}
+                </span>
+              )}
+            </div>
+            <div className="sb-slip-quick" style={{ marginBottom: 6 }}>
+              {[500, 1000, 5000, 10000].map(v => (
+                <button key={v} className="sb-slip-quick-btn" onClick={() => setParlayAmt(String(v))}>
+                  ${v.toLocaleString()}
+                </button>
+              ))}
+            </div>
+            {parlayMsg && (
+              <div className={`sb-slip-msg ${parlayMsg.ok ? 'sb-slip-msg--ok' : 'sb-slip-msg--err'}`} style={{ marginBottom: 6 }}>
+                {parlayMsg.text}
+              </div>
+            )}
+            <button className="sb-slip-place-btn" onClick={placeParlay}
+              disabled={placingParlay || parlayPicks.length < 2 || !parlayAmt || parseFloat(parlayAmt) < 100}>
+              {placingParlay ? 'Placing…' : `Place ${parlayPicks.length}-Leg Parlay · $${(parseFloat(parlayAmt)||0).toLocaleString()}`}
+            </button>
+          </div>
+        </div>
+      )}
 
       {slip && (
         <div className="sb-slip-overlay" onClick={() => { setSlip(null); setBetAmt(''); setSlipMsg(null); }}>

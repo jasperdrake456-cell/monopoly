@@ -106,6 +106,46 @@ function msToHuman(ms) {
   return `${Math.round(h / 24)}d`;
 }
 
+// ── Jackpot Admin Card ────────────────────────────────────────────────────────
+function JackpotAdminCard({ token, authFetch }) {
+  const [amount, setAmount]   = React.useState(null);
+  const [status, setStatus]   = React.useState('');
+  const [custom, setCustom]   = React.useState('');
+
+  React.useEffect(() => {
+    authFetch('/api/jackpot', token).then(d => { if (d.ok) setAmount(d.amount); });
+  }, []);
+
+  async function resetJackpot(val) {
+    const res = await authFetch('/api/admin/jackpot/reset', token, {
+      method: 'POST',
+      body: JSON.stringify({ amount: val }),
+    });
+    if (res.ok) { setAmount(res.amount); setStatus(`✓ Jackpot reset to $${res.amount.toLocaleString()}`); }
+    else setStatus(res.error || 'Failed');
+  }
+
+  return (
+    <div className="admin-site-card">
+      <div className="admin-site-card-title">🎰 Slots Jackpot</div>
+      <div className="admin-site-card-sub">
+        Current pool: <strong style={{ color: '#f59e0b' }}>${amount != null ? amount.toLocaleString() : '…'}</strong>
+      </div>
+      {status && <div style={{ color: '#86efac', fontSize: '0.82rem', marginBottom: 8 }}>{status}</div>}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <button className="admin-btn admin-btn--warn admin-btn--sm" onClick={() => resetJackpot(10000)}>Reset to $10k</button>
+        <button className="admin-btn admin-btn--warn admin-btn--sm" onClick={() => resetJackpot(50000)}>Reset to $50k</button>
+        <button className="admin-btn admin-btn--warn admin-btn--sm" onClick={() => resetJackpot(100000)}>Reset to $100k</button>
+        <input className="admin-input" style={{ width: 100 }} type="number" placeholder="Custom $" value={custom}
+          onChange={e => setCustom(e.target.value)} />
+        <button className="admin-btn admin-btn--primary admin-btn--sm"
+          disabled={!custom || isNaN(Number(custom))}
+          onClick={() => { resetJackpot(Number(custom)); setCustom(''); }}>Set</button>
+      </div>
+    </div>
+  );
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function AdminPage() {
   const { user, token, isLoggedIn } = useAuth();
@@ -1600,6 +1640,9 @@ export default function AdminPage() {
               }}>🔄 Reset Now</button>
             </div>
           </div>
+
+          {/* ── Jackpot ───────────────────────────────────────────────────── */}
+          <JackpotAdminCard token={token} authFetch={authFetch} />
 
           {/* ── Danger Zone ───────────────────────────────────────────────── */}
           <div className="admin-site-card admin-danger-card">
