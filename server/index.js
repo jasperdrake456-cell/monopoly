@@ -964,7 +964,13 @@ app.post('/api/champion/airdrop', requireAuth, (req, res) => {
   const result = ch.useAirdrop(req.user.username);
   if (!result.ok) return res.status(403).json(result);
 
-  us.addBonusByAdmin(target, amt);
+  const bonusResult = us.addBonusByAdmin(target, amt);
+
+  // Push new balance to the recipient's browser immediately so their
+  // localStorage is updated before their sync timer wipes the airdrop
+  if (bonusResult.ok) {
+    io.emit('balanceReset', { username: target, balance: bonusResult.balance });
+  }
 
   const state = ch.getState();
   const name  = state.champion?.displayName || req.user.username;

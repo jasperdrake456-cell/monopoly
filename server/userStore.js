@@ -561,6 +561,7 @@ function addBonusByAdmin(username, amount) {
   const users = readUsers();
   if (!users[clean]) return { ok: false, error: 'User not found' };
   users[clean].casinoBalance = (users[clean].casinoBalance || 0) + amt;
+  users[clean].adminSetAt = Date.now(); // lock against client sync overwriting the bonus
   writeUsers(users);
   return { ok: true, balance: users[clean].casinoBalance };
 }
