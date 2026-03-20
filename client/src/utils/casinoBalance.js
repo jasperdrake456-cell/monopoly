@@ -1,11 +1,11 @@
 // Shared casino balance — persisted in localStorage across all casino games
-// Hourly reward: $1000 every hour
+// Periodic reward: $1000 every 10 minutes
 // When logged in, balance is synced to server after every change.
 
 const BALANCE_KEY     = 'casino_balance';
 const DAILY_KEY       = 'casino_last_daily';
 const HOURLY_AMOUNT   = 1000;
-const HOURLY_MS       = 60 * 60 * 1000; // 1 hour in ms
+const HOURLY_MS       = 10 * 60 * 1000; // 10 minutes in ms
 const STARTING_AMOUNT = 2000; // New players start with $2,000
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';

@@ -4,7 +4,7 @@ import { addBalance } from '../utils/casinoBalance';
 import { useAuth } from '../contexts/AuthContext';
 import './HighScoreModal.css';
 
-const LEADERBOARD_REWARD = 10; // $10 for making the leaderboard
+const LEADERBOARD_REWARD = 500; // $500 for making the leaderboard
 
 export default function HighScoreModal({ gameId, score, label = 'points', higherIsBetter = true, onSave, onDismiss }) {
   const { user, isLoggedIn } = useAuth();
@@ -35,7 +35,7 @@ export default function HighScoreModal({ gameId, score, label = 'points', higher
       <div className="hs-box">
         <div className="hs-trophy">🏆</div>
         <h2 className="hs-title">New High Score!</h2>
-        <p className="hs-subtitle">You made the leaderboard</p>
+        <p className="hs-subtitle">You made the leaderboard — +$500 bonus!</p>
         <div className="hs-score">{typeof score === 'number' && !Number.isInteger(score) ? score.toFixed(1) : score} <span style={{ fontSize: '1rem', color: '#8b949e' }}>{label}</span></div>
         {rank !== null && rank <= 10 && <div className="hs-rank">#{rank} on the leaderboard</div>}
         <div className="hs-label" style={{ marginBottom: '4px' }}>Submitting as</div>

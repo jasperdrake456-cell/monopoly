@@ -198,7 +198,7 @@ function destroySession(token) {
 // ── Constants ─────────────────────────────────────────────────────────────────
 const STARTING_BALANCE = 2000;
 const DAILY_AMOUNT     = 1000;
-const HOURLY_MS        = 60 * 60 * 1000; // 1 hour
+const HOURLY_MS        = 10 * 60 * 1000; // 10 minutes
 const ADMIN_USERNAME   = 'jasper';
 const ADMIN_BALANCE    = 999_999_999; // effectively infinite
 
