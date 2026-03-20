@@ -281,6 +281,8 @@ function getMe(token) {
  * Sync balance from client.
  * Only updates if the provided balance is valid. Skipped for admin.
  */
+const ADMIN_LOCK_MS = 10 * 60 * 1000; // 10 minutes
+
 function syncBalance(token, balance) {
   const username = validateToken(token);
   if (!username) return { ok: false, error: 'Invalid session' };
@@ -289,6 +291,12 @@ function syncBalance(token, balance) {
 
   const users = readUsers();
   if (!users[username]) return { ok: false, error: 'User not found' };
+
+  // If an admin recently set this balance, block the client from overwriting it
+  const lockedUntil = (users[username].adminSetAt || 0) + ADMIN_LOCK_MS;
+  if (Date.now() < lockedUntil) {
+    return { ok: true, balance: users[username].casinoBalance }; // return server value, ignore client
+  }
 
   const newBalance = Math.floor(balance);
 
@@ -466,6 +474,7 @@ function adminSetBalance(adminToken, username, amount) {
   if (!users[clean]) return { ok: false, error: 'User not found' };
 
   users[clean].casinoBalance = newBalance;
+  users[clean].adminSetAt = Date.now(); // lock against client sync overwriting this
   writeUsers(users);
   return { ok: true, balance: newBalance };
 }

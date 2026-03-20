@@ -145,6 +145,15 @@ export function AuthProvider({ children }) {
       }
     });
 
+    // Admin reset: immediately overwrite localStorage so the sync timer can't
+    // push the stale old balance back to the server
+    sock.on('balanceReset', ({ username, balance }) => {
+      if (userRef.current?.username === username) {
+        setBalanceFromServer(balance);
+        setBalanceState(balance);
+      }
+    });
+
     return () => sock.disconnect();
   }, []);
 

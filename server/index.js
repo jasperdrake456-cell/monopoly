@@ -345,7 +345,12 @@ app.post('/api/admin/give-money', requireAdmin, (req, res) => {
 app.put('/api/admin/users/:username/balance', requireAdmin, (req, res) => {
   const { amount } = req.body || {};
   const result = us.adminSetBalance(getToken(req), req.params.username, amount);
-  if (result.ok) al.log('set_balance', { target: req.params.username, amount });
+  if (result.ok) {
+    al.log('set_balance', { target: req.params.username, amount });
+    // Push new balance to the user's browser immediately so localStorage is updated
+    // before their 800ms sync timer fires and overwrites the reset
+    io.emit('balanceReset', { username: req.params.username.trim().toLowerCase(), balance: result.balance });
+  }
   res.json(result);
 });
 

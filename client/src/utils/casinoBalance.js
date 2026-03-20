@@ -42,7 +42,12 @@ function scheduleSync() {
         'Authorization': `Bearer ${_authToken}`,
       },
       body: JSON.stringify({ balance }),
-    }).catch(() => { /* silent — localStorage is source of truth */ });
+    }).then(r => r.ok ? r.json() : null).then(data => {
+      // If server rejected our value (e.g. admin lock), it returns the real balance — respect it
+      if (data?.ok && typeof data.balance === 'number' && data.balance !== balance) {
+        setBalanceFromServer(data.balance);
+      }
+    }).catch(() => { /* silent */ });
   }, 800);
 }
 
