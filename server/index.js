@@ -19,6 +19,8 @@ const sg        = require('./suggestions');
 const ru        = require('./riggedUsers');
 const go        = require('./gameOdds');
 const ch        = require('./championStore');
+const odds      = require('./oddsAPI');
+const sb        = require('./sportsStore');
 
 const app = express();
 const server = http.createServer(app);
@@ -987,6 +989,105 @@ app.post('/api/admin/champion', requireAdmin, (req, res) => {
   al.log('set_champion', { target: user.username });
   res.json({ ok: true });
 });
+
+// ── Sports Betting ────────────────────────────────────────────────────────────
+
+// Public: list upcoming games with odds (cached 30 min)
+app.get('/api/sports/games', requireAuth, async (req, res) => {
+  try {
+    const sports = await odds.fetchAllGames();
+    res.json({ ok: true, sports });
+  } catch (err) {
+    if (err.message === 'NO_API_KEY') {
+      return res.json({ ok: false, error: 'NO_API_KEY' });
+    }
+    console.error('[sports] fetchAllGames error:', err.message);
+    res.json({ ok: false, error: 'Failed to fetch games' });
+  }
+});
+
+// Place a bet — deducts balance immediately
+app.post('/api/sports/bet', requireAuth, (req, res) => {
+  const { gameId, sport, homeTeam, awayTeam, commenceTime, pick, odds: betOdds, amount } = req.body || {};
+  const amt = Math.floor(Number(amount));
+
+  // Deduct from user balance first
+  const me = us.getMe(getToken(req));
+  if (!me.ok) return res.status(401).json({ ok: false, error: 'Not authenticated' });
+  if ((me.balance || 0) < amt) return res.status(400).json({ ok: false, error: 'Insufficient balance' });
+
+  // Place the bet in the store
+  const result = sb.placeBet({
+    username: req.user.username,
+    gameId, sport, homeTeam, awayTeam, commenceTime, pick,
+    odds: betOdds, amount: amt,
+  });
+  if (!result.ok) return res.status(400).json(result);
+
+  // Deduct from server balance
+  us.syncBalance(getToken(req), (me.balance || 0) - amt);
+
+  res.json(result);
+});
+
+// Get my bets
+app.get('/api/sports/bets', requireAuth, (req, res) => {
+  const bets = sb.getUserBets(req.user.username);
+  res.json({ ok: true, bets });
+});
+
+// ── Sports auto-settlement (runs every 10 minutes) ───────────────────────────
+async function settleSportsBets() {
+  const sportsWithBets = sb.getSportsWithOpenBets();
+  if (sportsWithBets.length === 0) return;
+
+  for (const sportKey of sportsWithBets) {
+    try {
+      const scores      = await odds.fetchScoresForSport(sportKey);
+      const openByGame  = sb.getOpenBetsByGame();
+
+      for (const score of scores) {
+        if (!score.completed) continue;
+        const gameBets = openByGame[score.id];
+        if (!gameBets || gameBets.length === 0) continue;
+
+        // Determine the winner from scores
+        let winner = null;
+        const sc = score.scores || [];
+        if (sc.length >= 2) {
+          const s0 = parseInt(sc[0].score, 10);
+          const s1 = parseInt(sc[1].score, 10);
+          if (!isNaN(s0) && !isNaN(s1)) {
+            if (s0 === s1) winner = 'push';
+            else winner = s0 > s1 ? sc[0].name : sc[1].name;
+          }
+        }
+        if (!winner) continue;
+
+        // Settle each bet and credit winners
+        for (const bet of gameBets) {
+          const settled = sb.settleBet(bet.betId, winner);
+          if (!settled) continue;
+
+          if (settled.status === 'won' || settled.status === 'push') {
+            // Credit payout to user's balance
+            us.addBonusByAdmin(settled.username, settled.payout);
+            console.log(`[sports] Settled WIN  — ${settled.username} +$${settled.payout} (${bet.pick} vs ${winner})`);
+          } else {
+            console.log(`[sports] Settled LOSS — ${settled.username} -$${settled.amount} (picked ${bet.pick}, winner ${winner})`);
+          }
+        }
+      }
+    } catch (err) {
+      console.error(`[sports] Settlement error for ${sportKey}:`, err.message);
+    }
+  }
+}
+
+// Run settlement every 10 minutes
+setInterval(settleSportsBets, 10 * 60 * 1000);
+// Also run once at startup (after 30 sec delay to let server warm up)
+setTimeout(settleSportsBets, 30_000);
 
 // ── Static client ─────────────────────────────────────────────────────────────
 

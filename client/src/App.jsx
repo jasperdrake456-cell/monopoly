@@ -52,6 +52,7 @@ import DragonTigerPage from './pages/DragonTigerPage';
 import RequireAuth from './components/RequireAuth';
 import SuggestionsPage from './pages/SuggestionsPage';
 import ChampionPage from './pages/ChampionPage';
+import SportsBettingPage from './pages/SportsBettingPage';
 import UnoPage from './pages/UnoPage';
 import './App.css';
 
@@ -123,6 +124,7 @@ export default function App() {
             <Route path="/leaderboard"        element={<LeaderboardPage />} />
             <Route path="/casino-leaderboard" element={<CasinoLeaderboardPage />} />
             <Route path="/auth"        element={<AuthPage />} />
+            <Route path="/sports-betting" element={<SportsBettingPage />} />
             <Route path="/transfer"    element={<TransferPage />} />
             <Route path="/admin"       element={<AdminPage />} />
             <Route path="/suggestions" element={<SuggestionsPage />} />
