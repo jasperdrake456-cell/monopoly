@@ -100,19 +100,20 @@ async function fetchAllGames() {
   return result;
 }
 
-async function fetchScoresForSport(sportKey) {
+async function fetchScoresForSport(sportKey, completedOnly = true) {
   if (!API_KEY) return [];
 
-  const hit = scoresCache.get(sportKey);
+  const cacheKey = `${sportKey}:${completedOnly}`;
+  const hit = scoresCache.get(cacheKey);
   if (hit && Date.now() - hit.fetchedAt < SCORES_TTL) return hit.data;
 
   const url = `${BASE_URL}/sports/${sportKey}/scores?apiKey=${API_KEY}&daysFrom=3`;
   const raw = await fetchJSON(url);
   if (!Array.isArray(raw)) return [];
 
-  const completed = raw.filter(g => g.completed);
-  scoresCache.set(sportKey, { data: completed, fetchedAt: Date.now() });
-  return completed;
+  const data = completedOnly ? raw.filter(g => g.completed) : raw;
+  scoresCache.set(cacheKey, { data, fetchedAt: Date.now() });
+  return data;
 }
 
 module.exports = { fetchAllGames, fetchGamesForSport, fetchScoresForSport, SPORTS };

@@ -1013,6 +1013,36 @@ app.get('/api/sports/games', requireAuth, (req, res) => {
   res.json({ ok: true, games });
 });
 
+// Live scores for all games that have started (open + all sports with bets)
+app.get('/api/sports/scores', requireAuth, async (req, res) => {
+  if (!process.env.ODDS_API_KEY) return res.json({ ok: true, scores: [] });
+
+  // Get all open games + user's open bets to know which sports to fetch
+  const allGames  = sb.getGames(true);
+  const started   = allGames.filter(g => new Date(g.startTime).getTime() <= Date.now() && g.status === 'open');
+  const sportKeys = [...new Set(started.map(g => {
+    const map = {
+      'NCAAB': 'basketball_ncaab', 'NBA': 'basketball_nba',
+      'NHL': 'icehockey_nhl', 'NFL': 'americanfootball_nfl',
+      'MLB': 'baseball_mlb', 'Premier League': 'soccer_epl',
+      'UEFA Champions League': 'soccer_uefa_champs_league',
+      'MMA': 'mma_mixed_martial_arts',
+    };
+    return map[g.sport];
+  }).filter(Boolean))];
+
+  try {
+    const all = [];
+    for (const key of sportKeys) {
+      const raw = await odds.fetchScoresForSport(key, false); // include in-progress
+      all.push(...raw);
+    }
+    res.json({ ok: true, scores: all });
+  } catch (e) {
+    res.json({ ok: true, scores: [] }); // degrade gracefully
+  }
+});
+
 // Place a bet
 app.post('/api/sports/bet', requireAuth, (req, res) => {
   const { gameId, pick, odds: betOdds, amount } = req.body || {};

@@ -99,10 +99,19 @@ export default function SportsBetting() {
   const [loading,   setLoading]   = useState(true);
   const [error,     setError]     = useState(null);
 
+  const [scores,   setScores]   = useState([]);
   const [slip,     setSlip]     = useState(null);
   const [betAmt,   setBetAmt]   = useState('');
   const [placing,  setPlacing]  = useState(false);
   const [slipMsg,  setSlipMsg]  = useState(null);
+
+  const loadScores = useCallback(async () => {
+    if (!token) return;
+    try {
+      const data = await authFetch('/api/sports/scores', token);
+      if (data.ok) setScores(data.scores || []);
+    } catch { /* silent */ }
+  }, [token]);
 
   const loadGames = useCallback(async () => {
     if (!token) return;
@@ -130,11 +139,11 @@ export default function SportsBetting() {
     if (data.ok) setMyBets(data.bets || []);
   }, [token]);
 
-  useEffect(() => { loadGames(); loadMyBets(); }, [loadGames, loadMyBets]);
+  useEffect(() => { loadGames(); loadMyBets(); loadScores(); }, [loadGames, loadMyBets, loadScores]);
   useEffect(() => {
-    const id = setInterval(() => { loadGames(); loadMyBets(); }, 60_000);
+    const id = setInterval(() => { loadGames(); loadMyBets(); loadScores(); }, 60_000);
     return () => clearInterval(id);
-  }, [loadGames, loadMyBets]);
+  }, [loadGames, loadMyBets, loadScores]);
 
   async function placeBet() {
     if (!slip) return;
@@ -171,6 +180,26 @@ export default function SportsBetting() {
     } else {
       setSlip({ game, pick, odds: pickOdds }); setBetAmt(''); setSlipMsg(null);
     }
+  }
+
+  // Look up live score for a stored game by fuzzy team name match
+  function getLiveScore(homeTeam, awayTeam) {
+    const norm = s => (s || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+    const match = name => n => norm(n).includes(norm(name)) || norm(name).includes(norm(n));
+    const g = scores.find(s =>
+      (s.scores || []).length >= 2 &&
+      s.home_team && s.away_team &&
+      (match(homeTeam)(s.home_team) || match(homeTeam)(s.away_team)) &&
+      (match(awayTeam)(s.home_team) || match(awayTeam)(s.away_team))
+    );
+    if (!g) return null;
+    const getS = team => (g.scores || []).find(s => match(team)(s.name))?.score ?? '?';
+    const homeIsApiHome = match(homeTeam)(g.home_team);
+    return {
+      home: homeIsApiHome ? getS(g.home_team) : getS(g.away_team),
+      away: homeIsApiHome ? getS(g.away_team) : getS(g.home_team),
+      completed: g.completed,
+    };
   }
 
   const openCount     = myBets.filter(b => b.status === 'open').length;
@@ -271,15 +300,26 @@ export default function SportsBetting() {
           <div className="sb-mybets">
             {myBets.length === 0 ? (
               <div className="sb-empty">No bets placed yet. Pick a game and place your first bet!</div>
-            ) : myBets.map(bet => (
+            ) : myBets.map(bet => {
+              const live = bet.status === 'open' ? getLiveScore(bet.homeTeam, bet.awayTeam) : null;
+              const isLive = live && !live.completed;
+              return (
               <div key={bet.betId} className={`sb-bet-card sb-bet-card--${bet.status}`}>
                 <div className="sb-bet-header">
-                  <span className="sb-bet-status-icon">{STATUS_ICON[bet.status] || '⏳'}</span>
+                  <span className="sb-bet-status-icon">{isLive ? '🔴' : (STATUS_ICON[bet.status] || '⏳')}</span>
                   <span className={`sb-bet-status-label sb-bet-status--${bet.status}`}>
-                    {STATUS_LABEL[bet.status] || bet.status.toUpperCase()}
+                    {isLive ? 'LIVE' : (STATUS_LABEL[bet.status] || bet.status.toUpperCase())}
                   </span>
-                  <span className="sb-bet-time">{fmtTime(bet.placedAt)}</span>
+                  <span className="sb-bet-time">{fmtTime(bet.commenceTime || bet.placedAt)}</span>
                 </div>
+                {live && (
+                  <div className="sb-bet-score">
+                    <span className="sb-bet-score-team">{bet.homeTeam.split(' ').slice(-1)[0]}</span>
+                    <span className="sb-bet-score-val">{live.home} – {live.away}</span>
+                    <span className="sb-bet-score-team">{bet.awayTeam.split(' ').slice(-1)[0]}</span>
+                    {live.completed && <span className="sb-bet-score-final">FINAL</span>}
+                  </div>
+                )}
                 <div className="sb-bet-matchup">{bet.homeTeam} vs {bet.awayTeam}</div>
                 <div className="sb-bet-pick">
                   Picked: <strong>{bet.pick}</strong>
@@ -293,7 +333,7 @@ export default function SportsBetting() {
                   {bet.status === 'lost'  && <span className="sb-bet-lost">-${bet.amount.toLocaleString()}</span>}
                 </div>
               </div>
-            ))}
+            );})}
           </div>
         )}
       </div>

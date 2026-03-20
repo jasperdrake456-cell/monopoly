@@ -273,6 +273,10 @@
 .sb-bet-status--push { background: #2a2015; color: #d29922; }
 .sb-bet-status--open { background: #1c2a3e; color: #58a6ff; }
 .sb-bet-time { margin-left: auto; font-size: 0.72rem; color: #6e7681; }
+.sb-bet-score { display: flex; align-items: center; gap: 8px; margin: 6px 0 8px; padding: 6px 10px; background: #0d1117; border-radius: 8px; font-size: 0.9rem; }
+.sb-bet-score-team { color: #8b949e; font-size: 0.78rem; }
+.sb-bet-score-val { font-size: 1.1rem; font-weight: 700; color: #e6edf3; flex: 1; text-align: center; }
+.sb-bet-score-final { font-size: 0.7rem; font-weight: 700; color: #6e7681; letter-spacing: 0.05em; }
 .sb-bet-matchup { font-size: 0.85rem; color: #8b949e; margin-bottom: 6px; }
 .sb-bet-pick { font-size: 0.9rem; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .sb-bet-pick strong { color: #e6edf3; }
