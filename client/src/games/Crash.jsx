@@ -20,8 +20,6 @@ export default function Crash() {
   const { banned, reason, expiresAt, loading } = useBanCheck('crash');
   useGameActivity('crash');
   const boost = useGameBoost('crash');
-  // Keep boost in a ref so the interval always reads the latest value
-  boostRef.current = boost || 1;
   const [balance, setBalance]         = useState(getBalance);
   const [bet, setBet]                 = useState(10);
   const [autoCashout, setAutoCashoutState] = useState('');
@@ -40,6 +38,8 @@ export default function Crash() {
   const betRef         = useRef(10);
   const autoCashoutRef = useRef('');
   const boostRef       = useRef(1);
+  // Keep boost in a ref so the interval always reads the latest value
+  boostRef.current = boost || 1;
 
   useEffect(() => {
     function tick() {
