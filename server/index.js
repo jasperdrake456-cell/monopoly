@@ -1238,8 +1238,7 @@ app.post('/api/admin/sports/cleanup-zero-bets', requireAdmin, (req, res) => {
   const now = Date.now();
   const stale = allGames.filter(g =>
     g.status === 'open' &&
-    new Date(g.startTime).getTime() < now &&  // game has started
-    (g.betCount == null || g.betCount === 0)  // no bets
+    new Date(g.startTime).getTime() < now   // game has started
   );
 
   // Re-enrich with live bet counts
@@ -1259,6 +1258,14 @@ app.post('/api/admin/sports/cleanup-zero-bets', requireAdmin, (req, res) => {
   }
 
   res.json({ ok: true, cancelled, message: `Cancelled ${cancelled} started game(s) with 0 bets` });
+});
+
+// Purge all settled/cancelled games and their bets from the database
+app.delete('/api/admin/sports/history', requireAdmin, (req, res) => {
+  const result = sb.purgeHistory();
+  al.log('sports_purge_history', result);
+  console.log(`[sports] Purged history: ${result.gamesRemoved} games, ${result.betsRemoved} bets removed`);
+  res.json({ ok: true, ...result });
 });
 
 // ── Gift Code Redemption ──────────────────────────────────────────────────────

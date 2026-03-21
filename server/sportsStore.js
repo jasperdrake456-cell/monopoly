@@ -122,6 +122,26 @@ function deleteGame(gameId) {
   return { ok: true };
 }
 
+/**
+ * Purge all settled and cancelled games (and their bets) from the DB.
+ * Keeps open games intact. Returns { gamesRemoved, betsRemoved }.
+ */
+function purgeHistory() {
+  const data = read();
+  const before = (data.games || []).length;
+  const removedIds = new Set(
+    (data.games || []).filter(g => g.status === 'settled' || g.status === 'cancelled').map(g => g.gameId)
+  );
+  data.games = (data.games || []).filter(g => !removedIds.has(g.gameId));
+  const betsBefore = (data.bets || []).length;
+  data.bets = (data.bets || []).filter(b => !removedIds.has(b.gameId));
+  write(data);
+  return {
+    gamesRemoved: before - data.games.length,
+    betsRemoved:  betsBefore - data.bets.length,
+  };
+}
+
 function getGameBetStats(gameId) {
   const data  = read();
   const bets  = (data.bets || []).filter(b => b.gameId === gameId);
@@ -348,7 +368,7 @@ function getSportsWithOpenBets() { return []; }
 function settleBet()             { return null; }
 
 module.exports = {
-  createGame, getGames, updateGame, settleGame, cancelGame, deleteGame,
+  createGame, getGames, updateGame, settleGame, cancelGame, deleteGame, purgeHistory,
   getGameBetStats, getAllBets,
   placeBet, getUserBets,
   placeParlayBet, settleParlayBets, getUserParlays,
