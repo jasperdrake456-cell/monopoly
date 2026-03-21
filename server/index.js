@@ -1232,6 +1232,35 @@ app.get('/api/admin/sports/bets', requireAdmin, (req, res) => {
   res.json({ ok: true, bets: sb.getAllBets() });
 });
 
+// Auto-cleanup: cancel all started games that have 0 open bets (nothing to pay out)
+app.post('/api/admin/sports/cleanup-zero-bets', requireAdmin, (req, res) => {
+  const allGames = sb.getGames(true);
+  const now = Date.now();
+  const stale = allGames.filter(g =>
+    g.status === 'open' &&
+    new Date(g.startTime).getTime() < now &&  // game has started
+    (g.betCount == null || g.betCount === 0)  // no bets
+  );
+
+  // Re-enrich with live bet counts
+  const toCancel = stale.filter(g => {
+    const stats = sb.getGameBetStats(g.gameId);
+    return stats.betCount === 0;
+  });
+
+  let cancelled = 0;
+  for (const g of toCancel) {
+    const r = sb.cancelGame(g.gameId);
+    if (r.ok) {
+      cancelled++;
+      al.log('sports_auto_cancel_zero_bets', { gameId: g.gameId, homeTeam: g.homeTeam, awayTeam: g.awayTeam });
+      console.log(`[sports] Auto-cancelled 0-bet game: ${g.homeTeam} vs ${g.awayTeam}`);
+    }
+  }
+
+  res.json({ ok: true, cancelled, message: `Cancelled ${cancelled} started game(s) with 0 bets` });
+});
+
 // ── Gift Code Redemption ──────────────────────────────────────────────────────
 
 // Player: redeem a gift code

@@ -86,6 +86,9 @@ let _io = null;
 
 // ── Core settle run ───────────────────────────────────────────────────────────
 async function runAutoSettle() {
+  // First: cancel any started games with 0 bets — no API key needed for this
+  cleanupZeroBetGames();
+
   // Always bust the scores cache so we get fresh data on every settle run
   odd.clearScoresCache();
 
@@ -206,11 +209,34 @@ async function runAutoSettle() {
   }
 }
 
+// ── Auto-cancel started games with 0 bets (no API key needed) ────────────────
+function cleanupZeroBetGames() {
+  const allGames = sb.getGames(true);
+  const now = Date.now();
+  let cancelled = 0;
+  for (const g of allGames) {
+    if (g.status !== 'open') continue;
+    if (new Date(g.startTime).getTime() >= now) continue; // not started yet
+    const stats = sb.getGameBetStats(g.gameId);
+    if (stats.betCount > 0) continue; // has real bets — let the API settle it
+    sb.cancelGame(g.gameId);
+    cancelled++;
+    console.log(`[autoSettle] 🧹 Auto-cancelled 0-bet game: ${g.homeTeam} vs ${g.awayTeam}`);
+  }
+  if (cancelled > 0) console.log(`[autoSettle] Cleaned up ${cancelled} zero-bet game(s)`);
+  return cancelled;
+}
+
 // ── Start the polling loop ────────────────────────────────────────────────────
 function start(intervalMs = 15 * 60_000, io = null) { // default: every 15 minutes
   _io = io; // store socket.io instance for balance push notifications
+
+  // Always run zero-bet cleanup on a schedule — no API key needed
+  setTimeout(() => cleanupZeroBetGames(), 15_000); // 15s after boot
+  setInterval(() => cleanupZeroBetGames(), intervalMs);
+
   if (!process.env.ODDS_API_KEY) {
-    console.warn('[autoSettle] ⚠️  ODDS_API_KEY not set — auto-settlement disabled. Set it in Railway env vars.');
+    console.warn('[autoSettle] ⚠️  ODDS_API_KEY not set — score-based auto-settlement disabled. Zero-bet cleanup still runs.');
     return;
   }
   console.log(`[autoSettle] ✅ Started — checking scores every ${intervalMs / 60_000} min`);
@@ -223,4 +249,4 @@ function start(intervalMs = 15 * 60_000, io = null) { // default: every 15 minut
   }, intervalMs);
 }
 
-module.exports = { start, runAutoSettle };
+module.exports = { start, runAutoSettle, cleanupZeroBetGames };
