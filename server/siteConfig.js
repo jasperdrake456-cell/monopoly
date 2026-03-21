@@ -11,22 +11,25 @@ const DEFAULT_CONFIG = {
   approvedTesters:  [],    // array of usernames approved for all testing-mode games
 };
 
+let _cache = null;
+
 function readConfig() {
+  if (_cache) return _cache;
   const raw = (() => {
     try { return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')); }
     catch { return {}; }
   })();
-  // Migrate old testingMode boolean → empty testingGames array
   const out = { ...DEFAULT_CONFIG, ...raw };
   if (typeof out.testingMode !== 'undefined') delete out.testingMode;
   if (!Array.isArray(out.testingGames)) out.testingGames = [];
-  return out;
+  _cache = out;
+  return _cache;
 }
 
 function writeConfig(cfg) {
-  try {
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2), 'utf8');
-  } catch { /* non-fatal */ }
+  _cache = cfg;
+  try { fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg), 'utf8'); }
+  catch { /* non-fatal */ }
 }
 
 function getConfig() {

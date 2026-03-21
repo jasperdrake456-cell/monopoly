@@ -8,13 +8,18 @@ const BANS_FILE = path.join(DATA_DIR, 'bans.json');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(BANS_FILE)) fs.writeFileSync(BANS_FILE, JSON.stringify({ ips: {}, users: {} }, null, 2), 'utf8');
 
+let _cache = null;
+
 function readBans() {
-  try { return JSON.parse(fs.readFileSync(BANS_FILE, 'utf8')); }
-  catch { return { ips: {}, users: {} }; }
+  if (_cache) return _cache;
+  try { _cache = JSON.parse(fs.readFileSync(BANS_FILE, 'utf8')); }
+  catch { _cache = { ips: {}, users: {} }; }
+  return _cache;
 }
 
 function writeBans(bans) {
-  fs.writeFileSync(BANS_FILE, JSON.stringify(bans, null, 2), 'utf8');
+  _cache = bans;
+  fs.writeFileSync(BANS_FILE, JSON.stringify(bans), 'utf8');
 }
 
 // ── IP bans ───────────────────────────────────────────────────────────────────

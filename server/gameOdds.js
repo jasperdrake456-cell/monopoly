@@ -12,13 +12,17 @@ const CASINO_SLUGS = [
   'wheel','video-poker','keno','dragon-tiger',
 ];
 
+let _cache = null;
 function read() {
-  try { return JSON.parse(fs.readFileSync(FILE, 'utf8')); }
-  catch { return { overrides: {}, wildcardOverride: null, wildcardBoost: 1.5 }; }
+  if (_cache) return _cache;
+  try { _cache = JSON.parse(fs.readFileSync(FILE, 'utf8')); }
+  catch { _cache = { overrides: {}, wildcardOverride: null, wildcardBoost: 1.5 }; }
+  return _cache;
 }
 function write(data) {
+  _cache = data;
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(FILE, JSON.stringify(data, null, 2));
+  fs.writeFileSync(FILE, JSON.stringify(data));
 }
 
 // Returns "YYYY-MM-DD" in server local time

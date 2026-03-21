@@ -35,14 +35,19 @@ function defaultState() {
   };
 }
 
+let _cache = null;
+
 function read() {
-  try { return JSON.parse(fs.readFileSync(FILE, 'utf8')); }
-  catch { return defaultState(); }
+  if (_cache) return _cache;
+  try { _cache = JSON.parse(fs.readFileSync(FILE, 'utf8')); }
+  catch { _cache = defaultState(); }
+  return _cache;
 }
 
 function write(data) {
+  _cache = data;
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(FILE, JSON.stringify(data, null, 2));
+  fs.writeFileSync(FILE, JSON.stringify(data));
 }
 
 // Auto-reset a daily counter if the stored date ≠ today.

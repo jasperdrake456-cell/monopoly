@@ -7,17 +7,22 @@ const crypto = require('crypto');
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const FILE     = path.join(DATA_DIR, 'sports.json');
 
-// ── Persistence ───────────────────────────────────────────────────────────────
+// ── Persistence (in-memory cache — read once, write-through) ──────────────────
+
+let _cache = null;
 
 function read() {
-  try { return JSON.parse(fs.readFileSync(FILE, 'utf8')); }
-  catch { return { games: [], bets: [] }; }
+  if (_cache) return _cache;
+  try { _cache = JSON.parse(fs.readFileSync(FILE, 'utf8')); }
+  catch { _cache = { games: [], bets: [] }; }
+  return _cache;
 }
 
 function write(data) {
+  _cache = data;
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
   const tmp = FILE + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
+  fs.writeFileSync(tmp, JSON.stringify(data));
   fs.renameSync(tmp, FILE);
 }
 
