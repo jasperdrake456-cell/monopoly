@@ -133,3 +133,9 @@
   letter-spacing: 0.04em;
   margin-top: 2px;
 }
+
+.hs-auto-note {
+  margin: 14px 0 0;
+  color: #484f58;
+  font-size: 0.78rem;
+}
