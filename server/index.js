@@ -214,7 +214,7 @@ setInterval(() => {
 }, 5 * 60 * 1000);
 
 // Auto-settle sports games every 15 minutes using Odds API scores
-autoSettle.start(15 * 60 * 1000);
+autoSettle.start(15 * 60 * 1000, io);
 
 // Game reports current activity (or null to clear)
 app.post('/api/accounts/activity', (req, res) => {
@@ -1197,16 +1197,18 @@ app.post('/api/admin/sports/games/:id/settle', requireAdmin, (req, res) => {
   const result = sb.settleGame(req.params.id, winner);
   if (!result.ok) return res.status(400).json(result);
 
-  // Credit all straight-bet winners
+  // Credit all straight-bet winners and push balance to their clients
   for (const [username, amount] of Object.entries(result.payouts)) {
-    us.addBonusByAdmin(username, amount);
+    const r = us.addBonusByAdmin(username, amount);
+    if (r.ok) io.emit('balanceReset', { username, balance: r.balance });
     console.log(`[sports] Payout: ${username} +$${amount}`);
   }
 
   // Settle any parlays that include this game
   const parlayPayouts = sb.settleParlayBets(req.params.id, winner);
   for (const [username, amount] of Object.entries(parlayPayouts)) {
-    us.addBonusByAdmin(username, amount);
+    const r = us.addBonusByAdmin(username, amount);
+    if (r.ok) io.emit('balanceReset', { username, balance: r.balance });
     console.log(`[sports] Parlay payout: ${username} +$${amount}`);
   }
 

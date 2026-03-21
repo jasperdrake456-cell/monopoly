@@ -81,6 +81,9 @@ function determineWinner(storedGame, apiGame) {
   }
 }
 
+// Socket.io instance — set by start() so we can push balance updates to clients
+let _io = null;
+
 // ── Core settle run ───────────────────────────────────────────────────────────
 async function runAutoSettle() {
   // Get ALL games (including settled) then filter to open ones that have started
@@ -131,16 +134,18 @@ async function runAutoSettle() {
         continue;
       }
 
-      // Credit all straight-bet winners
+      // Credit all straight-bet winners and push balance update to their clients
       for (const [username, amount] of Object.entries(result.payouts)) {
-        us.addBonusByAdmin(username, amount);
+        const r = us.addBonusByAdmin(username, amount);
+        if (r.ok && _io) _io.emit('balanceReset', { username, balance: r.balance });
         console.log(`[autoSettle] 💸 ${username} +$${amount.toLocaleString()} — ${match.homeTeam} vs ${match.awayTeam} (winner: ${winner})`);
       }
 
       // Settle any parlays that include this game
       const parlayPayouts = sb.settleParlayBets(match.gameId, winner);
       for (const [username, amount] of Object.entries(parlayPayouts)) {
-        us.addBonusByAdmin(username, amount);
+        const r = us.addBonusByAdmin(username, amount);
+        if (r.ok && _io) _io.emit('balanceReset', { username, balance: r.balance });
         console.log(`[autoSettle] 🎲 parlay payout: ${username} +$${amount.toLocaleString()} (game: ${match.homeTeam} vs ${match.awayTeam})`);
       }
 
@@ -164,7 +169,8 @@ async function runAutoSettle() {
 }
 
 // ── Start the polling loop ────────────────────────────────────────────────────
-function start(intervalMs = 15 * 60_000) { // default: every 15 minutes
+function start(intervalMs = 15 * 60_000, io = null) { // default: every 15 minutes
+  _io = io; // store socket.io instance for balance push notifications
   if (!process.env.ODDS_API_KEY) {
     console.warn('[autoSettle] ⚠️  ODDS_API_KEY not set — auto-settlement disabled. Set it in Railway env vars.');
     return;
