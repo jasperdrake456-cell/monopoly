@@ -22,7 +22,7 @@ export default function Crash() {
   const boost = useGameBoost('crash');
   const [balance, setBalance]         = useState(getBalance);
   const [bet, setBet]                 = useState(10);
-  const [autoCashout, setAutoCashout] = useState('');
+  const [autoCashout, setAutoCashoutState] = useState('');
   const [phase, setPhase]             = useState('betting'); // betting | running | crashed
   const [currentMult, setCurrentMult] = useState(1.00);
   const [cashedOut, setCashedOut]     = useState(false);
@@ -31,11 +31,12 @@ export default function Crash() {
   const [history, setHistory]         = useState([]); // [{mult, crashed}]
   const [countdown, setCountdown]     = useState('');
 
-  const intervalRef  = useRef(null);
-  const tickRef      = useRef(0);
-  const crashRef     = useRef(null);
-  const cashedOutRef = useRef(false);
-  const betRef       = useRef(10);
+  const intervalRef    = useRef(null);
+  const tickRef        = useRef(0);
+  const crashRef       = useRef(null);
+  const cashedOutRef   = useRef(false);
+  const betRef         = useRef(10);
+  const autoCashoutRef = useRef('');
 
   useEffect(() => {
     function tick() {
@@ -49,6 +50,11 @@ export default function Crash() {
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, []);
+
+  function setAutoCashout(val) {
+    autoCashoutRef.current = val;
+    setAutoCashoutState(val);
+  }
 
   function syncBalance() { setBalance(getBalance()); }
 
@@ -76,10 +82,11 @@ export default function Crash() {
       const newMult = parseFloat((Math.pow(1.007, tickRef.current)).toFixed(2));
       setCurrentMult(newMult);
 
-      // Auto cashout
-      const ac = parseFloat(autoCashout);
+      // Auto cashout — always read from ref so latest value is used
+      const ac = parseFloat(autoCashoutRef.current);
       if (!cashedOutRef.current && !isNaN(ac) && ac >= 1.01 && newMult >= ac) {
-        doAutoCashout(newMult);
+        clearInterval(intervalRef.current); // stop the ticker immediately
+        doAutoCashout(Math.min(newMult, crashRef.current)); // cap at crash point
         return;
       }
 
@@ -100,26 +107,29 @@ export default function Crash() {
   function doAutoCashout(mult) {
     if (cashedOutRef.current) return;
     cashedOutRef.current = true;
-    const payout = Math.floor(betRef.current * mult * boost);
+    const payout = Math.floor(betRef.current * mult * (boost || 1));
     addBalance(payout);
     syncBalance();
-    reportBigWin('crash', betRef.current, payout, mult, `Auto cashout at ${mult}×`);
+    if (payout >= betRef.current * 5) reportBigWin && reportBigWin(payout);
     setCashedOut(true);
     setCashoutMult(mult);
     setHistory(h => [{ mult, win: true }, ...h].slice(0, MAX_HISTORY));
+    setPhase('crashed'); // end the round so Play Again shows immediately
   }
 
   function cashOut() {
     if (phase !== 'running' || cashedOut) return;
     cashedOutRef.current = true;
+    clearInterval(intervalRef.current);
     const mult   = currentMult;
-    const payout = Math.floor(betRef.current * mult * boost);
+    const payout = Math.floor(betRef.current * mult * (boost || 1));
     addBalance(payout);
     syncBalance();
-    reportBigWin('crash', betRef.current, payout, mult, `Cashed out at ${mult}×`);
+    if (payout >= betRef.current * 5) reportBigWin && reportBigWin(payout);
     setCashedOut(true);
     setCashoutMult(mult);
     setHistory(h => [{ mult, win: true }, ...h].slice(0, MAX_HISTORY));
+    setPhase('crashed');
   }
 
   function reset() {
