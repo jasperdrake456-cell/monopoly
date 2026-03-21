@@ -1229,6 +1229,24 @@ app.get('/api/admin/sports/bets', requireAdmin, (req, res) => {
   res.json({ ok: true, bets: sb.getAllBets() });
 });
 
+// ── Daily Free Spin ───────────────────────────────────────────────────────────
+
+// Check spin status (canSpin, nextSpinAt)
+app.get('/api/daily-spin', requireAuth, (req, res) => {
+  res.json(us.getDailySpinStatus(getToken(req)));
+});
+
+// Claim today's spin
+app.post('/api/daily-spin', requireAuth, (req, res) => {
+  const result = us.claimDailySpin(getToken(req));
+  if (result.ok) {
+    // Push updated balance to all of this user's connected sessions
+    io.emit('balanceReset', { username: req.user.username, balance: result.balance });
+    console.log(`[DailySpin] ${req.user.username} won ${result.prize}`);
+  }
+  res.json(result);
+});
+
 // ── Static client ─────────────────────────────────────────────────────────────
 
 const clientDist = path.join(__dirname, '..', 'client', 'dist');

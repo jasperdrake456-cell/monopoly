@@ -111,6 +111,7 @@ export default function HomePage() {
       <header className="home-header">
         <div className="home-logo">🎮 Game Vault</div>
         <div className="home-header-right">
+          <Link to="/daily-spin" className="home-trivia-btn" style={{ background: 'rgba(124,58,237,0.18)', borderColor: 'rgba(192,132,252,0.4)', color: '#c084fc' }}>🎡 Daily Spin</Link>
           <Link to="/trivia" className="home-trivia-btn">🎯 Daily Trivia</Link>
           <Link to="/leaderboard" className="home-trivia-btn">🏆 Leaderboard</Link>
           {isChampion && <Link to="/champion-panel" className="home-trivia-btn" style={{ background: 'rgba(255,215,0,0.12)', borderColor: 'rgba(255,215,0,0.45)', color: '#FFD700', fontWeight: 700 }}>👑 Champion Panel</Link>}

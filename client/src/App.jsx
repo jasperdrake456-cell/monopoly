@@ -55,6 +55,7 @@ import ChampionPage from './pages/ChampionPage';
 import SportsBettingPage from './pages/SportsBettingPage';
 import UnoPage from './pages/UnoPage';
 import HorseRacingPage from './pages/HorseRacingPage';
+import DailySpinPage from './pages/DailySpinPage';
 import './App.css';
 
 // Convenience wrapper: RequireAuth + GameGuard for a given slug
@@ -123,6 +124,7 @@ export default function App() {
             <Route path="/horse-racing"  element={<GR slug="horse-racing"><HorseRacingPage /></GR>} />
 
             {/* Non-game pages */}
+            <Route path="/daily-spin"         element={<RequireAuth><DailySpinPage /></RequireAuth>} />
             <Route path="/leaderboard"        element={<LeaderboardPage />} />
             <Route path="/casino-leaderboard" element={<CasinoLeaderboardPage />} />
             <Route path="/auth"        element={<AuthPage />} />

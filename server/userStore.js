@@ -612,9 +612,70 @@ function bulkResetBalances(amount) {
   return count;
 }
 
+// ── Daily Spin ────────────────────────────────────────────────────────────────
+const SPIN_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+// Must stay in same order as client PRIZES array in DailySpinPage.jsx
+const SPIN_PRIZES = [
+  { label: '$500',     amount: 500,    weight: 30 },
+  { label: '$1,000',   amount: 1000,   weight: 25 },
+  { label: '$2,500',   amount: 2500,   weight: 17 },
+  { label: '$5,000',   amount: 5000,   weight: 12 },
+  { label: '$10,000',  amount: 10000,  weight: 8  },
+  { label: '$25,000',  amount: 25000,  weight: 5  },
+  { label: '$50,000',  amount: 50000,  weight: 2  },
+  { label: '$100,000', amount: 100000, weight: 1  },
+];
+
+function getDailySpinStatus(token) {
+  const username = validateToken(token);
+  if (!username) return { ok: false, error: 'Invalid session' };
+  const users = readUsers();
+  const user  = users[username];
+  if (!user) return { ok: false, error: 'User not found' };
+  const now       = Date.now();
+  const lastSpin  = user.lastDailySpin || 0;
+  const nextSpinAt = lastSpin + SPIN_COOLDOWN_MS;
+  return { ok: true, canSpin: now >= nextSpinAt, nextSpinAt };
+}
+
+function claimDailySpin(token) {
+  const username = validateToken(token);
+  if (!username) return { ok: false, error: 'Invalid session' };
+  const users = readUsers();
+  const user  = users[username];
+  if (!user) return { ok: false, error: 'User not found' };
+  if (username === ADMIN_USERNAME) return { ok: false, error: 'Admin cannot spin' };
+
+  const now        = Date.now();
+  const nextSpinAt = (user.lastDailySpin || 0) + SPIN_COOLDOWN_MS;
+  if (now < nextSpinAt) return { ok: false, error: 'Already spun today', nextSpinAt };
+
+  // Weighted random selection
+  const total  = SPIN_PRIZES.reduce((s, p) => s + p.weight, 0);
+  let   rand   = Math.random() * total;
+  let   prize  = SPIN_PRIZES[0];
+  for (const p of SPIN_PRIZES) {
+    rand -= p.weight;
+    if (rand <= 0) { prize = p; break; }
+  }
+
+  user.lastDailySpin  = now;
+  user.casinoBalance  = (user.casinoBalance || 0) + prize.amount;
+  writeUsers(users);
+
+  return {
+    ok: true,
+    prize:      prize.label,
+    amount:     prize.amount,
+    nextSpinAt: now + SPIN_COOLDOWN_MS,
+    balance:    user.casinoBalance,
+  };
+}
+
 module.exports = {
   register, login, getMe, syncBalance, claimDaily, transfer, logout, userExists,
   deleteUser, adminGiveMoney, adminSetBalance, listUsers, isAdminToken, getTopBalances,
   recordIP, kickUser, addBonus, pruneZeroBalanceAccounts, adminGetStats, addBonusByAdmin,
-  validateToken, bulkResetBalances,
+  validateToken, bulkResetBalances, getDailySpinStatus, claimDailySpin,
 };
