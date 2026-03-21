@@ -43,6 +43,7 @@ const CASINO_GAMES = [
   { path: '/horse-racing',   name: 'Horse Racing',  desc: 'Pick a horse, place your wager, watch the race — 8 horses with real odds!', icon: '🏇', players: '1 player' },
   { path: '/sports-betting', name: 'Sports Betting', desc: 'Bet on real NFL, NBA, MLB, NHL, EPL & MMA games with live odds!', icon: '🏆', players: '1 player' },
   { path: '/coin-flip',      name: 'Coin Flip',      desc: '50/50 — pick heads or tails and win 1.95× your bet!', icon: '🪙', players: '1 player' },
+  { path: '/limbo',          name: 'Limbo',          desc: 'Set your target multiplier — launch and win if the result clears it!', icon: '🚀', players: '1 player' },
 ];
 
 const MULTI_GAMES = [
@@ -64,6 +65,8 @@ const SLUG_NAMES = {
   'texas-holdem': "Texas Hold'em", hilo: 'HiLo', tower: 'Tower',
   wheel: 'Wheel', 'video-poker': 'Video Poker', keno: 'Keno',
   'dragon-tiger': 'Dragon Tiger',
+  'coin-flip': 'Coin Flip',
+  limbo: 'Limbo',
 };
 
 export default function HomePage() {

@@ -1,0 +1,260 @@
+.limbo-page {
+  min-height: 100vh;
+  background: #0a0a14;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 64px;
+  padding-bottom: 40px;
+}
+
+.limbo-wrap {
+  max-width: 480px;
+  width: 100%;
+  padding: 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
+  color: #fff;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.limbo-title {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #6366f1, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.limbo-sub   { margin: 0; color: #64748b; font-size: 0.88rem; }
+.limbo-balance { color: #94a3b8; font-size: 0.9rem; }
+.limbo-balance strong { color: #f1f5f9; }
+
+/* ── Big display ── */
+.limbo-display {
+  font-size: 4.5rem;
+  font-weight: 900;
+  letter-spacing: -2px;
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.2s;
+  line-height: 1;
+  text-align: center;
+  text-shadow: 0 0 40px rgba(99,102,241,0.3);
+  min-height: 5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.limbo-display--rolling { color: #f1f5f9; animation: limboPulse 0.3s ease infinite alternate; }
+.limbo-display--win  { color: #2ecc71; text-shadow: 0 0 40px rgba(46,204,113,0.5); }
+.limbo-display--lose { color: #e74c3c; text-shadow: 0 0 40px rgba(231,76,60,0.4); }
+
+@keyframes limboPulse {
+  from { opacity: 0.85; transform: scale(0.98); }
+  to   { opacity: 1;    transform: scale(1.02); }
+}
+
+/* ── Result banner ── */
+.limbo-result {
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 10px 24px;
+  border-radius: 10px;
+  text-align: center;
+  animation: fadeUp 0.3s ease;
+}
+.limbo-result--win  { background: rgba(46,204,113,0.12); border: 1px solid rgba(46,204,113,0.35); color: #2ecc71; }
+.limbo-result--lose { background: rgba(231,76,60,0.10);  border: 1px solid rgba(231,76,60,0.3);  color: #fca5a5; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Target section ── */
+.limbo-target-section {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  padding: 1.1rem 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.limbo-target-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.limbo-target-val {
+  color: #a78bfa;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+/* Slider */
+.limbo-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #6366f1 0%, #6366f1 var(--p,50%), #1e293b var(--p,50%));
+  outline: none;
+  cursor: pointer;
+}
+.limbo-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #a78bfa;
+  border: 3px solid #0a0a14;
+  box-shadow: 0 0 8px rgba(167,139,250,0.6);
+  cursor: pointer;
+}
+.limbo-slider::-moz-range-thumb {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: #a78bfa;
+  border: 3px solid #0a0a14;
+  cursor: pointer;
+}
+
+/* Presets */
+.limbo-presets {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.limbo-preset {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #94a3b8;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.limbo-preset:hover { background: rgba(255,255,255,0.13); color: #e2e8f0; }
+.limbo-preset--active {
+  background: rgba(99,102,241,0.2);
+  border-color: #6366f1;
+  color: #a78bfa;
+}
+.limbo-custom-target {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  color: #fff;
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  width: 70px;
+  outline: none;
+}
+.limbo-custom-target:focus { border-color: #6366f1; }
+.limbo-custom-target::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+/* Stats row */
+.limbo-stats-row {
+  display: flex;
+  gap: 1rem;
+}
+.limbo-stat { display: flex; flex-direction: column; gap: 1px; }
+.limbo-stat-label { font-size: 0.7rem; color: #475569; text-transform: uppercase; letter-spacing: 1px; }
+.limbo-stat-val   { font-size: 0.95rem; font-weight: 800; color: #e2e8f0; }
+.limbo-stat-val--green { color: #2ecc71; }
+
+/* ── Bet input ── */
+.limbo-bet-row {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  padding: 0 14px;
+  width: 100%;
+}
+.limbo-bet-prefix { color: #475569; font-size: 1.1rem; margin-right: 6px; }
+.limbo-bet-input {
+  background: none;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 12px 0;
+  width: 100%;
+}
+.limbo-bet-input::placeholder { color: #334155; }
+.limbo-bet-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+.limbo-quick-btns { display: flex; gap: 8px; }
+.limbo-quick-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #94a3b8;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.limbo-quick-btn:hover { background: rgba(255,255,255,0.12); color: #e2e8f0; }
+
+/* ── Roll button ── */
+.limbo-roll-btn {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  border: none;
+  padding: 15px 56px;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  font-weight: 900;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 24px rgba(99,102,241,0.45);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.limbo-roll-btn:hover:not(.limbo-roll-btn--disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 36px rgba(99,102,241,0.65);
+}
+.limbo-roll-btn--disabled { opacity: 0.45; cursor: not-allowed; }
+
+.limbo-err { color: #fca5a5; font-size: 0.82rem; }
+
+/* ── History ── */
+.limbo-history {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.limbo-hist-dot {
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.limbo-hist-dot--win  { background: rgba(46,204,113,0.15); color: #2ecc71; }
+.limbo-hist-dot--lose { background: rgba(231,76,60,0.12);  color: #fca5a5; }
+
+@media (max-width: 480px) {
+  .limbo-display { font-size: 3.2rem; }
+  .limbo-roll-btn { padding: 13px 40px; }
+}

@@ -57,6 +57,7 @@ import UnoPage from './pages/UnoPage';
 import HorseRacingPage from './pages/HorseRacingPage';
 import DailySpinPage from './pages/DailySpinPage';
 import CoinFlipPage from './pages/CoinFlipPage';
+import LimboPage from './pages/LimboPage';
 import './App.css';
 
 // Convenience wrapper: RequireAuth + GameGuard for a given slug
@@ -124,6 +125,7 @@ export default function App() {
             <Route path="/dragon-tiger"  element={<GR slug="dragon-tiger"><DragonTigerPage /></GR>} />
             <Route path="/horse-racing"  element={<GR slug="horse-racing"><HorseRacingPage /></GR>} />
             <Route path="/coin-flip"     element={<GR slug="coin-flip"><CoinFlipPage /></GR>} />
+            <Route path="/limbo"         element={<GR slug="limbo"><LimboPage /></GR>} />
 
             {/* Non-game pages */}
             <Route path="/daily-spin"         element={<RequireAuth><DailySpinPage /></RequireAuth>} />
