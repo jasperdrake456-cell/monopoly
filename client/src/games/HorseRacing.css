@@ -194,6 +194,7 @@
   background: rgba(58,143,255,0.1);
   box-shadow: 0 0 0 3px rgba(58,143,255,0.15);
 }
+.hr-horse-num { font-size: 0.7rem; font-weight: 800; text-align: center; letter-spacing: 0.05em; }
 .hr-horse-emoji { font-size: 1.6rem; }
 .hr-horse-name { font-size: 0.78rem; font-weight: 600; color: #cdd6e0; text-align: center; }
 .hr-horse-odds { font-size: 0.85rem; font-weight: 700; }

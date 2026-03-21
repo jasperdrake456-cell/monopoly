@@ -3,17 +3,15 @@ import { getBalance, addBalance, subtractBalance } from '../utils/casinoBalance'
 import './HorseRacing.css';
 
 // ── Horse definitions ─────────────────────────────────────────────────────────
-// odds: American format. Negative = favorite. Positive = underdog.
-// winProb: approximate probability used for simulation.
+// winProb: true race win probability (these sum to 1.0).
+// odds: American odds offered — slightly worse than fair to give house ~12% edge.
 const HORSES = [
-  { id: 1, name: 'Thunder Bolt',   odds: -150, winProb: 0.25, color: '#e74c3c', jockey: '🏇' },
-  { id: 2, name: 'Morning Glory',  odds: +200, winProb: 0.12, color: '#3498db', jockey: '🏇' },
-  { id: 3, name: 'Silver Arrow',   odds: -110, winProb: 0.20, color: '#2ecc71', jockey: '🏇' },
-  { id: 4, name: 'Lucky Star',     odds: +350, winProb: 0.08, color: '#f39c12', jockey: '🏇' },
-  { id: 5, name: 'Dark Knight',    odds: +175, winProb: 0.14, color: '#9b59b6', jockey: '🏇' },
-  { id: 6, name: 'Iron Hooves',    odds: +125, winProb: 0.10, color: '#1abc9c', jockey: '🏇' },
-  { id: 7, name: 'Desert Wind',    odds: +450, winProb: 0.06, color: '#e67e22', jockey: '🏇' },
-  { id: 8, name: 'Golden Stride',  odds: +550, winProb: 0.05, color: '#f1c40f', jockey: '🏇' },
+  { id: 1, name: 'Thunder Bolt',  odds: +150, winProb: 0.35, color: '#f59e0b', jockey: '🏇' },
+  { id: 2, name: 'Silver Arrow',  odds: +350, winProb: 0.20, color: '#6366f1', jockey: '🏇' },
+  { id: 3, name: 'Dark Knight',   odds: +500, winProb: 0.15, color: '#8b5cf6', jockey: '🏇' },
+  { id: 4, name: 'Morning Glory', odds: +575, winProb: 0.13, color: '#ec4899', jockey: '🏇' },
+  { id: 5, name: 'Desert Wind',   odds: +800, winProb: 0.10, color: '#14b8a6', jockey: '🏇' },
+  { id: 6, name: 'Golden Stride', odds: +1200, winProb: 0.07, color: '#f87171', jockey: '🏇' },
 ];
 
 // Normalize win probs to sum to 1.0
@@ -253,16 +251,15 @@ export default function HorseRacing() {
                 onClick={() => selectHorse(horse.id)}
                 style={{ '--horse-color': horse.color }}
               >
+                <div className="hr-horse-num" style={{ color: horse.color }}>#{horse.id}</div>
                 <div className="hr-horse-emoji">{horse.jockey}</div>
                 <div className="hr-horse-name">{horse.name}</div>
-                <div className="hr-horse-odds" style={{ color: horse.odds < 0 ? '#ef4444' : '#22c55e' }}>
+                <div className="hr-horse-odds" style={{ color: '#22c55e' }}>
                   {fmtOdds(horse.odds)}
                 </div>
-                {selectedId === horse.id && (
-                  <div className="hr-horse-payout-preview">
-                    Win ${calcPayout(bet, horse.odds).toLocaleString()}
-                  </div>
-                )}
+                <div className="hr-horse-payout-preview" style={{ opacity: selectedId === horse.id ? 1 : 0.5 }}>
+                  Win ${calcPayout(bet, horse.odds).toLocaleString()}
+                </div>
               </button>
             ))}
           </div>
