@@ -107,7 +107,7 @@ async function fetchScoresForSport(sportKey, completedOnly = true) {
   const hit = scoresCache.get(cacheKey);
   if (hit && Date.now() - hit.fetchedAt < SCORES_TTL) return hit.data;
 
-  const url = `${BASE_URL}/sports/${sportKey}/scores?apiKey=${API_KEY}&daysFrom=3`;
+  const url = `${BASE_URL}/sports/${sportKey}/scores?apiKey=${API_KEY}&daysFrom=7`;
   const raw = await fetchJSON(url);
   if (!Array.isArray(raw)) return [];
 
@@ -116,4 +116,8 @@ async function fetchScoresForSport(sportKey, completedOnly = true) {
   return data;
 }
 
-module.exports = { fetchAllGames, fetchGamesForSport, fetchScoresForSport, SPORTS };
+function clearScoresCache() {
+  scoresCache.clear();
+}
+
+module.exports = { fetchAllGames, fetchGamesForSport, fetchScoresForSport, clearScoresCache, SPORTS };

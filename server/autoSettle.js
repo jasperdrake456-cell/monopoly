@@ -86,20 +86,38 @@ let _io = null;
 
 // ── Core settle run ───────────────────────────────────────────────────────────
 async function runAutoSettle() {
+  // Always bust the scores cache so we get fresh data on every settle run
+  odd.clearScoresCache();
+
   // Get ALL games (including settled) then filter to open ones that have started
   const allGames = sb.getGames(true);
   const now = Date.now();
   // Only settle open games whose start time has already passed (give 10 min grace)
   const eligible = allGames.filter(g => g.status === 'open' && new Date(g.startTime).getTime() < now - 10 * 60_000);
-  if (!eligible.length) return;
+
+  console.log(`[autoSettle] Run started — ${allGames.length} total games, ${eligible.length} eligible for settlement`);
+  if (!eligible.length) {
+    console.log('[autoSettle] No eligible games — nothing to do');
+    return;
+  }
+
+  eligible.forEach(g => console.log(`[autoSettle]   Eligible: ${g.sport} | ${g.homeTeam} vs ${g.awayTeam} | started ${new Date(g.startTime).toISOString()}`));
 
   // Group by API sport key
   const bySportKey = {};
   for (const g of eligible) {
     const apiKey = SPORT_KEY_MAP[g.sport];
-    if (!apiKey) continue;
+    if (!apiKey) {
+      console.warn(`[autoSettle] No API key mapping for sport "${g.sport}" — skipping`);
+      continue;
+    }
     if (!bySportKey[apiKey]) bySportKey[apiKey] = [];
     bySportKey[apiKey].push(g);
+  }
+
+  if (!Object.keys(bySportKey).length) {
+    console.log('[autoSettle] No eligible games have a known sport mapping');
+    return;
   }
 
   let totalSettled = 0;
@@ -113,21 +131,26 @@ async function runAutoSettle() {
       continue;
     }
 
+    console.log(`[autoSettle] ${apiKey}: fetched ${scores.length} completed scores from API`);
+
     for (const apiGame of scores) {
       if (!apiGame.completed) continue;
 
       const match = games.find(g => isSameGame(g, apiGame.home_team, apiGame.away_team));
       if (!match) continue;
 
+      console.log(`[autoSettle] Match found: ${apiGame.home_team} vs ${apiGame.away_team} → stored as ${match.homeTeam} vs ${match.awayTeam}`);
+
       const winner = determineWinner(match, apiGame);
       if (!winner) {
-        console.log(`[autoSettle] Could not determine winner for ${apiGame.home_team} vs ${apiGame.away_team} — skipping`);
+        const sc = (apiGame.scores || []).map(s => `${s.name}:${s.score}`).join(', ');
+        console.log(`[autoSettle] Could not determine winner for ${apiGame.home_team} vs ${apiGame.away_team} (scores: ${sc || 'none'}) — skipping`);
         continue;
       }
 
       const result = sb.settleGame(match.gameId, winner);
       if (!result.ok) {
-        // Already settled or cancelled — remove from future checks by just logging
+        // Already settled or cancelled — just log if it's unexpected
         if (!result.error?.includes('Already settled')) {
           console.log(`[autoSettle] settleGame failed for ${match.homeTeam} vs ${match.awayTeam}: ${result.error}`);
         }
@@ -137,6 +160,7 @@ async function runAutoSettle() {
       // Credit all straight-bet winners and push balance update to their clients
       for (const [username, amount] of Object.entries(result.payouts)) {
         const r = us.addBonusByAdmin(username, amount);
+        if (!r.ok) console.error(`[autoSettle] addBonusByAdmin failed for ${username}: ${r.error}`);
         if (r.ok && _io) _io.emit('balanceReset', { username, balance: r.balance });
         console.log(`[autoSettle] 💸 ${username} +$${amount.toLocaleString()} — ${match.homeTeam} vs ${match.awayTeam} (winner: ${winner})`);
       }
@@ -145,6 +169,7 @@ async function runAutoSettle() {
       const parlayPayouts = sb.settleParlayBets(match.gameId, winner);
       for (const [username, amount] of Object.entries(parlayPayouts)) {
         const r = us.addBonusByAdmin(username, amount);
+        if (!r.ok) console.error(`[autoSettle] addBonusByAdmin (parlay) failed for ${username}: ${r.error}`);
         if (r.ok && _io) _io.emit('balanceReset', { username, balance: r.balance });
         console.log(`[autoSettle] 🎲 parlay payout: ${username} +$${amount.toLocaleString()} (game: ${match.homeTeam} vs ${match.awayTeam})`);
       }
@@ -161,10 +186,23 @@ async function runAutoSettle() {
       console.log(`[autoSettle] ✅ Settled: ${match.homeTeam} vs ${match.awayTeam} — Winner: ${winner} (${result.settled.length} bets)`);
       totalSettled++;
     }
+
+    // Log any eligible games from this sport that had NO API match (name mismatch likely)
+    for (const g of games) {
+      const wasSettled = allGames.find(ag => ag.gameId === g.gameId)?.status !== 'open';
+      if (!wasSettled) {
+        const matched = scores.some(s => isSameGame(g, s.home_team, s.away_team));
+        if (!matched) {
+          console.log(`[autoSettle] ⚠️  No API match found for: ${g.sport} | ${g.homeTeam} vs ${g.awayTeam}`);
+        }
+      }
+    }
   }
 
   if (totalSettled > 0) {
     console.log(`[autoSettle] 🏆 Auto-settled ${totalSettled} game(s) this run`);
+  } else {
+    console.log('[autoSettle] Run complete — 0 games settled this pass');
   }
 }
 
