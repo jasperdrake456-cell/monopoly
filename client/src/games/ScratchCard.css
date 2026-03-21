@@ -1,0 +1,220 @@
+.sc-page {
+  min-height: 100vh;
+  background: #0a0a14;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 64px;
+  padding-bottom: 40px;
+}
+
+.sc-wrap {
+  max-width: 480px;
+  width: 100%;
+  padding: 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
+  color: #fff;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.sc-title {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.sc-sub    { margin: 0; color: #64748b; font-size: 0.88rem; }
+.sc-balance { color: #94a3b8; font-size: 0.9rem; }
+.sc-balance strong { color: #f1f5f9; }
+
+/* ── Card ── */
+.sc-card {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(251,191,36,0.05));
+  border: 2px solid rgba(245,158,11,0.3);
+  border-radius: 20px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  min-height: 280px;
+  justify-content: center;
+  transition: border-color 0.3s;
+}
+.sc-card--win  { border-color: rgba(46,204,113,0.6); background: linear-gradient(135deg, rgba(46,204,113,0.08), rgba(46,204,113,0.04)); }
+.sc-card--lose { border-color: rgba(231,76,60,0.4); }
+
+.sc-idle-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+.sc-idle-icon { font-size: 3rem; }
+
+/* ── Grid ── */
+.sc-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+.sc-tile {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  transition: transform 0.15s, background 0.15s;
+}
+.sc-tile--hidden {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: 900;
+  box-shadow: 0 4px 12px rgba(245,158,11,0.3);
+}
+.sc-tile--hidden:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(245,158,11,0.5);
+}
+.sc-tile--hidden:active:not(:disabled) { transform: scale(0.95); }
+
+.sc-tile--revealed {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  cursor: default;
+  animation: tileFlip 0.25s ease;
+}
+.sc-tile--winner {
+  background: rgba(46,204,113,0.15);
+  border-color: rgba(46,204,113,0.5);
+  animation: tileFlip 0.25s ease, winnerGlow 1.2s ease infinite alternate;
+}
+
+@keyframes tileFlip {
+  from { transform: rotateY(90deg) scale(0.8); opacity: 0; }
+  to   { transform: rotateY(0deg)  scale(1);   opacity: 1; }
+}
+@keyframes winnerGlow {
+  from { box-shadow: 0 0 8px rgba(46,204,113,0.3); }
+  to   { box-shadow: 0 0 20px rgba(46,204,113,0.7); }
+}
+
+.sc-tile-sym   { line-height: 1; }
+.sc-tile-scratch { color: rgba(255,255,255,0.7); font-weight: 900; font-size: 1.3rem; }
+
+.sc-reveal-all-btn {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #94a3b8;
+  border-radius: 8px;
+  padding: 6px 18px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.sc-reveal-all-btn:hover { background: rgba(255,255,255,0.13); color: #e2e8f0; }
+
+/* ── Result banner ── */
+.sc-result {
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1rem;
+  text-align: center;
+  animation: fadeUp 0.3s ease;
+}
+.sc-result--win  { background: rgba(46,204,113,0.12); border: 1px solid rgba(46,204,113,0.4); color: #2ecc71; }
+.sc-result--lose { background: rgba(231,76,60,0.10); border: 1px solid rgba(231,76,60,0.3); color: #fca5a5; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Bet section ── */
+.sc-bet-section {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  padding: 1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.sc-bet-label { font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.sc-bet-options { display: flex; gap: 6px; flex-wrap: wrap; }
+.sc-bet-opt {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #94a3b8;
+  border-radius: 7px;
+  padding: 5px 11px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.sc-bet-opt:hover { background: rgba(255,255,255,0.13); color: #e2e8f0; }
+.sc-bet-opt--active { background: rgba(245,158,11,0.2); border-color: #f59e0b; color: #fbbf24; }
+.sc-bet-opt:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Paytable ── */
+.sc-paytable {
+  width: 100%;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  padding: 1rem 1.2rem;
+}
+.sc-paytable-title { font-size: 0.72rem; color: #475569; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 0.6rem; }
+.sc-paytable-rows { display: flex; flex-direction: column; gap: 4px; }
+.sc-paytable-row { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; }
+.sc-pt-sym   { font-size: 1rem; letter-spacing: -2px; min-width: 56px; }
+.sc-pt-mult  { color: #f59e0b; font-weight: 800; min-width: 36px; }
+.sc-pt-payout { color: #64748b; font-size: 0.78rem; }
+
+/* ── Action button ── */
+.sc-action-btn {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #1a1a1a;
+  border: none;
+  padding: 15px 48px;
+  border-radius: 50px;
+  font-size: 1.05rem;
+  font-weight: 900;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 24px rgba(245,158,11,0.4);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.sc-action-btn:hover:not(.sc-action-btn--disabled):not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 36px rgba(245,158,11,0.6);
+}
+.sc-action-btn--disabled, .sc-action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.sc-err   { color: #fca5a5; font-size: 0.82rem; }
+.sc-boost { color: #f59e0b; font-size: 0.82rem; font-weight: 700; }
+
+@media (max-width: 400px) {
+  .sc-tile { font-size: 1.6rem; }
+  .sc-action-btn { padding: 13px 32px; font-size: 0.95rem; }
+}
