@@ -146,6 +146,86 @@ function JackpotAdminCard({ token, authFetch }) {
   );
 }
 
+// ── Gift Code Admin Card ──────────────────────────────────────────────────────
+function GiftCodeAdminCard({ token, authFetch }) {
+  const [codes,    setCodes]    = React.useState([]);
+  const [newCode,  setNewCode]  = React.useState('');
+  const [newAmt,   setNewAmt]   = React.useState('');
+  const [maxUses,  setMaxUses]  = React.useState('1');
+  const [note,     setNote]     = React.useState('');
+  const [status,   setStatus]   = React.useState('');
+
+  React.useEffect(() => { loadCodes(); }, []);
+
+  async function loadCodes() {
+    const d = await authFetch('/api/admin/gift-codes', token);
+    if (d.ok) setCodes(d.codes || []);
+  }
+
+  async function handleCreate() {
+    if (!newCode.trim() || !newAmt) return;
+    const d = await authFetch('/api/admin/gift-codes', token, {
+      method: 'POST',
+      body: JSON.stringify({ code: newCode.trim(), amount: Number(newAmt), maxUses: Number(maxUses) || 1, note }),
+    });
+    if (d.ok) {
+      setStatus(`✓ Code ${d.entry.code} created`);
+      setNewCode(''); setNewAmt(''); setNote(''); setMaxUses('1');
+      loadCodes();
+    } else {
+      setStatus(`✗ ${d.error}`);
+    }
+  }
+
+  async function handleDelete(code) {
+    await authFetch(`/api/admin/gift-codes/${code}`, token, { method: 'DELETE' });
+    setCodes(c => c.filter(x => x.code !== code));
+  }
+
+  return (
+    <div className="admin-site-card">
+      <div className="admin-site-card-title">🎁 Gift Codes</div>
+      <div className="admin-site-card-sub">Create codes players can redeem for coins (via account menu)</div>
+
+      {/* Create form */}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+        <input className="admin-input" style={{ width: 110 }} placeholder="CODE" value={newCode}
+          onChange={e => setNewCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} />
+        <input className="admin-input" style={{ width: 90 }} type="number" placeholder="$Amount" value={newAmt}
+          onChange={e => setNewAmt(e.target.value)} />
+        <input className="admin-input" style={{ width: 70 }} type="number" placeholder="Max uses" value={maxUses}
+          onChange={e => setMaxUses(e.target.value)} title="0 = unlimited" />
+        <input className="admin-input" style={{ width: 130 }} placeholder="Note (optional)" value={note}
+          onChange={e => setNote(e.target.value)} />
+        <button className="admin-btn admin-btn--primary admin-btn--sm"
+          disabled={!newCode.trim() || !newAmt}
+          onClick={handleCreate}>Create</button>
+      </div>
+
+      {status && <div style={{ fontSize: '0.82rem', color: status.startsWith('✓') ? '#86efac' : '#fca5a5', marginBottom: 8 }}>{status}</div>}
+
+      {/* Code list */}
+      {codes.length === 0 ? (
+        <div style={{ color: '#475569', fontSize: '0.82rem' }}>No codes yet</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {codes.map(c => (
+            <div key={c.code} style={{ display: 'flex', gap: 8, alignItems: 'center', background: 'rgba(255,255,255,0.04)', padding: '6px 10px', borderRadius: 6 }}>
+              <code style={{ color: '#c084fc', fontWeight: 700, minWidth: 110 }}>{c.code}</code>
+              <span style={{ color: '#f59e0b', minWidth: 70 }}>${c.amount.toLocaleString()}</span>
+              <span style={{ color: '#64748b', fontSize: '0.8rem', flex: 1 }}>
+                {c.uses}/{c.maxUses === 0 ? '∞' : c.maxUses} uses{c.note ? ` · ${c.note}` : ''}
+              </span>
+              <button className="admin-btn admin-btn--warn admin-btn--sm" style={{ padding: '2px 10px' }}
+                onClick={() => handleDelete(c.code)}>Delete</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function AdminPage() {
   const { user, token, isLoggedIn } = useAuth();
@@ -1643,6 +1723,9 @@ export default function AdminPage() {
 
           {/* ── Jackpot ───────────────────────────────────────────────────── */}
           <JackpotAdminCard token={token} authFetch={authFetch} />
+
+          {/* ── Gift Codes ────────────────────────────────────────────────── */}
+          <GiftCodeAdminCard token={token} authFetch={authFetch} />
 
           {/* ── Danger Zone ───────────────────────────────────────────────── */}
           <div className="admin-site-card admin-danger-card">

@@ -2,7 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useChampion } from '../hooks/useChampion';
+import { addBalance } from '../utils/casinoBalance';
 import './AccountWidget.css';
+
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
 
 export default function AccountWidget() {
   const { user, balance, isLoggedIn, logout } = useAuth();
@@ -13,12 +16,42 @@ export default function AccountWidget() {
 
   const isChampion = isLoggedIn && user && champion?.username === user.username?.toLowerCase();
 
+  const [redeemMode, setRedeemMode] = useState(false);
+  const [redeemCode, setRedeemCode] = useState('');
+  const [redeemMsg,  setRedeemMsg]  = useState('');
+  const [redeeming,  setRedeeming]  = useState(false);
+
   // Close on outside click
   useEffect(() => {
-    function handle(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    function handle(e) { if (ref.current && !ref.current.contains(e.target)) { setOpen(false); setRedeemMode(false); } }
     document.addEventListener('mousedown', handle);
     return () => document.removeEventListener('mousedown', handle);
   }, []);
+
+  async function handleRedeem() {
+    if (!redeemCode.trim() || redeeming) return;
+    setRedeeming(true);
+    setRedeemMsg('');
+    try {
+      const token = localStorage.getItem('authToken');
+      const res   = await fetch(`${SERVER_URL}/api/redeem`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ code: redeemCode.trim() }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        addBalance(data.amount);
+        setRedeemMsg(`🎉 +$${data.amount.toLocaleString()} added to your balance!`);
+        setRedeemCode('');
+      } else {
+        setRedeemMsg(`❌ ${data.error || 'Invalid code'}`);
+      }
+    } catch {
+      setRedeemMsg('❌ Network error');
+    }
+    setRedeeming(false);
+  }
 
   if (!isLoggedIn) {
     return (
@@ -52,6 +85,25 @@ export default function AccountWidget() {
           <Link to="/transfer" className="acw-item" onClick={() => setOpen(false)}>
             💸 Send Money
           </Link>
+          <button className="acw-item" onClick={() => { setRedeemMode(m => !m); setRedeemMsg(''); }}>
+            🎁 Redeem Code
+          </button>
+          {redeemMode && (
+            <div className="acw-redeem">
+              <input
+                className="acw-redeem-input"
+                placeholder="Enter code…"
+                value={redeemCode}
+                onChange={e => setRedeemCode(e.target.value.toUpperCase())}
+                onKeyDown={e => e.key === 'Enter' && handleRedeem()}
+                autoFocus
+              />
+              <button className="acw-redeem-btn" onClick={handleRedeem} disabled={redeeming}>
+                {redeeming ? '…' : 'Go'}
+              </button>
+              {redeemMsg && <div className={`acw-redeem-msg ${redeemMsg.startsWith('🎉') ? 'acw-redeem-msg--ok' : 'acw-redeem-msg--err'}`}>{redeemMsg}</div>}
+            </div>
+          )}
           <div className="acw-divider" />
           <button className="acw-item acw-item--danger" onClick={async () => { await logout(); setOpen(false); navigate('/'); }}>
             🚪 Sign Out

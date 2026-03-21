@@ -24,6 +24,7 @@ const odds      = require('./oddsAPI');
 const sb        = require('./sportsStore');
 const autoSettle = require('./autoSettle');
 const jp        = require('./jackpotStore');
+const gc        = require('./giftCodeStore');
 
 const app = express();
 const server = http.createServer(app);
@@ -1227,6 +1228,42 @@ app.delete('/api/admin/sports/games/:id', requireAdmin, (req, res) => {
 // All bets across all games (for admin overview)
 app.get('/api/admin/sports/bets', requireAdmin, (req, res) => {
   res.json({ ok: true, bets: sb.getAllBets() });
+});
+
+// ── Gift Code Redemption ──────────────────────────────────────────────────────
+
+// Player: redeem a gift code
+app.post('/api/redeem', requireAuth, (req, res) => {
+  const { code } = req.body || {};
+  if (!code) return res.status(400).json({ ok: false, error: 'Missing code' });
+
+  const result = gc.redeemCode(code, req.user.username);
+  if (!result.ok) return res.status(400).json(result);
+
+  // Credit coins server-side (locked so client sync can't overwrite it)
+  us.addBonusByAdmin(req.user.username, result.amount);
+  al.log('gift_code_redeemed', { username: req.user.username, code: result.code, amount: result.amount });
+  console.log(`[GiftCode] ${req.user.username} redeemed ${result.code} (+$${result.amount.toLocaleString()})`);
+  res.json({ ok: true, amount: result.amount });
+});
+
+// Admin: list codes
+app.get('/api/admin/gift-codes', requireAdmin, (req, res) => {
+  res.json({ ok: true, codes: gc.listCodes() });
+});
+
+// Admin: create code
+app.post('/api/admin/gift-codes', requireAdmin, (req, res) => {
+  const { code, amount, maxUses, expiresAt, note } = req.body || {};
+  const result = gc.createCode({ code, amount, maxUses, expiresAt, note });
+  if (result.ok) al.log('gift_code_created', { code: result.entry.code, amount: result.entry.amount });
+  res.json(result);
+});
+
+// Admin: delete code
+app.delete('/api/admin/gift-codes/:code', requireAdmin, (req, res) => {
+  al.log('gift_code_deleted', { code: req.params.code });
+  res.json(gc.deleteCode(req.params.code));
 });
 
 // ── Daily Free Spin ───────────────────────────────────────────────────────────
