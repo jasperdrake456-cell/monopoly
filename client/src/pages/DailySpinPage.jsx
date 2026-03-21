@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import './DailySpinPage.css';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
+const TOKEN_KEY  = 'gv_auth_token';
 
 // Must match server SPIN_PRIZES order exactly
 const PRIZES = [
@@ -93,6 +95,7 @@ function fmt(ms) {
 
 export default function DailySpinPage() {
   const navigate  = useNavigate();
+  const { token } = useAuth();
   const canvasRef = useRef(null);
   const animRef   = useRef(null);
   const angleRef  = useRef(0);
@@ -128,9 +131,9 @@ export default function DailySpinPage() {
 
   async function fetchStatus() {
     try {
-      const token = localStorage.getItem('authToken');
+      const authToken = token || localStorage.getItem(TOKEN_KEY);
       const res   = await fetch(`${SERVER_URL}/api/daily-spin`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${authToken}` },
       });
       const data = await res.json();
       if (data.ok) {
@@ -148,10 +151,10 @@ export default function DailySpinPage() {
     setError('');
 
     try {
-      const token = localStorage.getItem('authToken');
+      const authToken = token || localStorage.getItem(TOKEN_KEY);
       const res   = await fetch(`${SERVER_URL}/api/daily-spin`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers: { Authorization: `Bearer ${authToken}`, 'Content-Type': 'application/json' },
       });
       const data = await res.json();
 
