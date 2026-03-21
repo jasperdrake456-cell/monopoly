@@ -16,8 +16,9 @@ const SYMBOLS = [
   { sym: '💀', label: 'Skull',    mult: 0   },
 ];
 
-// Weighted pick — skulls common, diamonds rare
-const WEIGHTS = [1, 3, 6, 10, 15, 20, 30];
+// Weighted pick — skulls very common, big symbols rare
+// Order: 💎, 🌟, 🍀, 🎰, 🍒, 🍋, 💀
+const WEIGHTS = [1, 2, 4, 7, 10, 14, 62];  // total 100; skull ~62%
 const WEIGHT_TOTAL = WEIGHTS.reduce((a, b) => a + b, 0);
 
 function pickSym() {
@@ -99,7 +100,7 @@ export default function ScratchCard() {
     setBalance(getBalance());
 
     // Rigged mode always loses
-    const forced = !isRiggedMode() && Math.random() < 0.18; // 18% chance of guaranteed win
+    const forced = !isRiggedMode() && Math.random() < 0.07; // 7% chance of guaranteed win
     const newGrid = generateGrid(forced);
     setGrid(newGrid);
     setRevealed([]);

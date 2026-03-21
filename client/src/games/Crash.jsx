@@ -20,6 +20,8 @@ export default function Crash() {
   const { banned, reason, expiresAt, loading } = useBanCheck('crash');
   useGameActivity('crash');
   const boost = useGameBoost('crash');
+  // Keep boost in a ref so the interval always reads the latest value
+  boostRef.current = boost || 1;
   const [balance, setBalance]         = useState(getBalance);
   const [bet, setBet]                 = useState(10);
   const [autoCashout, setAutoCashoutState] = useState('');
@@ -37,6 +39,7 @@ export default function Crash() {
   const cashedOutRef   = useRef(false);
   const betRef         = useRef(10);
   const autoCashoutRef = useRef('');
+  const boostRef       = useRef(1);
 
   useEffect(() => {
     function tick() {
@@ -82,11 +85,21 @@ export default function Crash() {
       const newMult = parseFloat((Math.pow(1.007, tickRef.current)).toFixed(2));
       setCurrentMult(newMult);
 
-      // Auto cashout — always read from ref so latest value is used
-      const ac = parseFloat(autoCashoutRef.current);
-      if (!cashedOutRef.current && !isNaN(ac) && ac >= 1.01 && newMult >= ac) {
-        clearInterval(intervalRef.current); // stop the ticker immediately
-        doAutoCashout(Math.min(newMult, crashRef.current)); // cap at crash point
+      // Auto cashout — read exclusively from refs, no closure dependency
+      const acRaw = parseFloat(autoCashoutRef.current);
+      if (!cashedOutRef.current && !isNaN(acRaw) && acRaw >= 1.01 && newMult >= acRaw) {
+        clearInterval(intervalRef.current);
+        // Inline payout so nothing relies on stale closures
+        cashedOutRef.current = true;
+        const mult   = newMult;
+        const payout = Math.floor(betRef.current * mult * boostRef.current);
+        addBalance(payout);
+        setBalance(getBalance());
+        if (payout >= betRef.current * 5) reportBigWin && reportBigWin(payout);
+        setCashedOut(true);
+        setCashoutMult(mult);
+        setHistory(h => [{ mult, win: true }, ...h].slice(0, MAX_HISTORY));
+        setPhase('crashed');
         return;
       }
 
@@ -96,10 +109,9 @@ export default function Crash() {
         setCurrentMult(crashRef.current);
         setPhase('crashed');
         if (!cashedOutRef.current) {
-          // Didn't cash out — lose bet (already deducted)
           setHistory(h => [{ mult: crashRef.current, win: false }, ...h].slice(0, MAX_HISTORY));
         }
-        syncBalance();
+        setBalance(getBalance());
       }
     }, 50);
   }
