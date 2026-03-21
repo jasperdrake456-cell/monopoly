@@ -57,51 +57,74 @@ function register(ns) {
     });
 
     socket.on('joinRoom', ({ roomCode, playerName, token, authToken }) => {
-      const result = rm.joinRoom(roomCode, socket.id, playerName, token, authToken);
-      if (result.error) { socket.emit('error', { message: result.error }); return; }
-      socket.join(roomChannel(roomCode));
-      socket.emit('roomJoined', { playerId: socket.id, sessionId: result.player.sessionId });
-      broadcastState(ns, result.room);
+      try {
+        const result = rm.joinRoom(roomCode, socket.id, playerName, token, authToken);
+        if (result.error) { socket.emit('error', { message: result.error }); return; }
+        socket.join(roomChannel(roomCode));
+        socket.emit('roomJoined', { playerId: socket.id, sessionId: result.player.sessionId });
+        broadcastState(ns, result.room);
+      } catch (err) {
+        console.error('[Monopoly] joinRoom threw:', err);
+        socket.emit('error', { message: 'Failed to join room' });
+      }
     });
 
     socket.on('reconnect', ({ roomCode, sessionId }) => {
-      const result = rm.reconnect(roomCode, sessionId, socket.id);
-      if (result.error) { socket.emit('error', { message: result.error }); return; }
-      socket.join(roomChannel(roomCode));
-      socket.emit('reconnected', { playerId: socket.id });
-      broadcastState(ns, result.room);
+      try {
+        const result = rm.reconnect(roomCode, sessionId, socket.id);
+        if (result.error) { socket.emit('error', { message: result.error }); return; }
+        socket.join(roomChannel(roomCode));
+        socket.emit('reconnected', { playerId: socket.id });
+        broadcastState(ns, result.room);
+      } catch (err) {
+        console.error('[Monopoly] reconnect threw:', err);
+        socket.emit('error', { message: 'Reconnect failed' });
+      }
     });
 
     socket.on('selectToken', ({ roomCode, token }) => {
-      const result = rm.selectToken(roomCode, socket.id, token);
-      if (result.error) { socket.emit('error', { message: result.error }); return; }
-      broadcastState(ns, result.room);
+      try {
+        const result = rm.selectToken(roomCode, socket.id, token);
+        if (result.error) { socket.emit('error', { message: result.error }); return; }
+        broadcastState(ns, result.room);
+      } catch (err) {
+        console.error('[Monopoly] selectToken threw:', err);
+        socket.emit('error', { message: 'Token selection failed' });
+      }
     });
 
     socket.on('closeRoom', ({ roomCode }) => {
-      const room = rm.getRoom(roomCode);
-      if (!room) return;
-      if (room.hostId !== socket.id) return;
-      broadcast(ns, roomCode, 'roomClosed', {});
-      rm.deleteRoom(roomCode);
+      try {
+        const room = rm.getRoom(roomCode);
+        if (!room) return;
+        if (room.hostId !== socket.id) return;
+        broadcast(ns, roomCode, 'roomClosed', {});
+        rm.deleteRoom(roomCode);
+      } catch (err) {
+        console.error('[Monopoly] closeRoom threw:', err);
+      }
     });
 
     socket.on('kickPlayer', ({ roomCode, targetId }) => {
-      const room = rm.getRoom(roomCode);
-      if (!room) return;
-      if (room.hostId !== socket.id) return; // only host can kick
-      if (targetId === socket.id) return;    // can't kick yourself
-      // Notify the kicked player
-      const ns_ = socket.nsp;
-      ns_.to(targetId).emit('kicked', { message: 'You have been kicked from the room by the host.' });
-      // Remove them from the room
-      rm.leaveRoom(roomCode, targetId);
-      // Disconnect their socket from this room
-      const targetSocket = ns_.sockets.get(targetId);
-      if (targetSocket) targetSocket.leave(roomCode);
-      // Broadcast updated room state to remaining players
-      const updated = rm.getRoom(roomCode);
-      if (updated) broadcastState(ns_, updated);
+      try {
+        const room = rm.getRoom(roomCode);
+        if (!room) return;
+        if (room.hostId !== socket.id) return; // only host can kick
+        if (targetId === socket.id) return;    // can't kick yourself
+        // Notify the kicked player
+        const ns_ = socket.nsp;
+        ns_.to(targetId).emit('kicked', { message: 'You have been kicked from the room by the host.' });
+        // Remove them from the room
+        rm.leaveRoom(roomCode, targetId);
+        // Disconnect their socket from this room
+        const targetSocket = ns_.sockets.get(targetId);
+        if (targetSocket) targetSocket.leave(roomCode);
+        // Broadcast updated room state to remaining players
+        const updated = rm.getRoom(roomCode);
+        if (updated) broadcastState(ns_, updated);
+      } catch (err) {
+        console.error('[Monopoly] kickPlayer threw:', err);
+      }
     });
 
     socket.on('startGame', ({ roomCode }) => {
@@ -262,17 +285,21 @@ function register(ns) {
     });
 
     socket.on('chatMessage', ({ roomCode, text }) => {
-      const room = rm.getRoom(roomCode);
-      if (!room) return;
-      const player = room.players.find(p => p.id === socket.id);
-      if (!player) return;
-      const trimmed = String(text || '').trim().slice(0, 200);
-      if (!trimmed) return;
-      broadcast(ns, roomCode, 'chatMessage', {
-        name: player.name,
-        text: trimmed,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      });
+      try {
+        const room = rm.getRoom(roomCode);
+        if (!room) return;
+        const player = room.players.find(p => p.id === socket.id);
+        if (!player) return;
+        const trimmed = String(text || '').trim().slice(0, 200);
+        if (!trimmed) return;
+        broadcast(ns, roomCode, 'chatMessage', {
+          name: player.name,
+          text: trimmed,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        });
+      } catch (err) {
+        console.error('[Monopoly] chatMessage threw:', err);
+      }
     });
 
     socket.on('disconnect', () => {

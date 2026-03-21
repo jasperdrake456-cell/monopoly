@@ -31,7 +31,13 @@ const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] },
 });
 
-app.use(compression()); // gzip all API responses
+// Gzip all API responses — skip Socket.io long-polling paths (prevents WS handshake corruption)
+app.use(compression({
+  filter: (req, res) => {
+    if (req.path.startsWith('/socket.io')) return false;
+    return compression.filter(req, res);
+  },
+}));
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 
@@ -191,15 +197,19 @@ const pendingBonuses = new Map();
 
 // Every 5 minutes: give all active online players $5,000
 setInterval(() => {
-  const now = Date.now();
-  let count = 0;
-  for (const [token, data] of gameActivity) {
-    if (now - data.lastSeen > ACTIVITY_TTL_MS) continue;
-    us.addBonus(data.username, 5000);
-    pendingBonuses.set(token, (pendingBonuses.get(token) || 0) + 5000);
-    count++;
+  try {
+    const now = Date.now();
+    let count = 0;
+    for (const [token, data] of gameActivity) {
+      if (now - data.lastSeen > ACTIVITY_TTL_MS) continue;
+      us.addBonus(data.username, 5000);
+      pendingBonuses.set(token, (pendingBonuses.get(token) || 0) + 5000);
+      count++;
+    }
+    if (count > 0) console.log(`[Bonus] Gave $5,000 to ${count} online player(s)`);
+  } catch (err) {
+    console.error('[Bonus interval] Error:', err);
   }
-  if (count > 0) console.log(`[Bonus] Gave $5,000 to ${count} online player(s)`);
 }, 5 * 60 * 1000);
 
 // Auto-settle sports games every 15 minutes using Odds API scores
