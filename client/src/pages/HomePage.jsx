@@ -45,6 +45,7 @@ const CASINO_GAMES = [
   { path: '/coin-flip',      name: 'Coin Flip',      desc: '50/50 — pick heads or tails and win 1.95× your bet!', icon: '🪙', players: '1 player' },
   { path: '/limbo',          name: 'Limbo',          desc: 'Set your target multiplier — launch and win if the result clears it!', icon: '🚀', players: '1 player' },
   { path: '/scratch-card',   name: 'Scratch Card',   desc: 'Reveal all 9 tiles — match 3 symbols to win up to 50× your bet!', icon: '🎟️', players: '1 player' },
+  { path: '/casino-war',     name: 'Casino War',     desc: 'Higher card wins — tie? Go to War for double the stakes!', icon: '⚔️', players: '1 player' },
 ];
 
 const MULTI_GAMES = [
@@ -69,6 +70,7 @@ const SLUG_NAMES = {
   'coin-flip': 'Coin Flip',
   limbo: 'Limbo',
   'scratch-card': 'Scratch Card',
+  'casino-war': 'Casino War',
 };
 
 export default function HomePage() {
