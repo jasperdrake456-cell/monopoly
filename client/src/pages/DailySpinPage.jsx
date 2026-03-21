@@ -112,11 +112,17 @@ export default function DailySpinPage() {
     if (canvasRef.current) drawWheel(canvasRef.current, angle);
   }, []);
 
-  // Initial draw + fetch status
+  // Initial wheel draw
   useEffect(() => {
     draw(angleRef.current);
-    fetchStatus();
   }, [draw]);
+
+  // Fetch status whenever token becomes available (handles async auth restore)
+  useEffect(() => {
+    const t = token || localStorage.getItem(TOKEN_KEY);
+    if (!t) return; // wait until we have a token
+    fetchStatus(t);
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Countdown timer
   useEffect(() => {
@@ -129,18 +135,21 @@ export default function DailySpinPage() {
     return () => clearInterval(id);
   }, [nextSpinAt, canSpin]);
 
-  async function fetchStatus() {
+  async function fetchStatus(authToken) {
     try {
-      const authToken = token || localStorage.getItem(TOKEN_KEY);
-      const res   = await fetch(`${SERVER_URL}/api/daily-spin`, {
+      const res  = await fetch(`${SERVER_URL}/api/daily-spin`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       const data = await res.json();
       if (data.ok) {
         setCanSpin(data.canSpin);
         setNextSpinAt(data.nextSpinAt);
+      } else {
+        setError(data.error || 'Could not load spin status');
       }
-    } catch { /* ignore */ }
+    } catch (e) {
+      setError('Network error — please refresh');
+    }
     setLoading(false);
   }
 
@@ -152,6 +161,7 @@ export default function DailySpinPage() {
 
     try {
       const authToken = token || localStorage.getItem(TOKEN_KEY);
+      if (!authToken) { setError('Not logged in'); setSpinning(false); return; }
       const res   = await fetch(`${SERVER_URL}/api/daily-spin`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${authToken}`, 'Content-Type': 'application/json' },
