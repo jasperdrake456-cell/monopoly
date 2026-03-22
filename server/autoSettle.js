@@ -1,7 +1,7 @@
 'use strict';
 /**
  * autoSettle.js
- * Polls The Odds API scores every 15 minutes.
+ * Polls The Odds API scores every 5 minutes.
  * Any completed game that has an open entry in sportsStore is settled automatically
  * and winners are credited without any manual input.
  */
@@ -24,22 +24,33 @@ const SPORT_KEY_MAP = {
   'MMA':                   'mma_mixed_martial_arts',
 };
 
-// ── Team name normalization (same logic as auto-sync script) ──────────────────
+// ── Team name normalization ───────────────────────────────────────────────────
 function normalizeTeam(name) {
   return (name || '')
     .toLowerCase()
-    .replace(/^\(\d+\)\s*/, '')       // strip "(5) " seed prefix
-    .replace(/\bst\./g, 'saint')      // St. (with period) → saint, e.g. "St. John's"
-    .replace(/[^a-z0-9 ]/g, '')       // remove special chars
-    .replace(/\bstate\b/g, 'st')      // "Wright State" → "wright st" to match "Wright St Raiders"
+    .replace(/^\(\d+\)\s*/, '')        // strip "(5) " seed prefix
+    .replace(/\bst\b\.?/g, 'saint')    // st / st. → saint
+    .replace(/[^a-z0-9 ]/g, '')        // remove special chars
+    .replace(/\bstate\b/g, 'st')       // "Wright State" → "wright st"
     .replace(/\s+/g, ' ')
     .trim();
 }
 
-// Fuzzy match: exact OR one name contains the other (handles "Kentucky" ↔ "Kentucky Wildcats")
+// Return last word (nickname) of a team name: "Golden State Warriors" → "warriors"
+function teamNick(name) {
+  const parts = normalizeTeam(name).split(' ');
+  return parts[parts.length - 1] || '';
+}
+
+// Fuzzy match: exact, contains, or last-word (nickname) matches
 function teamMatches(a, b) {
   const na = normalizeTeam(a), nb = normalizeTeam(b);
-  return na === nb || na.includes(nb) || nb.includes(na);
+  if (na === nb) return true;
+  if (na.includes(nb) || nb.includes(na)) return true;
+  // Nickname match: "Warriors" ↔ "Golden State Warriors"
+  const nickA = teamNick(a), nickB = teamNick(b);
+  if (nickA.length >= 4 && nickA === nickB) return true;
+  return false;
 }
 
 function isSameGame(storedGame, apiHome, apiAway) {
@@ -53,7 +64,6 @@ function determineWinner(storedGame, apiGame) {
   const { scores, home_team, away_team } = apiGame;
   if (!scores || scores.length < 2) return null;
 
-  // Find score by fuzzy-matching the team name
   const getScore = (teamName) => {
     const entry = scores.find(s => teamMatches(s.name, teamName));
     return entry != null ? parseFloat(entry.score) : NaN;
@@ -64,12 +74,9 @@ function determineWinner(storedGame, apiGame) {
   if (isNaN(homeScore) || isNaN(awayScore)) return null;
 
   const isDraw = homeScore === awayScore;
-
-  // Determine which stored team name corresponds to which API team
   const storedHomeIsApiHome = teamMatches(storedGame.homeTeam, home_team);
 
   if (isDraw) {
-    // Only settle draw if the game has draw odds, otherwise hold
     return storedGame.odds?.draw != null ? 'Draw' : null;
   }
 
@@ -81,133 +88,11 @@ function determineWinner(storedGame, apiGame) {
   }
 }
 
-// Socket.io instance — set by start() so we can push balance updates to clients
+// ── Socket.io instance ────────────────────────────────────────────────────────
 let _io = null;
 
-// ── Core settle run ───────────────────────────────────────────────────────────
-async function runAutoSettle() {
-  // First: cancel any started games with 0 bets — no API key needed for this
-  cleanupZeroBetGames();
-
-  // Always bust the scores cache so we get fresh data on every settle run
-  odd.clearScoresCache();
-
-  // Get ALL games (including settled) then filter to open ones that have started
-  const allGames = sb.getGames(true);
-  const now = Date.now();
-  // Only settle open games whose start time has already passed (give 10 min grace)
-  const eligible = allGames.filter(g => g.status === 'open' && new Date(g.startTime).getTime() < now - 10 * 60_000);
-
-  console.log(`[autoSettle] Run started — ${allGames.length} total games, ${eligible.length} eligible for settlement`);
-  if (!eligible.length) {
-    console.log('[autoSettle] No eligible games — nothing to do');
-    return;
-  }
-
-  eligible.forEach(g => console.log(`[autoSettle]   Eligible: ${g.sport} | ${g.homeTeam} vs ${g.awayTeam} | started ${new Date(g.startTime).toISOString()}`));
-
-  // Group by API sport key
-  const bySportKey = {};
-  for (const g of eligible) {
-    const apiKey = SPORT_KEY_MAP[g.sport];
-    if (!apiKey) {
-      console.warn(`[autoSettle] No API key mapping for sport "${g.sport}" — skipping`);
-      continue;
-    }
-    if (!bySportKey[apiKey]) bySportKey[apiKey] = [];
-    bySportKey[apiKey].push(g);
-  }
-
-  if (!Object.keys(bySportKey).length) {
-    console.log('[autoSettle] No eligible games have a known sport mapping');
-    return;
-  }
-
-  let totalSettled = 0;
-
-  for (const [apiKey, games] of Object.entries(bySportKey)) {
-    let scores;
-    try {
-      scores = await odd.fetchScoresForSport(apiKey);
-    } catch (e) {
-      console.error(`[autoSettle] Score fetch failed for ${apiKey}:`, e.message);
-      continue;
-    }
-
-    console.log(`[autoSettle] ${apiKey}: fetched ${scores.length} completed scores from API`);
-
-    for (const apiGame of scores) {
-      if (!apiGame.completed) continue;
-
-      const match = games.find(g => isSameGame(g, apiGame.home_team, apiGame.away_team));
-      if (!match) continue;
-
-      console.log(`[autoSettle] Match found: ${apiGame.home_team} vs ${apiGame.away_team} → stored as ${match.homeTeam} vs ${match.awayTeam}`);
-
-      const winner = determineWinner(match, apiGame);
-      if (!winner) {
-        const sc = (apiGame.scores || []).map(s => `${s.name}:${s.score}`).join(', ');
-        console.log(`[autoSettle] Could not determine winner for ${apiGame.home_team} vs ${apiGame.away_team} (scores: ${sc || 'none'}) — skipping`);
-        continue;
-      }
-
-      const result = sb.settleGame(match.gameId, winner);
-      if (!result.ok) {
-        // Already settled or cancelled — just log if it's unexpected
-        if (!result.error?.includes('Already settled')) {
-          console.log(`[autoSettle] settleGame failed for ${match.homeTeam} vs ${match.awayTeam}: ${result.error}`);
-        }
-        continue;
-      }
-
-      // Credit all straight-bet winners and push balance update to their clients
-      for (const [username, amount] of Object.entries(result.payouts)) {
-        const r = us.addBonusByAdmin(username, amount);
-        if (!r.ok) console.error(`[autoSettle] addBonusByAdmin failed for ${username}: ${r.error}`);
-        if (r.ok && _io) _io.emit('balanceReset', { username, balance: r.balance });
-        console.log(`[autoSettle] 💸 ${username} +$${amount.toLocaleString()} — ${match.homeTeam} vs ${match.awayTeam} (winner: ${winner})`);
-      }
-
-      // Settle any parlays that include this game
-      const parlayPayouts = sb.settleParlayBets(match.gameId, winner);
-      for (const [username, amount] of Object.entries(parlayPayouts)) {
-        const r = us.addBonusByAdmin(username, amount);
-        if (!r.ok) console.error(`[autoSettle] addBonusByAdmin (parlay) failed for ${username}: ${r.error}`);
-        if (r.ok && _io) _io.emit('balanceReset', { username, balance: r.balance });
-        console.log(`[autoSettle] 🎲 parlay payout: ${username} +$${amount.toLocaleString()} (game: ${match.homeTeam} vs ${match.awayTeam})`);
-      }
-
-      al.log('sports_auto_settle', {
-        gameId:      match.gameId,
-        winner,
-        homeTeam:    match.homeTeam,
-        awayTeam:    match.awayTeam,
-        betsSettled: result.settled.length,
-        totalPaid:   Object.values(result.payouts).reduce((a, b) => a + b, 0),
-      });
-
-      console.log(`[autoSettle] ✅ Settled: ${match.homeTeam} vs ${match.awayTeam} — Winner: ${winner} (${result.settled.length} bets)`);
-      totalSettled++;
-    }
-
-    // Log any eligible games from this sport that had NO API match (name mismatch likely)
-    for (const g of games) {
-      const wasSettled = allGames.find(ag => ag.gameId === g.gameId)?.status !== 'open';
-      if (!wasSettled) {
-        const matched = scores.some(s => isSameGame(g, s.home_team, s.away_team));
-        if (!matched) {
-          console.log(`[autoSettle] ⚠️  No API match found for: ${g.sport} | ${g.homeTeam} vs ${g.awayTeam}`);
-        }
-      }
-    }
-  }
-
-  if (totalSettled > 0) {
-    console.log(`[autoSettle] 🏆 Auto-settled ${totalSettled} game(s) this run`);
-  } else {
-    console.log('[autoSettle] Run complete — 0 games settled this pass');
-  }
-}
+// ── Concurrent-run guard ──────────────────────────────────────────────────────
+let _settling = false;
 
 // ── Auto-cancel started games with 0 bets (no API key needed) ────────────────
 function cleanupZeroBetGames() {
@@ -216,9 +101,9 @@ function cleanupZeroBetGames() {
   let cancelled = 0;
   for (const g of allGames) {
     if (g.status !== 'open') continue;
-    if (new Date(g.startTime).getTime() >= now) continue; // not started yet
+    if (new Date(g.startTime).getTime() >= now) continue;
     const stats = sb.getGameBetStats(g.gameId);
-    if (stats.betCount > 0) continue; // has real bets — let the API settle it
+    if (stats.betCount > 0) continue;
     sb.cancelGame(g.gameId);
     cancelled++;
     console.log(`[autoSettle] 🧹 Auto-cancelled 0-bet game: ${g.homeTeam} vs ${g.awayTeam}`);
@@ -227,26 +112,182 @@ function cleanupZeroBetGames() {
   return cancelled;
 }
 
-// ── Start the polling loop ────────────────────────────────────────────────────
-function start(intervalMs = 15 * 60_000, io = null) { // default: every 15 minutes
-  _io = io; // store socket.io instance for balance push notifications
+// ── Auto-purge old settled/cancelled games (keep DB lean) ────────────────────
+function purgeOldGames() {
+  const KEEP_DAYS = 14; // remove settled/cancelled games older than 14 days
+  const cutoff = Date.now() - KEEP_DAYS * 24 * 60 * 60_000;
+  const allGames = sb.getGames(true);
+  const stale = allGames.filter(g =>
+    (g.status === 'settled' || g.status === 'cancelled') &&
+    (g.settledAt || g.createdAt || 0) < cutoff
+  );
+  if (!stale.length) return;
+  const result = sb.purgeHistory();
+  console.log(`[autoSettle] 🗑️  Purged ${result.gamesRemoved} old game(s) and ${result.betsRemoved} bet record(s)`);
+}
 
-  // Always run zero-bet cleanup on a schedule — no API key needed
-  setTimeout(() => cleanupZeroBetGames(), 15_000); // 15s after boot
-  setInterval(() => cleanupZeroBetGames(), intervalMs);
-
-  if (!process.env.ODDS_API_KEY) {
-    console.warn('[autoSettle] ⚠️  ODDS_API_KEY not set — score-based auto-settlement disabled. Zero-bet cleanup still runs.');
+// ── Core settle run ───────────────────────────────────────────────────────────
+async function runAutoSettle() {
+  if (_settling) {
+    console.log('[autoSettle] Already running — skipping this tick');
     return;
   }
-  console.log(`[autoSettle] ✅ Started — checking scores every ${intervalMs / 60_000} min`);
-  // Run once immediately after a short delay (let server fully start)
+  _settling = true;
+
+  try {
+    // Step 1: cancel started 0-bet games (no API key needed)
+    cleanupZeroBetGames();
+
+    // Step 2: bail early if no API key
+    if (!process.env.ODDS_API_KEY) return;
+
+    // Step 3: bust cache and fetch fresh scores
+    odd.clearScoresCache();
+
+    const allGames = sb.getGames(true);
+    const now = Date.now();
+    // 10-min grace after start time before we try to settle
+    const eligible = allGames.filter(
+      g => g.status === 'open' && new Date(g.startTime).getTime() < now - 10 * 60_000
+    );
+
+    console.log(`[autoSettle] Run — ${allGames.length} total, ${eligible.length} eligible`);
+    if (!eligible.length) {
+      console.log('[autoSettle] Nothing to settle');
+      return;
+    }
+
+    eligible.forEach(g =>
+      console.log(`[autoSettle]   → ${g.sport} | ${g.homeTeam} vs ${g.awayTeam} | start:${g.startTime}`)
+    );
+
+    // Group by API sport key
+    const bySportKey = {};
+    for (const g of eligible) {
+      const apiKey = SPORT_KEY_MAP[g.sport];
+      if (!apiKey) {
+        console.warn(`[autoSettle] No API mapping for sport "${g.sport}" — skipping`);
+        continue;
+      }
+      if (!bySportKey[apiKey]) bySportKey[apiKey] = [];
+      bySportKey[apiKey].push(g);
+    }
+
+    if (!Object.keys(bySportKey).length) return;
+
+    let totalSettled = 0;
+
+    for (const [apiKey, games] of Object.entries(bySportKey)) {
+      let scores;
+      try {
+        scores = await odd.fetchScoresForSport(apiKey);
+      } catch (e) {
+        console.error(`[autoSettle] Score fetch failed for ${apiKey}:`, e.message);
+        continue;
+      }
+
+      console.log(`[autoSettle] ${apiKey}: ${scores.length} completed scores`);
+
+      // Settle matched games
+      for (const apiGame of scores) {
+        if (!apiGame.completed) continue;
+
+        const match = games.find(g => isSameGame(g, apiGame.home_team, apiGame.away_team));
+        if (!match) continue;
+
+        console.log(`[autoSettle] Match: ${apiGame.home_team} vs ${apiGame.away_team}`);
+
+        const winner = determineWinner(match, apiGame);
+        if (!winner) {
+          const sc = (apiGame.scores || []).map(s => `${s.name}:${s.score}`).join(', ');
+          console.log(`[autoSettle] Could not determine winner (scores: ${sc || 'none'}) — skipping`);
+          continue;
+        }
+
+        const result = sb.settleGame(match.gameId, winner);
+        if (!result.ok) {
+          if (!result.error?.includes('Already settled')) {
+            console.log(`[autoSettle] settleGame failed: ${result.error}`);
+          }
+          continue;
+        }
+
+        // Credit straight-bet winners
+        for (const [username, amount] of Object.entries(result.payouts)) {
+          const r = us.addBonusByAdmin(username, amount);
+          if (!r.ok) console.error(`[autoSettle] addBonusByAdmin failed for ${username}: ${r.error}`);
+          if (r.ok && _io) _io.emit('balanceReset', { username, balance: r.balance });
+          console.log(`[autoSettle] 💸 ${username} +$${amount.toLocaleString()} (${match.homeTeam} vs ${match.awayTeam} → ${winner})`);
+        }
+
+        // Settle parlays
+        const parlayPayouts = sb.settleParlayBets(match.gameId, winner);
+        for (const [username, amount] of Object.entries(parlayPayouts)) {
+          const r = us.addBonusByAdmin(username, amount);
+          if (!r.ok) console.error(`[autoSettle] parlay addBonusByAdmin failed for ${username}: ${r.error}`);
+          if (r.ok && _io) _io.emit('balanceReset', { username, balance: r.balance });
+          console.log(`[autoSettle] 🎲 parlay: ${username} +$${amount.toLocaleString()}`);
+        }
+
+        al.log('sports_auto_settle', {
+          gameId:      match.gameId,
+          winner,
+          homeTeam:    match.homeTeam,
+          awayTeam:    match.awayTeam,
+          betsSettled: result.settled.length,
+          totalPaid:   Object.values(result.payouts).reduce((a, b) => a + b, 0),
+        });
+
+        console.log(`[autoSettle] ✅ ${match.homeTeam} vs ${match.awayTeam} → ${winner} (${result.settled.length} bets)`);
+        totalSettled++;
+      }
+
+      // Warn about unmatched eligible games
+      for (const g of games) {
+        const stillOpen = sb.getGames(true).find(ag => ag.gameId === g.gameId)?.status === 'open';
+        if (stillOpen) {
+          const matched = scores.some(s => isSameGame(g, s.home_team, s.away_team));
+          if (!matched) {
+            console.log(`[autoSettle] ⚠️  No API match: ${g.sport} | ${g.homeTeam} vs ${g.awayTeam} — settle manually`);
+          }
+        }
+      }
+    }
+
+    console.log(`[autoSettle] Done — ${totalSettled} settled this pass`);
+  } finally {
+    _settling = false;
+  }
+}
+
+// ── Start the polling loop ────────────────────────────────────────────────────
+function start(intervalMs = 5 * 60_000, io = null) {
+  _io = io;
+
+  // Zero-bet cleanup + purge — run 20s after boot, then on every interval tick
+  setTimeout(() => {
+    cleanupZeroBetGames();
+    purgeOldGames();
+  }, 20_000);
+
+  if (!process.env.ODDS_API_KEY) {
+    console.warn('[autoSettle] ⚠️  ODDS_API_KEY not set — score-based settlement disabled. Zero-bet cleanup still runs.');
+    setInterval(() => { cleanupZeroBetGames(); purgeOldGames(); }, intervalMs);
+    return;
+  }
+
+  console.log(`[autoSettle] ✅ Started — polling every ${intervalMs / 60_000} min`);
+
+  // First full run 30s after boot
   setTimeout(() => {
     runAutoSettle().catch(e => console.error('[autoSettle] Error on first run:', e));
   }, 30_000);
+
+  // Recurring: settle + cleanup + purge
   setInterval(() => {
     runAutoSettle().catch(e => console.error('[autoSettle] Error:', e));
+    purgeOldGames();
   }, intervalMs);
 }
 
-module.exports = { start, runAutoSettle, cleanupZeroBetGames };
+module.exports = { start, runAutoSettle, cleanupZeroBetGames, purgeOldGames };

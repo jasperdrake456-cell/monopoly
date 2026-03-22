@@ -213,8 +213,8 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000);
 
-// Auto-settle sports games every 15 minutes using Odds API scores
-autoSettle.start(15 * 60 * 1000, io);
+// Auto-settle sports games every 5 minutes using Odds API scores
+autoSettle.start(5 * 60 * 1000, io);
 
 // Game reports current activity (or null to clear)
 app.post('/api/accounts/activity', (req, res) => {
@@ -1258,6 +1258,14 @@ app.post('/api/admin/sports/cleanup-zero-bets', requireAdmin, (req, res) => {
   }
 
   res.json({ ok: true, cancelled, message: `Cancelled ${cancelled} started game(s) with 0 bets` });
+});
+
+// Purge all settled/cancelled games + their bets from the DB (keeps it lean)
+app.post('/api/admin/sports/purge-history', requireAdmin, (req, res) => {
+  const result = sb.purgeHistory();
+  al.log('sports_purge_history', result);
+  console.log(`[sports] Admin purged history — ${result.gamesRemoved} games, ${result.betsRemoved} bets removed`);
+  res.json({ ok: true, ...result, message: `Removed ${result.gamesRemoved} game(s) and ${result.betsRemoved} bet record(s)` });
 });
 
 // Purge all settled/cancelled games and their bets from the database
