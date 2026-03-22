@@ -1197,31 +1197,54 @@ app.post('/api/admin/sports/games/:id/settle', requireAdmin, (req, res) => {
   const result = sb.settleGame(req.params.id, winner);
   if (!result.ok) return res.status(400).json(result);
 
+  const creditErrors = [];
+
   // Credit all straight-bet winners and push balance to their clients
   for (const [username, amount] of Object.entries(result.payouts)) {
     const r = us.addBonusByAdmin(username, amount);
-    if (r.ok) io.emit('balanceReset', { username, balance: r.balance });
-    console.log(`[sports] Payout: ${username} +$${amount}`);
+    if (r.ok) {
+      io.emit('balanceReset', { username, balance: r.balance });
+      console.log(`[sports] ✅ Payout: ${username} +$${amount.toLocaleString()}`);
+    } else {
+      creditErrors.push(`${username}: ${r.error}`);
+      console.error(`[sports] ❌ addBonusByAdmin failed for ${username}: ${r.error}`);
+    }
   }
 
   // Settle any parlays that include this game
   const parlayPayouts = sb.settleParlayBets(req.params.id, winner);
   for (const [username, amount] of Object.entries(parlayPayouts)) {
     const r = us.addBonusByAdmin(username, amount);
-    if (r.ok) io.emit('balanceReset', { username, balance: r.balance });
-    console.log(`[sports] Parlay payout: ${username} +$${amount}`);
+    if (r.ok) {
+      io.emit('balanceReset', { username, balance: r.balance });
+      console.log(`[sports] ✅ Parlay payout: ${username} +$${amount.toLocaleString()}`);
+    } else {
+      creditErrors.push(`parlay ${username}: ${r.error}`);
+      console.error(`[sports] ❌ addBonusByAdmin (parlay) failed for ${username}: ${r.error}`);
+    }
   }
 
-  al.log('sports_settle_game', { gameId: req.params.id, winner, betsSettled: result.settled.length });
-  res.json({ ok: true, settled: result.settled.length, payouts: { ...result.payouts, ...parlayPayouts } });
+  al.log('sports_settle_game', { gameId: req.params.id, winner, betsSettled: result.settled.length, creditErrors });
+  res.json({
+    ok: true,
+    settled: result.settled.length,
+    payouts: { ...result.payouts, ...parlayPayouts },
+    creditErrors: creditErrors.length ? creditErrors : undefined,
+  });
 });
 
-// Cancel & refund a game
+// Cancel & refund a game — credits refunds and pushes balance to clients
 app.delete('/api/admin/sports/games/:id', requireAdmin, (req, res) => {
   const result = sb.cancelGame(req.params.id);
   if (!result.ok) return res.status(400).json(result);
   for (const [username, amount] of Object.entries(result.payouts)) {
-    us.addBonusByAdmin(username, amount);
+    const r = us.addBonusByAdmin(username, amount);
+    if (r.ok) {
+      io.emit('balanceReset', { username, balance: r.balance });
+      console.log(`[sports] 🔄 Refund: ${username} +$${amount.toLocaleString()}`);
+    } else {
+      console.error(`[sports] ❌ Refund failed for ${username}: ${r.error}`);
+    }
   }
   al.log('sports_cancel_game', { gameId: req.params.id });
   res.json({ ok: true });
