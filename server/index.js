@@ -1,4 +1,11 @@
 'use strict';
+
+// ── Ensure Odds API key is available before any modules cache process.env ─────
+// Falls back to the key in sync-today.sh so Railway works without manual setup.
+if (!process.env.ODDS_API_KEY) {
+  process.env.ODDS_API_KEY = '358b60a6e8223a596d99cb0dc8fe6716';
+}
+
 const express     = require('express');
 const http        = require('http');
 const { Server }  = require('socket.io');
@@ -23,6 +30,7 @@ const ch        = require('./championStore');
 const odds      = require('./oddsAPI');
 const sb        = require('./sportsStore');
 const autoSettle = require('./autoSettle');
+const autoSync   = require('./autoSync');
 const jp        = require('./jackpotStore');
 const gc        = require('./giftCodeStore');
 
@@ -212,6 +220,9 @@ setInterval(() => {
     console.error('[Bonus interval] Error:', err);
   }
 }, 5 * 60 * 1000);
+
+// Auto-sync upcoming games from Odds API every 6 hours
+autoSync.start();
 
 // Auto-settle sports games every 5 minutes using Odds API scores
 autoSettle.start(5 * 60 * 1000, io);
@@ -1086,6 +1097,17 @@ app.post('/api/admin/settle-now', requireAdmin, async (req, res) => {
   try {
     await autoSettle.runAutoSettle();
     res.json({ ok: true, message: 'Auto-settle run complete — check server logs' });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Manual trigger for auto-sync (admin only)
+app.post('/api/admin/sync-games-now', requireAdmin, async (req, res) => {
+  try {
+    await autoSync.runAutoSync();
+    const games = sb.getGames(false); // open, upcoming only
+    res.json({ ok: true, message: 'Game sync complete — check server logs', openGames: games.length });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }

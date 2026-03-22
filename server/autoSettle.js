@@ -138,7 +138,7 @@ async function runAutoSettle() {
     // Step 1: cancel started 0-bet games (no API key needed)
     cleanupZeroBetGames();
 
-    // Step 2: bail early if no API key
+    // Step 2: bail early if no API key (shouldn't happen — set at top of index.js)
     if (!process.env.ODDS_API_KEY) return;
 
     // Step 3: bust cache and fetch fresh scores
