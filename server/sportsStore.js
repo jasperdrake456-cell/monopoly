@@ -143,11 +143,21 @@ function purgeHistory() {
 }
 
 function getGameBetStats(gameId) {
-  const data  = read();
-  const bets  = (data.bets || []).filter(b => b.gameId === gameId);
-  const open  = bets.filter(b => b.status === 'open');
-  const totalWagered = open.reduce((s, b) => s + b.amount, 0);
-  return { betCount: open.length, totalWagered };
+  const data = read();
+  const allBets = data.bets || [];
+
+  // Straight bets on this game
+  const straight = allBets.filter(b => b.gameId === gameId && b.status === 'open');
+
+  // Parlay bets that include this game as one of their legs
+  const parlay = allBets.filter(
+    b => b.type === 'parlay' && b.status === 'open' &&
+         Array.isArray(b.picks) && b.picks.some(p => p.gameId === gameId)
+  );
+
+  const all = [...straight, ...parlay];
+  const totalWagered = straight.reduce((s, b) => s + b.amount, 0); // only count straight wagers toward the pool
+  return { betCount: all.length, totalWagered };
 }
 
 function getAllBets() {
@@ -312,17 +322,27 @@ function settleParlayBets(gameId, winner) {
       leg.status = 'lost';
     }
 
-    // Check if all legs are resolved
-    const openLegs      = bet.picks.filter(p => p.status === 'open');
+    // ── Instant bust: if this leg lost, kill the parlay immediately ──────────
+    if (leg.status === 'lost') {
+      bet.status    = 'lost';
+      bet.payout    = 0;
+      bet.settledAt = Date.now();
+      // Mark all remaining open legs as lost too so the parlay is fully closed
+      bet.picks.forEach(p => { if (p.status === 'open') p.status = 'lost'; });
+      continue; // nothing to pay out — move on
+    }
+
+    // Check if all remaining legs are resolved
+    const openLegs = bet.picks.filter(p => p.status === 'open');
     if (openLegs.length > 0) continue; // more legs still pending
 
-    // All legs resolved — determine parlay outcome
-    const lostLegs = bet.picks.filter(p => p.status === 'lost');
+    // All legs resolved with no losses — determine final payout
+    const lostLegs = bet.picks.filter(p => p.status === 'lost'); // should always be 0 here
 
     bet.settledAt = Date.now();
 
     if (lostLegs.length > 0) {
-      // Any loss = parlay lost
+      // Shouldn't reach here due to instant-bust above, but kept as safety net
       bet.status = 'lost';
       bet.payout = 0;
     } else {
