@@ -1255,10 +1255,12 @@ app.post('/api/admin/sports/games/:id/settle', requireAdmin, (req, res) => {
   });
 });
 
-// Cancel & refund a game — credits refunds and pushes balance to clients
+// Cancel & refund a game — credits refunds and settles parlay legs
 app.delete('/api/admin/sports/games/:id', requireAdmin, (req, res) => {
   const result = sb.cancelGame(req.params.id);
   if (!result.ok) return res.status(400).json(result);
+
+  // Refund straight bets
   for (const [username, amount] of Object.entries(result.payouts)) {
     const r = us.addBonusByAdmin(username, amount);
     if (r.ok) {
@@ -1268,6 +1270,19 @@ app.delete('/api/admin/sports/games/:id', requireAdmin, (req, res) => {
       console.error(`[sports] ❌ Refund failed for ${username}: ${r.error}`);
     }
   }
+
+  // Settle parlay legs for this game (cancelled = void/push for that leg)
+  const parlayPayouts = sb.settleParlayBets(req.params.id, 'cancelled');
+  for (const [username, amount] of Object.entries(parlayPayouts)) {
+    const r = us.addBonusByAdmin(username, amount);
+    if (r.ok) {
+      io.emit('balanceReset', { username, balance: r.balance });
+      console.log(`[sports] 🔄 Parlay void payout: ${username} +$${amount.toLocaleString()}`);
+    } else {
+      console.error(`[sports] ❌ Parlay refund failed for ${username}: ${r.error}`);
+    }
+  }
+
   al.log('sports_cancel_game', { gameId: req.params.id });
   res.json({ ok: true });
 });
@@ -1297,6 +1312,12 @@ app.post('/api/admin/sports/cleanup-zero-bets', requireAdmin, (req, res) => {
     const r = sb.cancelGame(g.gameId);
     if (r.ok) {
       cancelled++;
+      // Settle parlay legs (void this leg; pay out if all other legs won)
+      const parlayPayouts = sb.settleParlayBets(g.gameId, 'cancelled');
+      for (const [username, amount] of Object.entries(parlayPayouts)) {
+        const cr = us.addBonusByAdmin(username, amount);
+        if (cr.ok) io.emit('balanceReset', { username, balance: cr.balance });
+      }
       al.log('sports_auto_cancel_zero_bets', { gameId: g.gameId, homeTeam: g.homeTeam, awayTeam: g.awayTeam });
       console.log(`[sports] Auto-cancelled 0-bet game: ${g.homeTeam} vs ${g.awayTeam}`);
     }

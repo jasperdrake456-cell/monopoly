@@ -175,8 +175,16 @@ function cleanupZeroBetGames() {
     if (g.status !== 'open') continue;
     if (new Date(g.startTime).getTime() >= now) continue;
     const stats = sb.getGameBetStats(g.gameId);
-    if (stats.betCount > 0) continue;
-    sb.cancelGame(g.gameId);
+    if (stats.betCount > 0) continue; // has straight or parlay bets — skip
+    const result = sb.cancelGame(g.gameId);
+    if (!result.ok) continue;
+    // Settle any parlay legs on this game (void the leg; pay out if all other legs are done)
+    const parlayPayouts = sb.settleParlayBets(g.gameId, 'cancelled');
+    for (const [username, amount] of Object.entries(parlayPayouts)) {
+      const r = us.addBonusByAdmin(username, amount);
+      if (r.ok && _io) _io.emit('balanceReset', { username, balance: r.balance });
+      console.log(`[autoSettle] 🔄 Parlay void payout: ${username} +$${amount.toLocaleString()}`);
+    }
     cancelled++;
     console.log(`[autoSettle] 🧹 Auto-cancelled 0-bet: ${g.homeTeam} vs ${g.awayTeam}`);
   }
