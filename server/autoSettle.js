@@ -89,7 +89,8 @@ function doSettle(storedGame, winner, source) {
     creditWinner(username, amount, `[${source}]`);
   }
 
-  const parlayPayouts = sb.settleParlayBets(storedGame.gameId, winner);
+  // parlayPayouts are now embedded in settleGame result (atomic settlement)
+  const parlayPayouts = result.parlayPayouts || {};
   for (const [username, amount] of Object.entries(parlayPayouts)) {
     creditWinner(username, amount, `[${source} parlay]`);
   }

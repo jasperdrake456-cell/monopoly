@@ -2,13 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useChampion } from '../hooks/useChampion';
-import { addBalance } from '../utils/casinoBalance';
+import { setBalanceFromServer } from '../utils/casinoBalance';
 import './AccountWidget.css';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
 
 export default function AccountWidget() {
-  const { user, balance, isLoggedIn, logout } = useAuth();
+  const { user, balance, isLoggedIn, logout, refreshBalance } = useAuth();
   const { champion } = useChampion();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -41,7 +41,9 @@ export default function AccountWidget() {
       });
       const data = await res.json();
       if (data.ok) {
-        addBalance(data.amount);
+        // Use server-authoritative balance so stale local cache can't wipe the bonus
+        setBalanceFromServer(data.newBalance);
+        if (refreshBalance) refreshBalance(data.newBalance);
         setRedeemMsg(`🎉 +$${data.amount.toLocaleString()} added to your balance!`);
         setRedeemCode('');
       } else {

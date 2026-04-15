@@ -105,8 +105,57 @@ function settleGame(gameId, winner) {
     }
   }
 
+  // Settle parlay legs in the SAME write so nothing is missed
+  const parlayPayouts = {};
+  const openParlays = (data.bets || []).filter(b => b.type === 'parlay' && b.status === 'open');
+  for (const bet of openParlays) {
+    const leg = bet.picks.find(p => p.gameId === gameId);
+    if (!leg) continue;
+
+    if (winner === 'cancelled') {
+      leg.status = 'push';
+    } else if (leg.pick === winner) {
+      leg.status = 'won';
+    } else {
+      leg.status = 'lost';
+    }
+
+    if (leg.status === 'lost') {
+      bet.status    = 'lost';
+      bet.payout    = 0;
+      bet.settledAt = Date.now();
+      bet.picks.forEach(p => { if (p.status === 'open') p.status = 'lost'; });
+      continue;
+    }
+
+    const stillOpen = bet.picks.filter(p => p.status === 'open');
+    if (stillOpen.length > 0) continue;
+
+    bet.settledAt = Date.now();
+    const lostLegs = bet.picks.filter(p => p.status === 'lost');
+    if (lostLegs.length > 0) {
+      bet.status = 'lost';
+      bet.payout = 0;
+    } else {
+      const pushLegs = bet.picks.filter(p => p.status === 'push');
+      if (pushLegs.length === bet.picks.length) {
+        bet.status = 'push';
+        bet.payout = bet.amount;
+      } else {
+        const wonLegs      = bet.picks.filter(p => p.status === 'won');
+        const effectiveDec = wonLegs.reduce((acc, p) => acc * americanToDecimal(p.odds), 1);
+        bet.status = 'won';
+        bet.payout = Math.floor(bet.amount * effectiveDec);
+        parlayPayouts[bet.username] = (parlayPayouts[bet.username] || 0) + bet.payout;
+      }
+    }
+    if (bet.status === 'push' && bet.payout > 0) {
+      parlayPayouts[bet.username] = (parlayPayouts[bet.username] || 0) + bet.payout;
+    }
+  }
+
   write(data);
-  return { ok: true, game, settled: openBets, payouts };
+  return { ok: true, game, settled: openBets, payouts, parlayPayouts };
 }
 
 function cancelGame(gameId) {
@@ -134,7 +183,13 @@ function purgeHistory() {
   );
   data.games = (data.games || []).filter(g => !removedIds.has(g.gameId));
   const betsBefore = (data.bets || []).length;
+  // Remove straight bets tied to purged games
   data.bets = (data.bets || []).filter(b => !removedIds.has(b.gameId));
+  // Remove settled/lost/push/won parlay bets (they have no gameId but are fully resolved)
+  data.bets = data.bets.filter(b => {
+    if (b.type !== 'parlay') return true;
+    return b.status === 'open'; // keep only open parlays
+  });
   write(data);
   return {
     gamesRemoved: before - data.games.length,
@@ -376,10 +431,13 @@ function settleParlayBets(gameId, winner) {
 
 function getUserParlays(username) {
   const data = read();
-  return (data.bets || [])
+  const all = (data.bets || [])
     .filter(b => b.username === username && b.type === 'parlay')
-    .sort((a, b) => b.placedAt - a.placedAt)
-    .slice(0, 50);
+    .sort((a, b) => b.placedAt - a.placedAt);
+  // Open parlays always included; settled parlays show last 10 for history
+  const open    = all.filter(b => b.status === 'open');
+  const settled = all.filter(b => b.status !== 'open').slice(0, 10);
+  return [...open, ...settled];
 }
 
 // Legacy — kept so settlement job still compiles

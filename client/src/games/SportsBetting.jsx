@@ -180,7 +180,7 @@ export default function SportsBetting() {
 
   useEffect(() => { loadGames(); loadMyBets(); loadScores(); loadMyParlays(); }, [loadGames, loadMyBets, loadScores, loadMyParlays]);
   useEffect(() => {
-    const id = setInterval(() => { loadGames(); loadMyBets(); loadScores(); loadMyParlays(); }, 60_000);
+    const id = setInterval(() => { loadGames(); loadMyBets(); loadScores(); loadMyParlays(); }, 15_000);
     return () => clearInterval(id);
   }, [loadGames, loadMyBets, loadScores, loadMyParlays]);
 

@@ -1233,8 +1233,8 @@ app.post('/api/admin/sports/games/:id/settle', requireAdmin, (req, res) => {
     }
   }
 
-  // Settle any parlays that include this game
-  const parlayPayouts = sb.settleParlayBets(req.params.id, winner);
+  // Parlay payouts are now embedded in settleGame result (atomic settlement)
+  const parlayPayouts = result.parlayPayouts || {};
   for (const [username, amount] of Object.entries(parlayPayouts)) {
     const r = us.addBonusByAdmin(username, amount);
     if (r.ok) {
@@ -1271,8 +1271,8 @@ app.delete('/api/admin/sports/games/:id', requireAdmin, (req, res) => {
     }
   }
 
-  // Settle parlay legs for this game (cancelled = void/push for that leg)
-  const parlayPayouts = sb.settleParlayBets(req.params.id, 'cancelled');
+  // Parlay payouts for void legs now embedded in cancelGame (= settleGame) result
+  const parlayPayouts = result.parlayPayouts || {};
   for (const [username, amount] of Object.entries(parlayPayouts)) {
     const r = us.addBonusByAdmin(username, amount);
     if (r.ok) {
@@ -1353,10 +1353,13 @@ app.post('/api/redeem', requireAuth, (req, res) => {
   if (!result.ok) return res.status(400).json(result);
 
   // Credit coins server-side (locked so client sync can't overwrite it)
-  us.addBonusByAdmin(req.user.username, result.amount);
+  const bonusResult = us.addBonusByAdmin(req.user.username, result.amount);
+  if (!bonusResult.ok) return res.status(500).json({ ok: false, error: 'Failed to credit balance' });
+
   al.log('gift_code_redeemed', { username: req.user.username, code: result.code, amount: result.amount });
   console.log(`[GiftCode] ${req.user.username} redeemed ${result.code} (+$${result.amount.toLocaleString()})`);
-  res.json({ ok: true, amount: result.amount });
+  // Return the server-authoritative new balance so the client doesn't have to guess
+  res.json({ ok: true, amount: result.amount, newBalance: bonusResult.balance });
 });
 
 // Admin: list codes
