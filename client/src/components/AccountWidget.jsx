@@ -33,7 +33,7 @@ export default function AccountWidget() {
     setRedeeming(true);
     setRedeemMsg('');
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('gv_auth_token');
       const res   = await fetch(`${SERVER_URL}/api/redeem`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
