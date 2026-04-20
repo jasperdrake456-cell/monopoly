@@ -147,6 +147,39 @@ function JackpotAdminCard({ token, authFetch }) {
 }
 
 // ── Gift Code Admin Card ──────────────────────────────────────────────────────
+function CoinRainAdminCard({ token, authFetch }) {
+  const [amount,  setAmount]  = React.useState('1000');
+  const [message, setMessage] = React.useState('🌧️ Coin Rain!');
+  const [status,  setStatus]  = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+
+  async function handleRain() {
+    if (loading) return;
+    setLoading(true); setStatus('');
+    const d = await authFetch('/api/admin/coin-rain', token, {
+      method: 'POST',
+      body: JSON.stringify({ amount: Number(amount), message }),
+    });
+    setStatus(d.ok ? `✓ Rained $${Number(amount).toLocaleString()} on ${d.credited} users` : `✗ ${d.error || 'Failed'}`);
+    setLoading(false);
+  }
+
+  return (
+    <div className="admin-site-card">
+      <div className="admin-site-card-title">🌧️ Coin Rain</div>
+      <div className="admin-site-card-sub">Drop free coins on all online players at once</div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+        <input className="admin-input" style={{ width: 120 }} type="number" placeholder="Amount per player" value={amount} onChange={e => setAmount(e.target.value)} />
+        <input className="admin-input" style={{ width: 200 }} placeholder="Message" value={message} onChange={e => setMessage(e.target.value)} />
+        <button className="admin-btn admin-btn--primary admin-btn--sm" onClick={handleRain} disabled={loading || !amount}>
+          {loading ? '…' : '🌧️ Rain Coins'}
+        </button>
+      </div>
+      {status && <div style={{ fontSize: '0.82rem', color: status.startsWith('✓') ? '#86efac' : '#fca5a5' }}>{status}</div>}
+    </div>
+  );
+}
+
 function GiftCodeAdminCard({ token, authFetch }) {
   const [codes,    setCodes]    = React.useState([]);
   const [newCode,  setNewCode]  = React.useState('');
@@ -1726,6 +1759,9 @@ export default function AdminPage() {
 
           {/* ── Gift Codes ────────────────────────────────────────────────── */}
           <GiftCodeAdminCard token={token} authFetch={authFetch} />
+
+          {/* ── Coin Rain ─────────────────────────────────────────────────── */}
+          <CoinRainAdminCard token={token} authFetch={authFetch} />
 
           {/* ── Danger Zone ───────────────────────────────────────────────── */}
           <div className="admin-site-card admin-danger-card">

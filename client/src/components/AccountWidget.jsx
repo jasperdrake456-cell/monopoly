@@ -84,6 +84,9 @@ export default function AccountWidget() {
             <div className="acw-header-bal">💰 ${balance.toLocaleString()}</div>
           </div>
           <div className="acw-divider" />
+          <Link to="/profile" className="acw-item" onClick={() => setOpen(false)}>
+            👤 My Profile
+          </Link>
           <Link to="/transfer" className="acw-item" onClick={() => setOpen(false)}>
             💸 Send Money
           </Link>

@@ -4,6 +4,8 @@ import { io } from 'socket.io-client';
 import AccountWidget from '../components/AccountWidget';
 import { useAuth } from '../contexts/AuthContext';
 import { useChampion, invalidateChampionCache } from '../hooks/useChampion';
+import LiveWinsTicker from '../components/LiveWinsTicker';
+import DailyMissions from '../components/DailyMissions';
 import './HomePage.css';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
@@ -74,7 +76,7 @@ const SLUG_NAMES = {
 };
 
 export default function HomePage() {
-  const { user } = useAuth();
+  const { user, token, isLoggedIn } = useAuth();
   const isAdmin = user?.username === 'jasper';
   const [champData, setChampData] = useState({ champion: null, happyHourActive: false });
   const { champion, happyHourActive } = champData;
@@ -129,6 +131,7 @@ export default function HomePage() {
       </header>
 
       <main className="home-main">
+        <LiveWinsTicker />
         <section className="home-section">
           <h2 className="home-section-title" style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
             <span>🎰 Casino</span>
@@ -182,6 +185,12 @@ export default function HomePage() {
             ))}
           </div>
         </section>
+
+        {isLoggedIn && token && (
+          <section className="home-section">
+            <DailyMissions token={token} />
+          </section>
+        )}
 
         <section className="home-section">
           <h2 className="home-section-title">Multiplayer Games</h2>

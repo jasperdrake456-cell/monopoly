@@ -1,0 +1,22 @@
+.xpbadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: color-mix(in srgb, var(--badge-color) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--badge-color) 55%, transparent);
+  color: var(--badge-color);
+  border-radius: 99px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: default;
+}
+.xpbadge--small {
+  font-size: 0.65rem;
+  padding: 1px 5px;
+}
+.xpbadge-num {
+  font-size: 0.72em;
+  opacity: 0.9;
+}

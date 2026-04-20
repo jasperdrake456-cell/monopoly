@@ -33,6 +33,8 @@ const autoSettle = require('./autoSettle');
 const autoSync   = require('./autoSync');
 const jp        = require('./jackpotStore');
 const gc        = require('./giftCodeStore');
+const xp        = require('./xpStore');
+const ms        = require('./missionsStore');
 
 const app = express();
 const server = http.createServer(app);
@@ -407,6 +409,19 @@ app.post('/api/accounts/big-win', (req, res) => {
     details:    details || '',
     timestamp:  Date.now(),
   });
+
+  // Broadcast to all clients for live feed
+  io.emit('bigWin', { username: me.username, game, profit: realProfit, multiplier: multiplier ?? null, timestamp: Date.now() });
+
+  // Award XP + achievements for big win
+  const xpResult = xp.recordBet({ username: me.username, game, amount: Math.floor(bet), won: true, multiplier: multiplier ?? 1, profit: realProfit });
+  if (xpResult.unlocked.length > 0 || xpResult.leveledUp) {
+    io.emit('xpEvent', { username: me.username, ...xpResult });
+  }
+  // Mission: big_win event
+  const mult = multiplier ?? (payout / bet);
+  ms.recordEvent(me.username, 'big_win', game, realProfit, mult);
+
   console.log(`[winLog] 🏆 ${me.username} won $${realProfit.toLocaleString()} on ${game}`);
   res.json({ ok: true });
 });
@@ -1030,6 +1045,99 @@ app.post('/api/admin/champion', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+// ── XP & Levels ───────────────────────────────────────────────────────────────
+
+app.get('/api/xp/profile', requireAuth, (req, res) => {
+  const profile = xp.getProfile(req.user.username);
+  if (!profile) return res.json({ ok: true, profile: { xp: 0, level: 1, levelInfo: xp.getLevelInfo(0), achievements: [], achievementDetails: [], totalWagered: 0, totalWins: 0, winStreak: 0, bestStreak: 0, gamesPlayed: {}, spinStreak: 0 } });
+  res.json({ ok: true, profile });
+});
+
+app.get('/api/xp/profile/:username', (req, res) => {
+  const profile = xp.getProfile(req.params.username.toLowerCase());
+  if (!profile) return res.status(404).json({ ok: false, error: 'User not found' });
+  res.json({ ok: true, profile });
+});
+
+app.get('/api/xp/leaderboard', (req, res) => {
+  res.json({ ok: true, players: xp.getTopPlayers(25) });
+});
+
+app.get('/api/xp/meta', (req, res) => {
+  res.json({ ok: true, levels: xp.LEVELS, achievements: xp.ACHIEVEMENTS });
+});
+
+// Record a bet result (called by casino game clients after each round)
+app.post('/api/xp/record-bet', requireAuth, (req, res) => {
+  const { game, amount, won, multiplier, profit } = req.body || {};
+  if (!game || amount == null) return res.status(400).json({ ok: false });
+  const result = xp.recordBet({ username: req.user.username, game, amount: Math.floor(amount), won: !!won, multiplier: multiplier ?? 1, profit: profit ?? 0 });
+
+  // Also record mission progress
+  ms.recordEvent(req.user.username, 'wager', game, Math.floor(amount), multiplier);
+  if (won) ms.recordEvent(req.user.username, 'win', game, Math.floor(amount), multiplier);
+  if (won) ms.recordEvent(req.user.username, 'game_win', game, Math.floor(amount), multiplier);
+  ms.recordEvent(req.user.username, 'game_wager', game, Math.floor(amount), multiplier);
+
+  if (result.unlocked.length > 0 || result.leveledUp) {
+    io.emit('xpEvent', { username: req.user.username, ...result });
+  }
+  res.json({ ok: true, ...result });
+});
+
+// ── Daily Missions ─────────────────────────────────────────────────────────────
+
+app.get('/api/missions', requireAuth, (req, res) => {
+  const missions = ms.getMissions(req.user.username);
+  res.json({ ok: true, missions });
+});
+
+app.post('/api/missions/claim/:id', requireAuth, (req, res) => {
+  const result = ms.claimReward(req.user.username, req.params.id);
+  if (!result.ok) return res.status(400).json(result);
+  // Credit the reward
+  const bonus = us.addBonusByAdmin(req.user.username, result.reward);
+  if (bonus.ok) {
+    io.emit('balanceReset', { username: req.user.username, balance: bonus.balance });
+    al.log('mission_claimed', { username: req.user.username, missionId: req.params.id, reward: result.reward });
+    xp.awardXP(req.user.username, Math.floor(result.reward / 10));
+  }
+  res.json({ ok: true, reward: result.reward, newBalance: bonus.balance });
+});
+
+// ── Coin Rain (admin) ──────────────────────────────────────────────────────────
+
+app.post('/api/admin/coin-rain', requireAdmin, (req, res) => {
+  const { amount = 1000, message = '🌧️ Coin Rain!' } = req.body || {};
+  const amt = Math.min(Math.max(Math.floor(amount), 100), 1_000_000);
+
+  // Credit all currently connected users
+  const connectedSockets = [...io.sockets.sockets.values()];
+  const credited = new Set();
+
+  // We credit everyone in the users DB who has been online in last 30 mins
+  const allUsers = us.getOnlineUsers ? us.getOnlineUsers(30) : [];
+  for (const username of allUsers) {
+    if (credited.has(username)) continue;
+    credited.add(username);
+    const r = us.addBonusByAdmin(username, amt);
+    if (r.ok) io.emit('balanceReset', { username, balance: r.balance });
+  }
+
+  // Broadcast rain event to ALL clients (even offline ones will see it on next load)
+  io.emit('coinRain', { amount: amt, message, creditedCount: credited.size });
+  al.log('coin_rain', { admin: req.user.username, amount: amt, credited: credited.size });
+  console.log(`[CoinRain] Admin dropped $${amt.toLocaleString()} on ${credited.size} user(s)`);
+  res.json({ ok: true, amount: amt, credited: credited.size });
+});
+
+// ── Live Recent Wins (public feed) ─────────────────────────────────────────────
+
+app.get('/api/wins/recent', (req, res) => {
+  const wins = wl.getWins().slice(0, 20);
+  res.json({ ok: true, wins });
+});
+
 // ── Jackpot (shared pool for Slots) ──────────────────────────────────────────
 
 // Public: get current jackpot amount
@@ -1072,6 +1180,10 @@ app.post('/api/jackpot/claim', requireAuth, (req, res) => {
 
   al.log('jackpot_won', { winner: req.user.username, amount: won });
   console.log(`[jackpot] 🎰 JACKPOT! ${req.user.username} won $${won.toLocaleString()}! Pool reset to $${resetTo.toLocaleString()}`);
+
+  // Award jackpot achievement + XP
+  const jackpotUnlocked = xp.recordJackpotWin(req.user.username);
+  if (jackpotUnlocked.length > 0) io.emit('xpEvent', { username: req.user.username, unlocked: jackpotUnlocked });
 
   res.json({ ok: true, amount: won, resetTo });
 });
@@ -1240,6 +1352,7 @@ app.post('/api/admin/sports/games/:id/settle', requireAdmin, (req, res) => {
     if (r.ok) {
       io.emit('balanceReset', { username, balance: r.balance });
       console.log(`[sports] ✅ Parlay payout: ${username} +$${amount.toLocaleString()}`);
+      xp.recordParlayWin(username);
     } else {
       creditErrors.push(`parlay ${username}: ${r.error}`);
       console.error(`[sports] ❌ addBonusByAdmin (parlay) failed for ${username}: ${r.error}`);
@@ -1392,9 +1505,12 @@ app.get('/api/daily-spin', requireAuth, (req, res) => {
 app.post('/api/daily-spin', requireAuth, (req, res) => {
   const result = us.claimDailySpin(getToken(req));
   if (result.ok) {
-    // Push updated balance to all of this user's connected sessions
     io.emit('balanceReset', { username: req.user.username, balance: result.balance });
     console.log(`[DailySpin] ${req.user.username} won ${result.prize}`);
+    // Award XP + track spin streak for achievements
+    xp.awardXP(req.user.username, 25);
+    const spinUnlocked = xp.recordDailySpin(req.user.username);
+    if (spinUnlocked.length > 0) io.emit('xpEvent', { username: req.user.username, unlocked: spinUnlocked });
   }
   res.json(result);
 });

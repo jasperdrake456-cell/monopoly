@@ -1,0 +1,131 @@
+.dm-wrap {
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.dm-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.dm-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #f1f5f9;
+}
+
+.dm-progress {
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.dm-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.dm-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.15s;
+}
+.dm-item:last-child { border-bottom: none; }
+.dm-item:hover { background: rgba(255,255,255,0.03); }
+.dm-item--done { background: rgba(34,197,94,0.06); }
+.dm-item--claimed { opacity: 0.6; }
+
+.dm-item-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  width: 36px;
+  text-align: center;
+}
+
+.dm-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.dm-item-desc {
+  font-size: 0.83rem;
+  color: #e2e8f0;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.dm-item-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dm-item-bar {
+  flex: 1;
+  height: 5px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.dm-item-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.dm-item-val {
+  font-size: 0.7rem;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.dm-item-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.dm-item-reward {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+.dm-claim-btn {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.dm-claim-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.dm-claim-btn:hover:not(:disabled) { opacity: 0.85; }
+
+.dm-claimed-label {
+  color: #22c55e;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.dm-footer {
+  text-align: center;
+  padding: 8px;
+  font-size: 0.7rem;
+  color: #334155;
+}

@@ -1,0 +1,261 @@
+[
+  {
+    "id": "a3581851b7db",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 50,
+      "skipped": 12,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1776277055647
+  },
+  {
+    "id": "d781b2d30357",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 21,
+      "skipped": 71,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1775260598909
+  },
+  {
+    "id": "c0a6676889d7",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 3,
+      "skipped": 88,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1775239003673
+  },
+  {
+    "id": "57609293690c",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 6,
+      "skipped": 88,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1775217399970
+  },
+  {
+    "id": "aed627d7f375",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 12,
+      "skipped": 91,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1775171390155
+  },
+  {
+    "id": "95449411444b",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 1,
+      "skipped": 84,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1775149787851
+  },
+  {
+    "id": "0f3030c8b560",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 13,
+      "skipped": 71,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1775105916161
+  },
+  {
+    "id": "c5a817602bd9",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 8,
+      "skipped": 70,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1775082977104
+  },
+  {
+    "id": "feed2eedbcd4",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 29,
+      "skipped": 47,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1775039414311
+  },
+  {
+    "id": "0369810e7696",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 9,
+      "skipped": 82,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1774994822786
+  },
+  {
+    "id": "97192f379aac",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 35,
+      "skipped": 47,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1774930023564
+  },
+  {
+    "id": "9be0a95ccf41",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 11,
+      "skipped": 76,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1774907907103
+  },
+  {
+    "id": "79e4461bd4dc",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 3,
+      "skipped": 74,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1774828344477
+  },
+  {
+    "id": "f70f5340908f",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 8,
+      "skipped": 80,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1774785145408
+  },
+  {
+    "id": "621dc5b3e151",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 21,
+      "skipped": 62,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1774740745526
+  },
+  {
+    "id": "caa138abd866",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 38,
+      "skipped": 57,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1774675570243
+  },
+  {
+    "id": "4ecbbb563123",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 2,
+      "skipped": 89,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1774586128909
+  },
+  {
+    "id": "86815a78bd53",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 17,
+      "skipped": 74,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1774578383149
+  },
+  {
+    "id": "9d46db3295b2",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 52,
+      "skipped": 47,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1774556783925
+  },
+  {
+    "id": "3130aa8388fc",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 13,
+      "skipped": 60,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1774351304686
+  },
+  {
+    "id": "13fc1c50e7ee",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 14,
+      "skipped": 46,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1774326382948
+  },
+  {
+    "id": "4455dc03ee48",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 11,
+      "skipped": 56,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1774303333898
+  },
+  {
+    "id": "6dc32f4912de",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 5,
+      "skipped": 60,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1774260132628
+  },
+  {
+    "id": "2441a3941842",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 11,
+      "skipped": 49,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1774228232906
+  },
+  {
+    "id": "9278bda21441",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 58,
+      "skipped": 14,
+      "source": "ESPN+OddsAPI"
+    },
+    "timestamp": 1774206272233
+  },
+  {
+    "id": "9587ce960d5f",
+    "action": "sports_auto_sync",
+    "details": {
+      "gamesAdded": 13,
+      "skipped": 0
+    },
+    "timestamp": 1774205311975
+  }
+]

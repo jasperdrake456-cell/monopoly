@@ -127,6 +127,7 @@ export function AuthProvider({ children }) {
   // ── Listen for server-forced logout (weekly reset) & money alerts ────────
   useEffect(() => {
     const sock = io(SERVER_URL, { autoConnect: true });
+    window.__gameSocket = sock; // make globally accessible for live feed
     forceLogoutSocketRef.current = sock;
 
     sock.on('forceLogout', () => {
@@ -159,7 +160,24 @@ export function AuthProvider({ children }) {
       window.dispatchEvent(new CustomEvent('jackpotWon', { detail: data }));
     });
 
-    return () => sock.disconnect();
+    // XP events — achievements unlocked, level ups
+    sock.on('xpEvent', (data) => {
+      if (userRef.current?.username === data.username) {
+        window.dispatchEvent(new CustomEvent('xpEvent', { detail: data }));
+      }
+    });
+
+    // Coin rain — show animation for ALL users
+    sock.on('coinRain', (data) => {
+      window.dispatchEvent(new CustomEvent('coinRain', { detail: data }));
+    });
+
+    // Big win feed
+    sock.on('bigWin', (data) => {
+      window.dispatchEvent(new CustomEvent('bigWin', { detail: data }));
+    });
+
+    return () => { sock.disconnect(); window.__gameSocket = null; };
   }, []);
 
   // ── Listen for balance changes from casino games ──────────────────────────

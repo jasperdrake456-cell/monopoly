@@ -1,0 +1,59 @@
+.coin-rain-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: all;
+  overflow: hidden;
+}
+
+.coin-rain-banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border-radius: 20px;
+  padding: 20px 36px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 0 60px rgba(245,158,11,0.6), 0 20px 60px rgba(0,0,0,0.8);
+  animation: rainBannerPop 0.5s cubic-bezier(0.175,0.885,0.32,1.275) both;
+  z-index: 2;
+  text-align: center;
+}
+
+.coin-rain-banner-emoji { font-size: 3rem; }
+
+.coin-rain-banner-title {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #000;
+  text-shadow: none;
+}
+
+.coin-rain-banner-amount {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: rgba(0,0,0,0.7);
+  margin-top: 4px;
+}
+
+.coin-rain-coin {
+  position: absolute;
+  top: -60px;
+  animation: coinFall linear infinite;
+  z-index: 1;
+  user-select: none;
+  pointer-events: none;
+}
+
+@keyframes coinFall {
+  0%   { top: -60px; opacity: 1; transform: rotate(0deg); }
+  100% { top: 110vh;  opacity: 0; transform: rotate(720deg); }
+}
+
+@keyframes rainBannerPop {
+  from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  to   { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+}

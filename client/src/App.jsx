@@ -60,6 +60,9 @@ import CoinFlipPage from './pages/CoinFlipPage';
 import LimboPage from './pages/LimboPage';
 import ScratchCardPage from './pages/ScratchCardPage';
 import CasinoWarPage from './pages/CasinoWarPage';
+import ProfilePage from './pages/ProfilePage';
+import AchievementToast, { showAchievement, showLevelUp } from './components/AchievementToast';
+import CoinRain, { triggerCoinRain } from './components/CoinRain';
 import './App.css';
 
 // Convenience wrapper: RequireAuth + GameGuard for a given slug
@@ -71,10 +74,34 @@ function GR({ slug, children }) {
   );
 }
 
+function GlobalEventListeners() {
+  React.useEffect(() => {
+    function onXP(e) {
+      const { unlocked = [], leveledUp, levelInfo } = e.detail || {};
+      unlocked.forEach(a => showAchievement(a));
+      if (leveledUp && levelInfo) showLevelUp(levelInfo);
+    }
+    function onCoinRain(e) {
+      const { amount, message } = e.detail || {};
+      triggerCoinRain(amount, message);
+    }
+    window.addEventListener('xpEvent', onXP);
+    window.addEventListener('coinRain', onCoinRain);
+    return () => {
+      window.removeEventListener('xpEvent', onXP);
+      window.removeEventListener('coinRain', onCoinRain);
+    };
+  }, []);
+  return null;
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <SiteConfigProvider>
+        <GlobalEventListeners />
+        <AchievementToast />
+        <CoinRain />
         <ChatPanel />
         <AnnouncementOverlay />
         <MoneyRainOverlay />
@@ -140,6 +167,8 @@ export default function App() {
             <Route path="/transfer"    element={<TransferPage />} />
             <Route path="/admin"       element={<AdminPage />} />
             <Route path="/suggestions" element={<SuggestionsPage />} />
+            <Route path="/profile"     element={<RequireAuth><ProfilePage /></RequireAuth>} />
+            <Route path="/profile/:username" element={<ProfilePage />} />
             <Route path="*"            element={<Navigate to="/" replace />} />
           </Routes>
         </PasswordGate>

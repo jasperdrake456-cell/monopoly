@@ -1,0 +1,192 @@
+.profile-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+}
+
+.profile-loading {
+  text-align: center;
+  padding: 80px 20px;
+  color: #64748b;
+  font-size: 1rem;
+}
+
+.profile-hero {
+  background: linear-gradient(135deg, rgba(0,0,0,0.5), rgba(0,0,0,0.3));
+  border: 1px solid rgba(255,255,255,0.08);
+  border-top: 3px solid var(--level-color, #f59e0b);
+  border-radius: 20px;
+  padding: 28px 28px 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.profile-hero-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--level-color, #f59e0b), rgba(0,0,0,0.3));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 900;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 0 24px color-mix(in srgb, var(--level-color) 40%, transparent);
+}
+
+.profile-hero-info { flex: 1; min-width: 180px; }
+
+.profile-hero-name {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #f1f5f9;
+  margin-bottom: 6px;
+}
+
+.profile-hero-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.profile-hero-level-name {
+  font-size: 0.85rem;
+  color: var(--level-color, #f59e0b);
+  font-weight: 700;
+}
+
+.profile-xp-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-xp-bar {
+  flex: 1;
+  height: 7px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 99px;
+  overflow: hidden;
+  max-width: 260px;
+}
+
+.profile-xp-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.6s ease;
+  opacity: 0.9;
+}
+
+.profile-xp-label {
+  font-size: 0.72rem;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.profile-hero-achievements {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.profile-achiev-count {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #f59e0b;
+}
+
+.profile-achiev-label {
+  font-size: 0.72rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Tabs */
+.profile-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding-bottom: 0;
+}
+
+.profile-tab {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 10px 16px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
+}
+
+.profile-tab--active {
+  color: #f59e0b;
+  border-bottom-color: #f59e0b;
+}
+
+.profile-tab:hover:not(.profile-tab--active) { color: #e2e8f0; }
+
+/* Stats grid */
+.profile-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.stat-card {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  padding: 16px;
+  text-align: center;
+}
+
+.stat-card-icon { font-size: 1.6rem; margin-bottom: 6px; }
+.stat-card-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.stat-card-value { font-size: 1.1rem; font-weight: 800; color: #f1f5f9; }
+.stat-card-sub { font-size: 0.72rem; color: #475569; margin-top: 2px; }
+
+/* Achievements */
+.profile-achievements {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-empty {
+  text-align: center;
+  padding: 40px;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.profile-achiev-card {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.profile-achiev-icon { font-size: 1.8rem; flex-shrink: 0; }
+
+.profile-achiev-body { flex: 1; }
+.profile-achiev-name { font-size: 0.9rem; font-weight: 700; color: #f1f5f9; }
+.profile-achiev-desc { font-size: 0.78rem; color: #64748b; }
+
+.profile-achiev-xp { font-size: 0.78rem; font-weight: 700; color: #22c55e; }
+.profile-achiev-date { font-size: 0.7rem; color: #334155; }

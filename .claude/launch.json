@@ -8,10 +8,11 @@
       "port": 5173
     },
     {
-      "name": "server",
-      "runtimeExecutable": "node",
-      "runtimeArgs": ["server/index.js"],
-      "port": 3001
+      "name": "game-vault-server",
+      "runtimeExecutable": "/opt/homebrew/bin/node",
+      "runtimeArgs": ["/Users/jasper/game-vault/server/index.js"],
+      "port": 3001,
+      "autoPort": false
     }
   ]
 }
