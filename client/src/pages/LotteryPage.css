@@ -1,0 +1,145 @@
+.lt-page {
+  min-height: 100vh;
+  background: #0f0f1a;
+  color: #e2e8f0;
+  font-family: 'Roboto', sans-serif;
+  padding: 24px 16px 60px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.lt-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.lt-hero-icon { font-size: 3rem; }
+.lt-hero-title {
+  font-size: 1.9rem;
+  font-weight: 800;
+  margin: 0 0 4px;
+  background: linear-gradient(135deg, #f59e0b, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.lt-hero-sub { margin: 0; color: #94a3b8; font-size: 0.95rem; }
+
+/* Jackpot */
+.lt-jackpot {
+  background: linear-gradient(135deg, #1a0a2e, #2a1a3e);
+  border: 2px solid #a855f7;
+  border-radius: 20px;
+  padding: 32px;
+  text-align: center;
+  margin-bottom: 24px;
+  box-shadow: 0 0 40px rgba(168, 85, 247, 0.2);
+}
+.lt-jackpot-label {
+  font-size: 0.7rem;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: #a855f7;
+  margin-bottom: 8px;
+}
+.lt-jackpot-amount {
+  font-size: 3.5rem;
+  font-weight: 900;
+  color: #f59e0b;
+  text-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.lt-jackpot-meta { color: #94a3b8; font-size: 0.9rem; }
+
+/* Drawn banner */
+.lt-drawn-banner {
+  background: #1a2e1a;
+  border: 1px solid #22c55e;
+  border-radius: 12px;
+  padding: 16px 20px;
+  text-align: center;
+  color: #86efac;
+  font-size: 1rem;
+  margin-bottom: 24px;
+}
+.lt-drawn-banner--no-win {
+  background: #1a1a2e;
+  border-color: #475569;
+  color: #64748b;
+}
+
+/* Buy area */
+.lt-buy-area {
+  background: #1a1a2e;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #2a2a45;
+  margin-bottom: 24px;
+}
+.lt-ticket-info {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin-bottom: 16px;
+}
+.lt-ticket-info strong { color: #e2e8f0; }
+.lt-my-count { color: #f59e0b; }
+
+.lt-msg { padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 14px; }
+.lt-msg--ok  { background: #1a2e1a; color: #86efac; border: 1px solid #22c55e; }
+.lt-msg--err { background: #2e1a1a; color: #fca5a5; border: 1px solid #ef4444; }
+
+.lt-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .2s, transform .1s;
+}
+.lt-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+.lt-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* My tickets */
+.lt-my-tickets { margin-top: 20px; }
+.lt-my-tickets-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: .08em; color: #475569; margin-bottom: 10px; }
+.lt-ticket-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.lt-ticket {
+  background: #12122a;
+  border: 1px solid #3a3a5a;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  color: #a78bfa;
+  font-family: monospace;
+}
+
+/* History */
+.lt-history {
+  background: #1a1a2e;
+  border-radius: 14px;
+  padding: 20px;
+  border: 1px solid #2a2a45;
+}
+.lt-history-title { font-size: 1rem; font-weight: 700; margin: 0 0 14px; color: #94a3b8; }
+.lt-history-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #1e1e38;
+  font-size: 0.9rem;
+}
+.lt-history-row:last-child { border-bottom: none; }
+.lt-history-week   { color: #64748b; min-width: 110px; }
+.lt-history-winner { font-weight: 600; flex: 1; }
+.lt-history-prize  { font-weight: 700; }
+
+.lt-loading { text-align: center; padding: 60px; color: #475569; }

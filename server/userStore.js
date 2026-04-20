@@ -202,6 +202,44 @@ const HOURLY_MS        = 10 * 60 * 1000; // 10 minutes
 const ADMIN_USERNAME   = 'jasper';
 const ADMIN_BALANCE    = 999_999_999; // effectively infinite
 
+// ── Secondary Admins (only ADMIN_USERNAME can manage this list) ───────────────
+const SECONDARY_ADMINS_FILE = path.join(DATA_DIR, 'secondaryAdmins.json');
+let _secondaryAdmins = null;
+function loadSecondaryAdmins() {
+  if (_secondaryAdmins) return _secondaryAdmins;
+  try { _secondaryAdmins = JSON.parse(fs.readFileSync(SECONDARY_ADMINS_FILE, 'utf8')); }
+  catch { _secondaryAdmins = []; }
+  return _secondaryAdmins;
+}
+function saveSecondaryAdmins(list) {
+  _secondaryAdmins = list;
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.writeFileSync(SECONDARY_ADMINS_FILE, JSON.stringify(list));
+}
+function isSecondaryAdmin(username) {
+  return loadSecondaryAdmins().includes((username || '').toLowerCase());
+}
+function grantAdmin(callerUsername, targetUsername) {
+  if (callerUsername !== ADMIN_USERNAME) return { ok: false, error: 'Only the owner can grant admin' };
+  const clean = (targetUsername || '').toLowerCase();
+  if (clean === ADMIN_USERNAME) return { ok: false, error: 'Owner is already admin' };
+  const list = loadSecondaryAdmins();
+  if (list.includes(clean)) return { ok: false, error: 'Already an admin' };
+  list.push(clean);
+  saveSecondaryAdmins(list);
+  return { ok: true };
+}
+function revokeAdmin(callerUsername, targetUsername) {
+  if (callerUsername !== ADMIN_USERNAME) return { ok: false, error: 'Only the owner can revoke admin' };
+  const clean = (targetUsername || '').toLowerCase();
+  const list = loadSecondaryAdmins().filter(u => u !== clean);
+  saveSecondaryAdmins(list);
+  return { ok: true };
+}
+function listSecondaryAdmins() {
+  return loadSecondaryAdmins();
+}
+
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
@@ -497,6 +535,12 @@ function getTopBalances(limit = 20) {
  * Check if a token belongs to the admin.
  */
 function isAdminToken(token) {
+  const username = validateToken(token);
+  if (!username) return false;
+  return username === ADMIN_USERNAME || isSecondaryAdmin(username);
+}
+
+function isOwnerToken(token) {
   return validateToken(token) === ADMIN_USERNAME;
 }
 
@@ -675,7 +719,8 @@ function claimDailySpin(token) {
 
 module.exports = {
   register, login, getMe, syncBalance, claimDaily, transfer, logout, userExists,
-  deleteUser, adminGiveMoney, adminSetBalance, listUsers, isAdminToken, getTopBalances,
+  deleteUser, adminGiveMoney, adminSetBalance, listUsers, isAdminToken, isOwnerToken, getTopBalances,
   recordIP, kickUser, addBonus, pruneZeroBalanceAccounts, adminGetStats, addBonusByAdmin,
   validateToken, bulkResetBalances, getDailySpinStatus, claimDailySpin,
+  grantAdmin, revokeAdmin, listSecondaryAdmins, isSecondaryAdmin,
 };

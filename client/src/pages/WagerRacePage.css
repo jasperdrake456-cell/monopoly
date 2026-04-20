@@ -1,0 +1,154 @@
+.wr-page {
+  min-height: 100vh;
+  background: #0f0f1a;
+  color: #e2e8f0;
+  font-family: 'Roboto', sans-serif;
+  padding: 24px 16px 60px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Hero */
+.wr-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.wr-hero-icon { font-size: 3rem; }
+.wr-hero-title {
+  font-size: 1.9rem;
+  font-weight: 800;
+  margin: 0 0 4px;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.wr-hero-sub { margin: 0; color: #94a3b8; font-size: 0.95rem; }
+
+/* Prize cards */
+.wr-prizes {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.wr-prize-card {
+  flex: 1;
+  min-width: 120px;
+  background: #1e1e30;
+  border: 1px solid color-mix(in srgb, var(--prize-color) 30%, transparent);
+  border-radius: 14px;
+  padding: 18px 12px;
+  text-align: center;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--prize-color) 12%, transparent);
+}
+.wr-prize-medal { font-size: 2rem; margin-bottom: 4px; }
+.wr-prize-rank  { font-size: 0.75rem; color: #64748b; margin-bottom: 4px; letter-spacing: .05em; text-transform: uppercase; }
+.wr-prize-amount { font-size: 1.4rem; font-weight: 800; color: var(--prize-color); }
+
+/* Week label */
+.wr-week-label {
+  text-align: center;
+  color: #64748b;
+  font-size: 0.85rem;
+  margin-bottom: 20px;
+  letter-spacing: .03em;
+}
+
+/* Table */
+.wr-table {
+  background: #1a1a2e;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #2a2a45;
+  margin-bottom: 28px;
+}
+.wr-table-header {
+  display: grid;
+  grid-template-columns: 60px 1fr 140px;
+  padding: 12px 20px;
+  background: #12122a;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #475569;
+  border-bottom: 1px solid #2a2a45;
+}
+.wr-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 140px auto;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid #1e1e38;
+  transition: background .15s;
+}
+.wr-row:last-child { border-bottom: none; }
+.wr-row:hover { background: #1e1e38; }
+.wr-row--me {
+  background: #1a2a1a !important;
+  border-left: 3px solid #22c55e;
+}
+.wr-row--top { background: #181828; }
+
+.wr-rank  { font-size: 1.1rem; font-weight: 700; }
+.wr-name  { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.wr-name a { color: #e2e8f0; text-decoration: none; }
+.wr-name a:hover { color: #f59e0b; }
+.wr-you-badge {
+  background: #22c55e;
+  color: #000;
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: .06em;
+}
+.wr-wager   { color: #94a3b8; font-variant-numeric: tabular-nums; }
+.wr-prize-tag { font-weight: 700; font-size: 0.85rem; text-align: right; }
+
+.wr-empty {
+  padding: 32px;
+  text-align: center;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+/* My rank callout */
+.wr-my-rank {
+  background: #1e2a1e;
+  border-top: 1px solid #2a4a2a;
+  padding: 14px 20px;
+  color: #86efac;
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+/* Previous winners */
+.wr-prev {
+  background: #1a1a2e;
+  border-radius: 14px;
+  padding: 20px;
+  border: 1px solid #2a2a45;
+}
+.wr-prev-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 14px;
+  color: #94a3b8;
+}
+.wr-prev-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #1e1e38;
+  font-size: 0.9rem;
+}
+.wr-prev-row:last-child { border-bottom: none; }
+
+@media (max-width: 500px) {
+  .wr-prizes { flex-direction: column; }
+  .wr-table-header, .wr-row { grid-template-columns: 48px 1fr 110px auto; padding: 12px; }
+  .wr-hero-title { font-size: 1.4rem; }
+}

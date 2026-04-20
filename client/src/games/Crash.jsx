@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode, recordBetResult } from '../utils/casinoBalance';
 import './Crash.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -96,6 +96,7 @@ export default function Crash() {
         addBalance(payout);
         setBalance(getBalance());
         if (payout >= betRef.current * 5) reportBigWin && reportBigWin(payout);
+        recordBetResult({ game: 'crash', amount: betRef.current, won: true, multiplier: mult, profit: payout - betRef.current });
         setCashedOut(true);
         setCashoutMult(mult);
         setHistory(h => [{ mult, win: true }, ...h].slice(0, MAX_HISTORY));
@@ -110,6 +111,7 @@ export default function Crash() {
         setPhase('crashed');
         if (!cashedOutRef.current) {
           setHistory(h => [{ mult: crashRef.current, win: false }, ...h].slice(0, MAX_HISTORY));
+          recordBetResult({ game: 'crash', amount: betRef.current, won: false, multiplier: crashRef.current, profit: -betRef.current });
         }
         setBalance(getBalance());
       }

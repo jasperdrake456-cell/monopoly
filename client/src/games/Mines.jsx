@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode, recordBetResult } from '../utils/casinoBalance';
 import './Mines.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -118,6 +118,7 @@ export default function Mines() {
       setAllMines(activeMines);
       setResult({ win: false, payout: 0, msg: `💥 BOOM! Lost $${bet}` });
       setPhase('result');
+      recordBetResult({ game: 'mines', amount: bet, won: false, multiplier: 1, profit: -bet });
     } else {
       // Update refs synchronously so rapid subsequent clicks see correct state
       revealedRef.current = new Set(revealedRef.current);
@@ -141,6 +142,7 @@ export default function Mines() {
         setAllMines(activeMines);
         setResult({ win: true, payout, msg: `🏆 All safe tiles! Won $${payout}` });
         setPhase('result');
+        recordBetResult({ game: 'mines', amount: bet, won: true, multiplier: mult, profit: payout - bet });
       }
     }
   }
@@ -156,6 +158,7 @@ export default function Mines() {
     setAllMines(minesRef.current);
     setResult({ win: true, payout, msg: `💎 Cashed out $${payout} (${mult}×)` });
     setPhase('result');
+    recordBetResult({ game: 'mines', amount: bet, won: true, multiplier: mult, profit: payout - bet });
   }
 
   const balance_ = getBalance();

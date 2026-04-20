@@ -146,7 +146,123 @@ function JackpotAdminCard({ token, authFetch }) {
   );
 }
 
+// ── Lottery Admin Card ────────────────────────────────────────────────────────
+function LotteryAdminCard({ token, authFetch }) {
+  const [info,    setInfo]    = React.useState(null);
+  const [status,  setStatus]  = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    authFetch('/api/lottery', token).then(d => { if (d.ok) setInfo(d); });
+  }, []);
+
+  async function handleDraw() {
+    if (!window.confirm('Draw the lottery winner now? This cannot be undone.')) return;
+    setLoading(true); setStatus('');
+    const d = await authFetch('/api/admin/lottery/draw', token, { method: 'POST' });
+    if (d.ok) {
+      setStatus(d.winner ? `✓ Winner: ${d.winner} won $${d.jackpot?.toLocaleString()}` : '✓ No tickets — no winner drawn');
+      authFetch('/api/lottery', token).then(r => { if (r.ok) setInfo(r); });
+    } else setStatus(`✗ ${d.error || 'Failed'}`);
+    setLoading(false);
+  }
+
+  return (
+    <div className="admin-site-card">
+      <div className="admin-site-card-title">🎟️ Weekly Lottery</div>
+      <div className="admin-site-card-sub">
+        Jackpot: <strong style={{ color: '#a78bfa' }}>${info?.jackpot?.toLocaleString() ?? '…'}</strong>
+        {' · '}{info?.tickets ?? '…'} tickets sold
+        {info?.drawn && <span style={{ color: '#22c55e', marginLeft: 8 }}>✓ Already drawn</span>}
+      </div>
+      {status && <div style={{ fontSize: '0.82rem', color: status.startsWith('✓') ? '#86efac' : '#fca5a5', marginBottom: 8 }}>{status}</div>}
+      <button className="admin-btn admin-btn--primary admin-btn--sm" onClick={handleDraw} disabled={loading || info?.drawn}>
+        {loading ? '…' : info?.drawn ? 'Already Drawn' : '🎲 Draw Winner Now'}
+      </button>
+    </div>
+  );
+}
+
+// ── Wager Race Admin Card ─────────────────────────────────────────────────────
+function WagerRaceAdminCard({ token, authFetch }) {
+  const [info,    setInfo]    = React.useState(null);
+  const [status,  setStatus]  = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    authFetch('/api/wager-race', token).then(d => { if (d.ok) setInfo(d); });
+  }, []);
+
+  async function handlePayout() {
+    if (!window.confirm('Pay out wager race prizes and reset leaderboard now?')) return;
+    setLoading(true); setStatus('');
+    const d = await authFetch('/api/admin/wager-race/payout', token, { method: 'POST' });
+    if (d.ok) {
+      const names = (d.payouts || []).map(p => `${p.username} $${p.prize?.toLocaleString()}`).join(', ');
+      setStatus(names ? `✓ Paid out: ${names}` : '✓ No leaders to pay out');
+      authFetch('/api/wager-race', token).then(r => { if (r.ok) setInfo(r); });
+    } else setStatus(`✗ ${d.error || 'Failed'}`);
+    setLoading(false);
+  }
+
+  return (
+    <div className="admin-site-card">
+      <div className="admin-site-card-title">🏁 Wager Race</div>
+      <div className="admin-site-card-sub">
+        Prize pool: <strong style={{ color: '#f59e0b' }}>${info?.prizePool?.toLocaleString() ?? '…'}</strong>
+        {' · '}{info?.leaderboard?.length ?? 0} players racing · Week of {info?.week ?? '…'}
+      </div>
+      {status && <div style={{ fontSize: '0.82rem', color: status.startsWith('✓') ? '#86efac' : '#fca5a5', marginBottom: 8 }}>{status}</div>}
+      <button className="admin-btn admin-btn--warn admin-btn--sm" onClick={handlePayout} disabled={loading}>
+        {loading ? '…' : '🏆 Pay Out & Reset Race'}
+      </button>
+    </div>
+  );
+}
+
 // ── Gift Code Admin Card ──────────────────────────────────────────────────────
+function SecondaryAdminsCard({ token, authFetch }) {
+  const [admins,  setAdmins]  = React.useState([]);
+  const [newUser, setNewUser] = React.useState('');
+  const [status,  setStatus]  = React.useState('');
+
+  React.useEffect(() => {
+    authFetch('/api/admin/secondary-admins', token).then(d => { if (d.ok) setAdmins(d.admins || []); });
+  }, []);
+
+  async function handleGrant() {
+    if (!newUser.trim()) return;
+    const d = await authFetch('/api/admin/secondary-admins', token, { method: 'POST', body: JSON.stringify({ username: newUser.trim() }) });
+    if (d.ok) { setAdmins(prev => [...prev, newUser.trim().toLowerCase()]); setNewUser(''); setStatus('✓ Admin granted'); }
+    else setStatus(`✗ ${d.error}`);
+  }
+
+  async function handleRevoke(u) {
+    const d = await authFetch(`/api/admin/secondary-admins/${u}`, token, { method: 'DELETE' });
+    if (d.ok) setAdmins(prev => prev.filter(x => x !== u));
+  }
+
+  return (
+    <div className="admin-site-card">
+      <div className="admin-site-card-title">🛡️ Admin Management</div>
+      <div className="admin-site-card-sub">Only you (owner) can grant or revoke admin access</div>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+        <input className="admin-input" style={{ width: 180 }} placeholder="Username to grant admin" value={newUser} onChange={e => setNewUser(e.target.value)} />
+        <button className="admin-btn admin-btn--primary admin-btn--sm" onClick={handleGrant} disabled={!newUser.trim()}>Grant Admin</button>
+      </div>
+      {status && <div style={{ fontSize: '0.82rem', color: status.startsWith('✓') ? '#86efac' : '#fca5a5', marginBottom: 8 }}>{status}</div>}
+      {admins.length === 0 ? (
+        <div style={{ fontSize: '0.82rem', color: '#475569' }}>No secondary admins yet</div>
+      ) : admins.map(u => (
+        <div key={u} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+          <span style={{ color: '#c084fc', fontWeight: 700 }}>{u}</span>
+          <button className="admin-btn admin-btn--warn admin-btn--sm" style={{ padding: '2px 10px' }} onClick={() => handleRevoke(u)}>Revoke</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function CoinRainAdminCard({ token, authFetch }) {
   const [amount,  setAmount]  = React.useState('1000');
   const [message, setMessage] = React.useState('🌧️ Coin Rain!');
@@ -367,7 +483,8 @@ export default function AdminPage() {
     'hilo','tower','wheel','video-poker','keno','dragon-tiger',
   ];
 
-  const isAdmin = user?.username === 'jasper';
+  const isAdmin = !!user;  // requireAdmin on server handles actual auth
+  const isOwner = user?.username?.toLowerCase() === 'jasper';
 
   useEffect(() => {
     if (!isLoggedIn || !isAdmin) navigate('/');
@@ -674,6 +791,12 @@ export default function AdminPage() {
       {/* ════════════════════════════════════════════════════════════════════ */}
       {tab === 'overview' && (
         <div className="admin-section">
+
+          {/* Quick Actions */}
+          <div className="admin-section-title">⚡ Quick Actions</div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 24 }}>
+            <CoinRainAdminCard token={token} authFetch={authFetch} />
+          </div>
 
           {/* Stats grid */}
           <div className="admin-section-title">📊 Platform Statistics</div>
@@ -1757,11 +1880,20 @@ export default function AdminPage() {
           {/* ── Jackpot ───────────────────────────────────────────────────── */}
           <JackpotAdminCard token={token} authFetch={authFetch} />
 
+          {/* ── Lottery ───────────────────────────────────────────────────── */}
+          <LotteryAdminCard token={token} authFetch={authFetch} />
+
+          {/* ── Wager Race ────────────────────────────────────────────────── */}
+          <WagerRaceAdminCard token={token} authFetch={authFetch} />
+
           {/* ── Gift Codes ────────────────────────────────────────────────── */}
           <GiftCodeAdminCard token={token} authFetch={authFetch} />
 
           {/* ── Coin Rain ─────────────────────────────────────────────────── */}
           <CoinRainAdminCard token={token} authFetch={authFetch} />
+
+          {/* ── Secondary Admins (owner only) ─────────────────────────────── */}
+          {isOwner && <SecondaryAdminsCard token={token} authFetch={authFetch} />}
 
           {/* ── Danger Zone ───────────────────────────────────────────────── */}
           <div className="admin-site-card admin-danger-card">

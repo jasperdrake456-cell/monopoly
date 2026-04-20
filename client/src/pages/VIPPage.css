@@ -1,0 +1,136 @@
+.vip-page {
+  min-height: 100vh;
+  background: #0f0f1a;
+  color: #e2e8f0;
+  font-family: 'Roboto', sans-serif;
+  padding: 24px 16px 60px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.vip-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.vip-hero-icon { font-size: 3rem; }
+.vip-hero-title {
+  font-size: 1.9rem;
+  font-weight: 800;
+  margin: 0 0 4px;
+  background: linear-gradient(135deg, #a78bfa, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.vip-hero-sub { margin: 0; color: #94a3b8; font-size: 0.95rem; }
+
+/* My status card */
+.vip-my-status {
+  background: linear-gradient(135deg, #12122a, #1e1e38);
+  border: 2px solid var(--tier-color, #94a3b8);
+  border-radius: 18px;
+  padding: 24px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 32px;
+  box-shadow: 0 0 30px color-mix(in srgb, var(--tier-color, #94a3b8) 12%, transparent);
+}
+.vip-my-icon { font-size: 3.5rem; }
+.vip-my-info { flex: 1; }
+.vip-my-tier-name {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--tier-color, #94a3b8);
+  margin-bottom: 4px;
+}
+.vip-my-wagered { font-size: 0.9rem; color: #94a3b8; margin-bottom: 10px; }
+.vip-my-wagered strong { color: #e2e8f0; }
+
+.vip-progress-bar {
+  background: #12122a;
+  border-radius: 99px;
+  height: 8px;
+  overflow: hidden;
+  margin-bottom: 6px;
+  border: 1px solid #2a2a45;
+}
+.vip-progress-fill {
+  height: 100%;
+  background: var(--tier-color, #94a3b8);
+  border-radius: 99px;
+  transition: width .5s ease;
+  box-shadow: 0 0 8px var(--tier-color, #94a3b8);
+}
+.vip-to-next { font-size: 0.82rem; color: #64748b; }
+.vip-maxed   { font-size: 0.9rem; color: #f59e0b; font-weight: 600; }
+
+.vip-login-prompt {
+  background: #1a1a2e;
+  border: 1px dashed #2a2a45;
+  border-radius: 14px;
+  padding: 24px;
+  text-align: center;
+  color: #64748b;
+  margin-bottom: 32px;
+}
+
+/* Tiers grid */
+.vip-tiers-heading {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #94a3b8;
+  margin: 0 0 16px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.vip-tiers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+}
+.vip-tier-card {
+  background: #1a1a2e;
+  border: 1px solid color-mix(in srgb, var(--tc) 25%, #2a2a45);
+  border-radius: 16px;
+  padding: 20px 16px;
+  text-align: center;
+  transition: transform .15s, box-shadow .15s;
+  position: relative;
+}
+.vip-tier-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--tc) 15%, transparent);
+}
+.vip-tier-card--active {
+  border-color: var(--tc);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--tc) 20%, transparent);
+}
+.vip-tier-card--past {
+  opacity: .6;
+}
+
+.vip-you-here {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--tc);
+  color: #000;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.vip-tier-icon   { font-size: 2.2rem; margin-bottom: 8px; }
+.vip-tier-name   { font-size: 1.05rem; font-weight: 800; color: var(--tc); margin-bottom: 4px; }
+.vip-tier-req    { font-size: 0.75rem; color: #475569; margin-bottom: 10px; }
+.vip-tier-perk   { font-size: 0.78rem; color: #94a3b8; margin-bottom: 4px; text-align: left; }
+.vip-tier-bonus  { font-size: 0.78rem; color: #f59e0b; margin-top: 8px; font-weight: 600; }
+
+@media (max-width: 500px) {
+  .vip-my-status { flex-direction: column; text-align: center; }
+  .vip-tiers     { grid-template-columns: 1fr 1fr; }
+}

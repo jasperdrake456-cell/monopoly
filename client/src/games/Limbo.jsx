@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { getBalance, addBalance, subtractBalance, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, reportBigWin, isRiggedMode, recordBetResult } from '../utils/casinoBalance';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 import { useGameBoost } from '../hooks/useGameBoost';
@@ -92,6 +92,7 @@ export default function Limbo() {
         setResult({ won, rolled, payout, amt, target });
         setHistory(h => [{ won, rolled, target },...h].slice(0, 12));
         setPhase('result');
+        recordBetResult({ game: 'limbo', amount: amt, won, multiplier: won ? target : 1, profit: won ? payout - amt : -amt });
       }
     }
     animRef.current = requestAnimationFrame(tick);

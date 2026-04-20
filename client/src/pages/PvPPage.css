@@ -1,0 +1,229 @@
+.pvp-page {
+  min-height: 100vh;
+  background: #0f0f1a;
+  color: #e2e8f0;
+  font-family: 'Roboto', sans-serif;
+  padding: 24px 16px 60px;
+  max-width: 750px;
+  margin: 0 auto;
+}
+
+.pvp-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.pvp-hero-icon { font-size: 3rem; }
+.pvp-hero-title {
+  font-size: 1.9rem;
+  font-weight: 800;
+  margin: 0 0 4px;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.pvp-hero-sub { margin: 0; color: #94a3b8; font-size: 0.95rem; }
+
+.pvp-balance {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+}
+.pvp-balance strong { color: #22c55e; }
+
+/* Flip result overlay */
+.pvp-flip-result {
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  margin-bottom: 20px;
+  border: 2px solid;
+  animation: pvpPopIn .3s ease;
+}
+.pvp-flip-result--win  { background: #0a2a0a; border-color: #22c55e; }
+.pvp-flip-result--lose { background: #2a0a0a; border-color: #ef4444; }
+@keyframes pvpPopIn {
+  from { transform: scale(.85); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+.pvp-flip-coin   { font-size: 3rem; margin-bottom: 8px; }
+.pvp-flip-verdict { font-size: 1.6rem; font-weight: 900; margin-bottom: 6px; }
+.pvp-flip-result--win  .pvp-flip-verdict { color: #22c55e; }
+.pvp-flip-result--lose .pvp-flip-verdict { color: #ef4444; }
+.pvp-flip-detail { color: #94a3b8; font-size: 0.9rem; margin-bottom: 14px; }
+.pvp-dismiss {
+  background: transparent;
+  border: 1px solid #475569;
+  color: #94a3b8;
+  padding: 6px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+/* Messages */
+.pvp-msg { padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 16px; }
+.pvp-msg--ok  { background: #1a2e1a; color: #86efac; border: 1px solid #22c55e; }
+.pvp-msg--err { background: #2e1a1a; color: #fca5a5; border: 1px solid #ef4444; }
+
+/* Create card */
+.pvp-create-card {
+  background: #1a1a2e;
+  border-radius: 16px;
+  padding: 22px;
+  border: 1px solid #2a2a45;
+  margin-bottom: 20px;
+}
+.pvp-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 16px;
+  color: #e2e8f0;
+}
+.pvp-create-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.pvp-input-group label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #475569;
+  margin-bottom: 6px;
+}
+.pvp-input-group input {
+  width: 100%;
+  background: #12122a;
+  border: 1px solid #2a2a45;
+  border-radius: 8px;
+  color: #e2e8f0;
+  padding: 9px 12px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+.pvp-input-group input:focus {
+  outline: none;
+  border-color: #f59e0b;
+}
+.pvp-quick-bets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.pvp-qb {
+  background: #12122a;
+  border: 1px solid #2a2a45;
+  color: #94a3b8;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all .15s;
+}
+.pvp-qb.active, .pvp-qb:hover { background: #1e1e38; border-color: #f59e0b; color: #f59e0b; }
+
+.pvp-has-open {
+  background: #1a1a0a;
+  border: 1px solid #78350f;
+  color: #fbbf24;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+/* Buttons */
+.pvp-btn {
+  padding: 11px 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s, transform .1s;
+}
+.pvp-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+.pvp-btn:disabled { opacity: .35; cursor: not-allowed; }
+.pvp-btn--create {
+  width: 100%;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #000;
+}
+.pvp-btn--cancel {
+  background: #2e1a1a;
+  color: #ef4444;
+  border: 1px solid #ef4444;
+  font-size: 0.85rem;
+}
+.pvp-btn--accept {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #000;
+  font-size: 0.85rem;
+  padding: 8px 16px;
+}
+
+/* My challenge */
+.pvp-my-challenge {
+  background: #1a2e1a;
+  border: 1px solid #22c55e;
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pvp-mc-label {
+  font-size: 0.65rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #22c55e;
+  margin-bottom: 6px;
+}
+.pvp-mc-info { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 0.9rem; }
+.pvp-mc-info strong { font-size: 1.1rem; color: #f59e0b; }
+
+/* Open challenges */
+.pvp-section { margin-bottom: 24px; }
+.pvp-empty { color: #475569; font-size: 0.9rem; padding: 20px 0; text-align: center; }
+
+.pvp-challenge-row {
+  background: #1a1a2e;
+  border: 1px solid #2a2a45;
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  transition: border-color .15s;
+}
+.pvp-challenge-row:hover { border-color: #3a3a5a; }
+.pvp-challenge-row--own  { border-color: #475569; opacity: .7; }
+.pvp-chal-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 0.9rem; }
+.pvp-chal-from a { color: #e2e8f0; text-decoration: none; font-weight: 600; }
+.pvp-chal-from a:hover { color: #f59e0b; }
+.pvp-chal-amount { color: #f59e0b; font-weight: 700; font-size: 1rem; }
+.pvp-chal-target { color: #a78bfa; font-size: 0.8rem; }
+.pvp-chal-time   { color: #475569; font-size: 0.75rem; }
+.pvp-targeted    { color: #64748b; font-size: 0.8rem; }
+
+/* Results */
+.pvp-result-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #1e1e38;
+  font-size: 0.88rem;
+  flex-wrap: wrap;
+}
+.pvp-result-row:last-child { border-bottom: none; }
+.pvp-result-flip { font-weight: 600; min-width: 80px; }
+
+@media (max-width: 500px) {
+  .pvp-create-row { grid-template-columns: 1fr; }
+  .pvp-challenge-row { flex-direction: column; align-items: flex-start; }
+}

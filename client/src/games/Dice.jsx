@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode, recordBetResult } from '../utils/casinoBalance';
 import './Dice.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -78,6 +78,7 @@ export default function Dice() {
       setResult({ win, payout, mult });
       setPhase('result');
       setHistory(h => [{ rolled, win }, ...h].slice(0, 12));
+      recordBetResult({ game: 'dice', amount: bet, won: win, multiplier: win ? mult : 1, profit: win ? payout - bet : -bet });
     }, 600);
   }
 

@@ -61,6 +61,11 @@ import LimboPage from './pages/LimboPage';
 import ScratchCardPage from './pages/ScratchCardPage';
 import CasinoWarPage from './pages/CasinoWarPage';
 import ProfilePage from './pages/ProfilePage';
+import WagerRacePage from './pages/WagerRacePage';
+import LotteryPage from './pages/LotteryPage';
+import PvPPage from './pages/PvPPage';
+import VIPPage from './pages/VIPPage';
+import GlobalStatsPage from './pages/GlobalStatsPage';
 import AchievementToast, { showAchievement, showLevelUp } from './components/AchievementToast';
 import CoinRain, { triggerCoinRain } from './components/CoinRain';
 import './App.css';
@@ -169,6 +174,11 @@ export default function App() {
             <Route path="/suggestions" element={<SuggestionsPage />} />
             <Route path="/profile"     element={<RequireAuth><ProfilePage /></RequireAuth>} />
             <Route path="/profile/:username" element={<ProfilePage />} />
+            <Route path="/wager-race"  element={<WagerRacePage />} />
+            <Route path="/lottery"     element={<LotteryPage />} />
+            <Route path="/pvp"         element={<RequireAuth><PvPPage /></RequireAuth>} />
+            <Route path="/vip"         element={<VIPPage />} />
+            <Route path="/stats"       element={<GlobalStatsPage />} />
             <Route path="*"            element={<Navigate to="/" replace />} />
           </Routes>
         </PasswordGate>

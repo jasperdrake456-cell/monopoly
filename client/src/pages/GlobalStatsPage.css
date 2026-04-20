@@ -1,0 +1,119 @@
+.gs-page {
+  min-height: 100vh;
+  background: #0f0f1a;
+  color: #e2e8f0;
+  font-family: 'Roboto', sans-serif;
+  padding: 24px 16px 60px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.gs-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f0f1a;
+  color: #475569;
+  font-family: 'Roboto', sans-serif;
+}
+
+.gs-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.gs-hero-icon { font-size: 3rem; }
+.gs-hero-title {
+  font-size: 1.9rem;
+  font-weight: 800;
+  margin: 0 0 4px;
+  background: linear-gradient(135deg, #3b82f6, #22c55e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.gs-hero-sub { margin: 0; color: #94a3b8; font-size: 0.95rem; }
+
+/* Stat cards */
+.gs-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
+  margin-bottom: 32px;
+}
+.gs-card {
+  background: #1a1a2e;
+  border: 1px solid #2a2a45;
+  border-radius: 16px;
+  padding: 20px 16px;
+  text-align: center;
+  transition: transform .15s;
+}
+.gs-card:hover { transform: translateY(-2px); }
+.gs-card--green  { border-color: #16a34a; }
+.gs-card--red    { border-color: #dc2626; }
+.gs-card--yellow { border-color: #d97706; }
+.gs-card--purple { border-color: #7c3aed; }
+
+.gs-card-icon   { font-size: 1.8rem; margin-bottom: 8px; }
+.gs-card-label  { font-size: 0.72rem; text-transform: uppercase; letter-spacing: .07em; color: #475569; margin-bottom: 6px; }
+.gs-card-value  { font-size: 1.5rem; font-weight: 800; color: #e2e8f0; }
+.gs-card-value--sm { font-size: 1rem; text-transform: capitalize; }
+.gs-card-sub    { font-size: 0.78rem; color: #94a3b8; margin-top: 4px; }
+.gs-card--green .gs-card-value  { color: #22c55e; }
+.gs-card--red   .gs-card-value  { color: #ef4444; }
+.gs-card--yellow .gs-card-value { color: #f59e0b; }
+.gs-card--purple .gs-card-value { color: #a78bfa; }
+
+/* Section */
+.gs-section { margin-bottom: 28px; }
+.gs-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 16px;
+  color: #e2e8f0;
+}
+
+/* XP table */
+.gs-xp-table {
+  background: #1a1a2e;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #2a2a45;
+}
+.gs-xp-header {
+  display: grid;
+  grid-template-columns: 50px 1fr 100px 100px 140px;
+  padding: 12px 20px;
+  background: #12122a;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #475569;
+  border-bottom: 1px solid #2a2a45;
+}
+.gs-xp-row {
+  display: grid;
+  grid-template-columns: 50px 1fr 100px 100px 140px;
+  align-items: center;
+  padding: 13px 20px;
+  border-bottom: 1px solid #1e1e38;
+  transition: background .15s;
+  font-size: 0.9rem;
+}
+.gs-xp-row:last-child { border-bottom: none; }
+.gs-xp-row:hover { background: #1e1e38; }
+.gs-xp-rank  { font-size: 1.1rem; }
+.gs-xp-name a { color: #e2e8f0; text-decoration: none; font-weight: 600; }
+.gs-xp-name a:hover { color: #3b82f6; }
+.gs-xp-level { font-weight: 700; font-size: 0.85rem; }
+.gs-xp-val   { color: #94a3b8; font-variant-numeric: tabular-nums; font-size: 0.85rem; }
+.gs-xp-wagered { color: #64748b; font-size: 0.82rem; }
+
+@media (max-width: 600px) {
+  .gs-xp-header,
+  .gs-xp-row { grid-template-columns: 44px 1fr 80px 80px; }
+  .gs-xp-row > :last-child,
+  .gs-xp-header > :last-child { display: none; }
+  .gs-cards { grid-template-columns: 1fr 1fr; }
+}

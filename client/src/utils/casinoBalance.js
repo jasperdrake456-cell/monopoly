@@ -87,6 +87,18 @@ export function subtractBalance(amount) {
   setBalance(getBalance() - amount);
 }
 
+// ── XP / Mission bet tracking ────────────────────────────────────────────────
+// Games call this after each round to record the result server-side for XP and missions.
+// game = slug (e.g. 'crash', 'slots'), won = bool, multiplier = number, profit = number
+export function recordBetResult({ game, amount, won, multiplier = 1, profit = 0 } = {}) {
+  if (!_authToken || !game || !amount) return;
+  fetch(SERVER_URL + '/api/xp/record-bet', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${_authToken}` },
+    body: JSON.stringify({ game, amount: Math.floor(amount), won: !!won, multiplier, profit }),
+  }).catch(() => { /* non-fatal */ });
+}
+
 // ── Hourly reward (client-side for guests; server handles logged-in users) ────
 
 // Returns amount claimed (1000) if an hour has passed, or 0 if not yet.

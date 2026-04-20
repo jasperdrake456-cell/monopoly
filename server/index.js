@@ -35,6 +35,10 @@ const jp        = require('./jackpotStore');
 const gc        = require('./giftCodeStore');
 const xp        = require('./xpStore');
 const ms        = require('./missionsStore');
+const wr        = require('./wagerRaceStore');
+const lt        = require('./lotteryStore');
+const vip       = require('./vipStore');
+const pvp       = require('./pvpStore');
 
 const app = express();
 const server = http.createServer(app);
@@ -304,9 +308,36 @@ app.post('/api/reports', (req, res) => {
 // ── Admin API ─────────────────────────────────────────────────────────────────
 
 function requireAdmin(req, res, next) {
-  if (!us.isAdminToken(getToken(req))) return res.status(403).json({ error: 'Forbidden' });
+  const token = getToken(req);
+  if (!us.isAdminToken(token)) return res.status(403).json({ error: 'Forbidden' });
+  const me = us.getMe(token);
+  if (me.ok) req.user = me;
   next();
 }
+
+function requireOwner(req, res, next) {
+  const token = getToken(req);
+  if (!us.isOwnerToken(token)) return res.status(403).json({ error: 'Owner only' });
+  const me = us.getMe(token);
+  if (me.ok) req.user = me;
+  next();
+}
+
+// Owner-only: manage secondary admins
+app.get('/api/admin/secondary-admins', requireOwner, (req, res) => {
+  res.json({ ok: true, admins: us.listSecondaryAdmins() });
+});
+app.post('/api/admin/secondary-admins', requireOwner, (req, res) => {
+  const { username } = req.body || {};
+  const result = us.grantAdmin(req.user.username, username);
+  if (result.ok) al.log('admin_granted', { target: username, by: req.user.username });
+  res.json(result);
+});
+app.delete('/api/admin/secondary-admins/:username', requireOwner, (req, res) => {
+  const result = us.revokeAdmin(req.user.username, req.params.username);
+  if (result.ok) al.log('admin_revoked', { target: req.params.username, by: req.user.username });
+  res.json(result);
+});
 
 function requireAuth(req, res, next) {
   const me = us.getMe(getToken(req));
@@ -1054,8 +1085,18 @@ app.get('/api/xp/profile', requireAuth, (req, res) => {
 });
 
 app.get('/api/xp/profile/:username', (req, res) => {
-  const profile = xp.getProfile(req.params.username.toLowerCase());
-  if (!profile) return res.status(404).json({ ok: false, error: 'User not found' });
+  const uname = req.params.username.toLowerCase();
+  let profile  = xp.getProfile(uname);
+  // If no XP data yet, check if user exists and return empty scaffold
+  if (!profile) {
+    const userExists = us.userExists ? us.userExists(uname) : true;
+    if (!userExists) return res.status(404).json({ ok: false, error: 'User not found' });
+    profile = {
+      xp: 0, level: 1, totalWagered: 0, totalWins: 0, winStreak: 0, bestStreak: 0,
+      gamesPlayed: {}, achievements: [], achievementDetails: [], spinStreak: 0,
+      levelInfo: xp.getLevelInfo(0),
+    };
+  }
   res.json({ ok: true, profile });
 });
 
@@ -1073,11 +1114,27 @@ app.post('/api/xp/record-bet', requireAuth, (req, res) => {
   if (!game || amount == null) return res.status(400).json({ ok: false });
   const result = xp.recordBet({ username: req.user.username, game, amount: Math.floor(amount), won: !!won, multiplier: multiplier ?? 1, profit: profit ?? 0 });
 
-  // Also record mission progress
+  // Mission progress
   ms.recordEvent(req.user.username, 'wager', game, Math.floor(amount), multiplier);
   if (won) ms.recordEvent(req.user.username, 'win', game, Math.floor(amount), multiplier);
   if (won) ms.recordEvent(req.user.username, 'game_win', game, Math.floor(amount), multiplier);
   ms.recordEvent(req.user.username, 'game_wager', game, Math.floor(amount), multiplier);
+
+  // Wager race
+  wr.recordWager(req.user.username, Math.floor(amount));
+
+  // Level-up rewards: auto-credit coins when leveling up
+  if (result.leveledUp) {
+    const levelRewards = [0, 0, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 1000000];
+    const reward = levelRewards[result.newLevel] || 0;
+    if (reward > 0) {
+      const r = us.addBonusByAdmin(req.user.username, reward);
+      if (r.ok) {
+        io.emit('balanceReset', { username: req.user.username, balance: r.balance });
+        result.levelUpReward = reward;
+      }
+    }
+  }
 
   if (result.unlocked.length > 0 || result.leveledUp) {
     io.emit('xpEvent', { username: req.user.username, ...result });
@@ -1136,6 +1193,192 @@ app.post('/api/admin/coin-rain', requireAdmin, (req, res) => {
 app.get('/api/wins/recent', (req, res) => {
   const wins = wl.getWins().slice(0, 20);
   res.json({ ok: true, wins });
+});
+
+// ── Wager Race ────────────────────────────────────────────────────────────────
+
+app.get('/api/wager-race', (req, res) => {
+  res.json({ ok: true, ...wr.getLeaderboard() });
+});
+
+app.get('/api/wager-race/prev', (req, res) => {
+  res.json({ ok: true, prev: wr.getPrevWinners() });
+});
+
+// Admin: manually trigger wager race payout
+app.post('/api/admin/wager-race/payout', requireAdmin, (req, res) => {
+  const payouts = wr.payoutAndReset();
+  const errors  = [];
+  for (const { username, prize } of payouts) {
+    const r = us.addBonusByAdmin(username, prize);
+    if (r.ok) {
+      io.emit('balanceReset', { username, balance: r.balance });
+      io.emit('wagerRaceWin', { username, prize, rank: payouts.indexOf({ username, prize }) + 1 });
+    } else errors.push(username);
+  }
+  al.log('wager_race_payout', { payouts });
+  res.json({ ok: true, payouts, errors });
+});
+
+// ── Lottery ───────────────────────────────────────────────────────────────────
+
+app.get('/api/lottery', (req, res) => {
+  const status = lt.getStatus();
+  const myTickets = req.query.u ? lt.getUserTickets(req.query.u) : [];
+  res.json({ ok: true, ...status, myTickets });
+});
+
+app.get('/api/lottery/my-tickets', requireAuth, (req, res) => {
+  res.json({ ok: true, tickets: lt.getUserTickets(req.user.username), status: lt.getStatus() });
+});
+
+app.post('/api/lottery/buy', requireAuth, (req, res) => {
+  const status = lt.getStatus();
+  if (status.drawn) return res.status(400).json({ ok: false, error: 'Draw has already happened this week' });
+
+  // Charge the player
+  const me = us.getMe(getToken(req));
+  if (!me.ok) return res.status(401).json({ ok: false, error: 'Not authenticated' });
+  // Balance check via sync
+  const userTickets = lt.getUserTickets(req.user.username).length;
+  if (userTickets >= lt.MAX_TICKETS) return res.status(400).json({ ok: false, error: `Max ${lt.MAX_TICKETS} tickets per week` });
+
+  const result = lt.buyTicket(req.user.username);
+  if (!result.ok) return res.status(400).json(result);
+
+  // Deduct ticket cost server-side
+  const deductResult = us.addBonusByAdmin(req.user.username, -lt.TICKET_PRICE);
+  if (deductResult.ok) io.emit('balanceReset', { username: req.user.username, balance: deductResult.balance });
+
+  al.log('lottery_ticket', { username: req.user.username, ticketId: result.ticketId });
+  res.json({ ok: true, ...result });
+});
+
+app.post('/api/admin/lottery/draw', requireAdmin, (req, res) => {
+  const result = lt.drawWinner();
+  if (result.winner) {
+    const r = us.addBonusByAdmin(result.winner, result.jackpot);
+    if (r.ok) io.emit('balanceReset', { username: result.winner, balance: r.balance });
+    io.emit('lotteryDraw', { winner: result.winner, jackpot: result.jackpot });
+    al.log('lottery_draw', { winner: result.winner, jackpot: result.jackpot });
+    console.log(`[Lottery] 🎟️ Winner: ${result.winner} wins $${result.jackpot.toLocaleString()}`);
+  }
+  res.json({ ok: true, ...result });
+});
+
+// ── VIP Status ────────────────────────────────────────────────────────────────
+
+app.get('/api/vip', requireAuth, (req, res) => {
+  const profile = xp.getProfile(req.user.username);
+  const totalWagered = profile?.totalWagered || 0;
+  const tierInfo = vip.getTierForWagered(totalWagered);
+  res.json({ ok: true, vip: tierInfo });
+});
+
+// /tiers must come BEFORE /:username so it isn't eaten as a username param
+app.get('/api/vip/tiers', (req, res) => {
+  res.json({ ok: true, tiers: vip.VIP_TIERS });
+});
+
+app.get('/api/vip/:username', (req, res) => {
+  const profile = xp.getProfile(req.params.username.toLowerCase());
+  const totalWagered = profile?.totalWagered || 0;
+  res.json({ ok: true, vip: vip.getTierForWagered(totalWagered) });
+});
+
+// ── PvP Coin Flip Challenges ──────────────────────────────────────────────────
+
+app.get('/api/pvp/challenges', (req, res) => {
+  res.json({ ok: true, challenges: pvp.getOpenChallenges(), results: pvp.getRecentResults(10) });
+});
+
+app.get('/api/pvp/my-challenges', requireAuth, (req, res) => {
+  res.json({ ok: true, challenges: pvp.getUserChallenges(req.user.username) });
+});
+
+app.post('/api/pvp/challenge', requireAuth, (req, res) => {
+  const { opponent, amount } = req.body || {};
+  const amt = Math.floor(Number(amount));
+  const result = pvp.createChallenge(req.user.username, opponent?.toLowerCase() || null, amt);
+  if (!result.ok) return res.status(400).json(result);
+
+  // Escrow: deduct from challenger immediately
+  const r = us.addBonusByAdmin(req.user.username, -amt);
+  if (!r.ok) {
+    pvp.cancelChallenge(result.id, req.user.username);
+    return res.status(400).json({ ok: false, error: 'Insufficient balance' });
+  }
+  io.emit('balanceReset', { username: req.user.username, balance: r.balance });
+  io.emit('newPvpChallenge', { challenger: req.user.username, amount: amt, id: result.id, opponent: opponent || null });
+  res.json({ ok: true, ...result });
+});
+
+app.post('/api/pvp/accept/:id', requireAuth, (req, res) => {
+  // Pre-check: get challenge details for balance deduction
+  const challenges = pvp.getOpenChallenges();
+  const challenge  = challenges.find(c => c.id === req.params.id);
+  if (!challenge) return res.status(404).json({ ok: false, error: 'Challenge not found or expired' });
+
+  // Deduct from acceptor
+  const deduct = us.addBonusByAdmin(req.user.username, -challenge.amount);
+  if (!deduct.ok) return res.status(400).json({ ok: false, error: 'Insufficient balance' });
+  io.emit('balanceReset', { username: req.user.username, balance: deduct.balance });
+
+  const result = pvp.acceptChallenge(req.params.id, req.user.username);
+  if (!result.ok) {
+    // Refund acceptor if something went wrong
+    const refund = us.addBonusByAdmin(req.user.username, challenge.amount);
+    if (refund.ok) io.emit('balanceReset', { username: req.user.username, balance: refund.balance });
+    return res.status(400).json(result);
+  }
+
+  // Pay winner 2× (both stakes)
+  const prize = challenge.amount * 2;
+  const pay   = us.addBonusByAdmin(result.winner, prize);
+  if (pay.ok) io.emit('balanceReset', { username: result.winner, balance: pay.balance });
+
+  // Refund challenger if they lost (they already had amount deducted; winner is paid 2x)
+  // If challenger lost, refund is 0 (challenger already paid). If acceptor lost, 0 refund too.
+  // Simple: winner gets 2x, loser gets 0. Already handled above.
+
+  io.emit('pvpResult', { id: result.id, winner: result.winner, loser: result.loser, flip: result.flip, amount: challenge.amount, prize });
+  al.log('pvp_result', { winner: result.winner, loser: result.loser, amount: challenge.amount });
+  res.json({ ok: true, ...result, prize });
+});
+
+app.delete('/api/pvp/challenge/:id', requireAuth, (req, res) => {
+  const challenges = pvp.getOpenChallenges();
+  const challenge  = challenges.find(c => c.id === req.params.id && c.challenger === req.user.username);
+  if (!challenge) return res.status(404).json({ ok: false, error: 'Not found' });
+
+  const result = pvp.cancelChallenge(req.params.id, req.user.username);
+  if (result.ok) {
+    // Refund escrowed amount
+    const r = us.addBonusByAdmin(req.user.username, challenge.amount);
+    if (r.ok) io.emit('balanceReset', { username: req.user.username, balance: r.balance });
+  }
+  res.json(result);
+});
+
+// ── Global Stats ──────────────────────────────────────────────────────────────
+
+app.get('/api/stats/global', (req, res) => {
+  const wins   = wl.getWins();
+  const topWin = wins.reduce((best, w) => !best || w.profit > best.profit ? w : best, null);
+  const totalProfit = wins.reduce((s, w) => s + (w.profit || 0), 0);
+  const top    = xp.getTopPlayers(1)[0] || null;
+  const raceInfo = wr.getLeaderboard(1);
+  const lottery  = lt.getStatus();
+  res.json({
+    ok: true,
+    biggestWinEver: topWin,
+    totalProfitPaid: totalProfit,
+    bigWinCount: wins.length,
+    topXpPlayer: top,
+    wagerRacePool: raceInfo.prizePool,
+    lotteryJackpot: lottery.jackpot,
+    lotteryTickets: lottery.tickets,
+  });
 });
 
 // ── Jackpot (shared pool for Slots) ──────────────────────────────────────────

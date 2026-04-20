@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
+import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode, recordBetResult } from '../utils/casinoBalance';
 import './Roulette.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -157,6 +157,7 @@ export default function Roulette() {
       setResult(r);
       setHistory(prev => [r, ...prev].slice(0, 20));
       setPhase('result');
+      recordBetResult({ game: 'roulette', amount: bet, won: win, multiplier: win ? betType.payout : 1, profit: net });
     }, 4500);
   }
 
