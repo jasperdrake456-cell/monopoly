@@ -12,6 +12,12 @@ import MysteryBox from '../components/MysteryBox';
 import NewsBanner from '../components/NewsBanner';
 import LiveJackpots from '../components/LiveJackpots';
 import OnlineCount from '../components/OnlineCount';
+import DailyCheckIn from '../components/DailyCheckIn';
+import LuckyNumbers from '../components/LuckyNumbers';
+import CryptoPrices from '../components/CryptoPrices';
+import JackpotRushBanner from '../components/JackpotRushBanner';
+import DailyGoals from '../components/DailyGoals';
+import BigWinsBoard from '../components/BigWinsBoard';
 import './HomePage.css';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
@@ -176,6 +182,11 @@ export default function HomePage() {
           {isLoggedIn && <Link to="/boost" className="home-trivia-btn" style={{ background: 'rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.35)', color: '#fca5a5' }}>🚀 Boost</Link>}
           {isLoggedIn && <Link to="/profile" className="home-trivia-btn" style={{ background: 'rgba(96,165,250,0.1)', borderColor: 'rgba(96,165,250,0.35)', color: '#93c5fd' }}>👤 Profile</Link>}
           {isLoggedIn && <Link to="/prestige" className="home-trivia-btn" style={{ background: 'rgba(251,191,36,0.1)', borderColor: 'rgba(251,191,36,0.35)', color: '#fbbf24' }}>⭐ Prestige</Link>}
+          {isLoggedIn && <Link to="/titles" className="home-trivia-btn" style={{ background: 'rgba(192,132,252,0.1)', borderColor: 'rgba(192,132,252,0.35)', color: '#c084fc' }}>🏷️ Titles</Link>}
+          {isLoggedIn && <Link to="/transactions" className="home-trivia-btn" style={{ background: 'rgba(56,189,248,0.1)', borderColor: 'rgba(56,189,248,0.35)', color: '#7dd3fc' }}>📜 History</Link>}
+          <Link to="/house-stats" className="home-trivia-btn" style={{ background: 'rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.35)', color: '#fca5a5' }}>🏛️ House Stats</Link>
+          <Link to="/search"     className="home-trivia-btn" style={{ background: 'rgba(148,163,184,0.1)', borderColor: 'rgba(148,163,184,0.35)', color: '#94a3b8' }}>🔍 Search</Link>
+          <Link to="/win-streaks" className="home-trivia-btn" style={{ background: 'rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.35)', color: '#fca5a5' }}>🔥 Streaks</Link>
           {isAdmin && <Link to="/admin" className="home-trivia-btn" style={{ background: 'rgba(239,68,68,0.15)', borderColor: 'rgba(239,68,68,0.4)', color: '#fca5a5' }}>🛡️ Admin</Link>}
           <AccountWidget />
         </div>
@@ -184,8 +195,19 @@ export default function HomePage() {
       <main className="home-main">
         <HotStreakBanner />
         <NewsBanner />
+        <JackpotRushBanner />
         <LiveJackpots />
         <LiveWinsTicker />
+
+        {/* ── Big Wins Board with emoji reactions ── */}
+        <section className="home-section" style={{ paddingTop:8, paddingBottom:8 }}>
+          <BigWinsBoard />
+        </section>
+
+        {/* ── Crypto prices ticker ── */}
+        <section className="home-section" style={{ paddingTop:8, paddingBottom:8 }}>
+          <CryptoPrices />
+        </section>
 
         {/* ── Special Features row ── */}
         <section className="home-section" style={{ paddingBottom: 0 }}>
@@ -193,6 +215,9 @@ export default function HomePage() {
             <CommunityRainPool />
             <MysteryBox />
             {isLoggedIn && user && <LuckyGameWidget username={user.username} />}
+            {isLoggedIn && <DailyCheckIn />}
+            <LuckyNumbers />
+            {isLoggedIn && <DailyGoals />}
           </div>
         </section>
 

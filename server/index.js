@@ -45,6 +45,13 @@ const ns        = require('./newsStore');
 const bs        = require('./boostStore');
 const rf        = require('./referralStore');
 const pr        = require('./prestigeStore');
+const ci        = require('./checkInStore');
+const tl        = require('./titleStore');
+const ln        = require('./luckyNumbersStore');
+const bh        = require('./balanceHistoryStore');
+const jr        = require('./jackpotRushStore');
+const dg        = require('./dailyGoalsStore');
+const er        = require('./emojiReactionsStore');
 
 const app = express();
 const server = http.createServer(app);
@@ -1122,6 +1129,10 @@ app.get('/api/xp/profile/:username', (req, res) => {
       levelInfo: xp.getLevelInfo(0),
     };
   }
+  // Attach VIP tier
+  const vipData = vip.getTierForWagered(profile.totalWagered || 0);
+  profile.vipTier = vipData.tier > 0 ? vipData.name.toLowerCase() : 'none';
+  profile.username = uname;
   res.json({ ok: true, profile });
 });
 
@@ -1152,6 +1163,16 @@ app.post('/api/xp/record-bet', requireAuth, (req, res) => {
   // Include boost status in response so client can display it
   result.boostActive = bs.isBoostActive(req.user.username);
 
+  // Lucky number bonus: roulette bets on today's lucky numbers get 2× XP
+  const luckyNum = req.body?.luckyNumber ?? req.body?.betNumber ?? null;
+  if (game === 'roulette' && luckyNum !== null && ln.isLucky(luckyNum) && result.xpGained > 0) {
+    const luckyBonus = result.xpGained; // double XP
+    const lr = xp.awardXP(req.user.username, luckyBonus);
+    result.xpGained   += luckyBonus;
+    result.newXp       = lr.newXp;
+    result.luckyBonus  = luckyBonus;
+  }
+
   // Apply weekend XP multiplier to the result
   if (xpMultiplier > 1 && result.xpGained > 0) {
     const bonus = Math.floor(result.xpGained * (xpMultiplier - 1));
@@ -1167,6 +1188,9 @@ app.post('/api/xp/record-bet', requireAuth, (req, res) => {
       }
     }
   }
+
+  // Daily goals — track wagered amount
+  dg.addWager(req.user.username, Math.floor(amount));
 
   // Mission progress
   ms.recordEvent(req.user.username, 'wager', game, Math.floor(amount), multiplier);
@@ -1258,7 +1282,8 @@ app.post('/api/admin/coin-rain', requireAdmin, (req, res) => {
 // ── Live Recent Wins (public feed) ─────────────────────────────────────────────
 
 app.get('/api/wins/recent', (req, res) => {
-  const wins = wl.getWins().slice(0, 20);
+  const limit = Math.min(parseInt(req.query.limit || '20', 10), 50);
+  const wins  = wl.getWins().slice(0, limit);
   res.json({ ok: true, wins });
 });
 
@@ -1512,6 +1537,7 @@ app.post('/api/mystery-box/claim', requireAuth, (req, res) => {
     }
   }
   al.log('mystery_box', { username: req.user.username, reward: result.reward });
+  bh.log(req.user.username, { type: 'mystery-box', amount: result.reward.amount, balance: r.balance, description: `${result.reward.tier} Mystery Box: ${result.reward.label}` });
   res.json({ ok: true, reward: result.reward, newBalance: r.balance });
 });
 
@@ -1589,6 +1615,54 @@ app.post('/api/referral/use', requireAuth, (req, res) => {
   res.json({ ok: true, bonus: result.bonus });
 });
 
+// ── Daily Check-in Streak ─────────────────────────────────────────────────────
+
+app.get('/api/checkin', requireAuth, (req, res) => {
+  res.json({ ok: true, ...ci.getStatus(req.user.username) });
+});
+
+app.post('/api/checkin', requireAuth, (req, res) => {
+  const result = ci.claim(req.user.username);
+  if (!result.ok) return res.status(400).json(result);
+  const r = us.addBonusByAdmin(req.user.username, result.reward);
+  if (r.ok) {
+    io.emit('balanceReset', { username: req.user.username, balance: r.balance });
+    bh.log(req.user.username, { type: 'check-in', amount: result.reward, balance: r.balance, description: `Day ${result.streak} check-in` });
+  }
+  if (result.isWeekly) {
+    io.emit('bigWin', { username: req.user.username, game: 'check-in', profit: result.reward, multiplier: null, timestamp: Date.now() });
+  }
+  al.log('checkin', { username: req.user.username, streak: result.streak, reward: result.reward });
+  res.json({ ok: true, ...result, newBalance: r.balance });
+});
+
+// ── Player Titles ─────────────────────────────────────────────────────────────
+
+app.get('/api/titles', requireAuth, (req, res) => {
+  const profile = xp.getProfile(req.user.username);
+  const unlocked = tl.getUnlockedTitles(profile?.achievements || []);
+  const equipped = tl.getEquipped(req.user.username);
+  res.json({ ok: true, unlocked, equipped, all: tl.TITLES });
+});
+
+app.post('/api/titles/equip', requireAuth, (req, res) => {
+  const { titleId } = req.body || {};
+  // Verify user has unlocked this title
+  const profile = xp.getProfile(req.user.username);
+  const unlocked = tl.getUnlockedTitles(profile?.achievements || []);
+  if (titleId !== null && !unlocked.find(t => t.id === titleId)) {
+    return res.status(403).json({ ok: false, error: 'Title not unlocked' });
+  }
+  const result = tl.equipTitle(req.user.username, titleId);
+  res.json(result);
+});
+
+// ── Lucky Numbers ─────────────────────────────────────────────────────────────
+
+app.get('/api/lucky-numbers', (req, res) => {
+  res.json({ ok: true, numbers: ln.getTodaysNumbers() });
+});
+
 // ── Prestige ──────────────────────────────────────────────────────────────────
 
 app.get('/api/prestige', requireAuth, (req, res) => {
@@ -1625,6 +1699,91 @@ app.get('/api/wins/today', (req, res) => {
   res.json({ ok: true, wins });
 });
 
+// ── Balance History ────────────────────────────────────────────────────────────
+
+app.get('/api/balance-history', requireAuth, (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit || '30', 10), 50);
+  const history = bh.getHistory(req.user.username, limit);
+  res.json({ ok: true, history });
+});
+
+// ── Jackpot Rush ───────────────────────────────────────────────────────────────
+
+app.get('/api/jackpot-rush', (req, res) => {
+  res.json({ ok: true, ...jr.getStatus() });
+});
+
+app.post('/api/admin/jackpot-rush/start', requireOwner, (req, res) => {
+  const status = jr.forceStart();
+  io.emit('jackpotRushStarted', status);
+  res.json({ ok: true, ...status });
+});
+
+// Hourly check (every 60 minutes)
+setInterval(() => {
+  const result = jr.tryTrigger();
+  if (result.triggered) {
+    io.emit('jackpotRushStarted', jr.getStatus());
+    console.log('[jackpotRush] Rush triggered!');
+  }
+}, 60 * 60 * 1000);
+// Also check shortly after startup
+setTimeout(() => {
+  const result = jr.tryTrigger();
+  if (result.triggered) io.emit('jackpotRushStarted', jr.getStatus());
+}, 5000);
+
+// ── Daily Goals ────────────────────────────────────────────────────────────────
+
+app.get('/api/daily-goals', requireAuth, (req, res) => {
+  const status = dg.getStatus(req.user.username);
+  res.json({ ok: true, ...status });
+});
+
+app.post('/api/daily-goals/claim', requireAuth, (req, res) => {
+  const { tierId } = req.body || {};
+  const result = dg.claimTier(req.user.username, tierId);
+  if (!result.ok) return res.status(400).json(result);
+  // Award the bonus
+  const r = us.addBonusByAdmin(req.user.username, result.tier.bonus);
+  bh.log(req.user.username, {
+    type: 'daily-goal', amount: result.tier.bonus, balance: r.balance,
+    description: `Daily Goal: ${result.tier.label} (wager ${result.tier.target.toLocaleString()})`,
+  });
+  res.json({ ok: true, tier: result.tier, balance: r.balance });
+});
+
+// ── Emoji reactions on wins ─────────────────────────────────────────────────────
+
+app.post('/api/wins/react', (req, res) => {
+  const { winId, emoji } = req.body || {};
+  const result = er.react(winId, emoji, req.ip);
+  if (!result.ok) return res.status(400).json(result);
+  // Broadcast to all clients
+  io.emit('winReaction', { winId, reactions: result.reactions });
+  res.json(result);
+});
+
+app.get('/api/wins/react/:winId', (req, res) => {
+  res.json({ ok: true, reactions: er.getReactions(req.params.winId) });
+});
+
+// ── Win Streak Leaderboard ─────────────────────────────────────────────────────
+
+app.get('/api/leaderboard/streaks', (req, res) => {
+  // Get all XP profiles and sort by current win streak
+  const allProfiles = xp.getTopPlayers(500);
+  const players = allProfiles
+    .map(p => {
+      const full = xp.getProfile(p.username);
+      return { username: p.username, streak: full?.winStreak || 0 };
+    })
+    .filter(p => p.streak >= 3)
+    .sort((a, b) => b.streak - a.streak)
+    .slice(0, 20);
+  res.json({ ok: true, players });
+});
+
 // ── Online count (public) ──────────────────────────────────────────────────────
 
 app.get('/api/online-count', (req, res) => {
@@ -1644,6 +1803,11 @@ app.get('/api/stats/global', (req, res) => {
   const raceInfo = wr.getLeaderboard(1);
   const lottery  = lt.getStatus();
   const userStats = us.adminGetStats ? us.adminGetStats() : {};
+  // Top players for search suggestions
+  const topPlayers = xp.getTopPlayers(10).map(p => {
+    const full = xp.getProfile(p.username);
+    return { username: p.username, totalWon: full?.totalWagered || 0 };
+  });
   res.json({
     ok: true,
     biggestWinEver: topWin,
@@ -1655,6 +1819,7 @@ app.get('/api/stats/global', (req, res) => {
     lotteryTickets: lottery.tickets,
     onlineNow: userStats.onlineNow || 0,
     totalUsers: userStats.totalUsers || 0,
+    topPlayers,
   });
 });
 

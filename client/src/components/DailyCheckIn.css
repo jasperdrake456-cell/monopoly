@@ -1,0 +1,90 @@
+.dci {
+  background: linear-gradient(135deg, #1a1200, #2a1a00);
+  border: 1px solid rgba(245,158,11,.3);
+  border-radius: 16px;
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.dci-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.dci-icon  { font-size: 1.8rem; }
+.dci-title { font-size: 0.95rem; font-weight: 800; color: #e2e8f0; }
+.dci-sub   { font-size: 0.78rem; color: #94a3b8; }
+
+/* 7-day track */
+.dci-track {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+.dci-day {
+  flex: 1;
+  min-width: 52px;
+  background: #12122a;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  padding: 8px 4px;
+  text-align: center;
+  transition: border-color .15s;
+}
+.dci-day--today {
+  background: rgba(245,158,11,.12);
+  border-color: #f59e0b;
+  box-shadow: 0 0 12px rgba(245,158,11,.2);
+}
+.dci-day--past { opacity: .45; }
+.dci-day-num   { font-size: 0.62rem; color: #475569; text-transform: uppercase; letter-spacing:.04em; }
+.dci-day-icon  { font-size: 1.1rem; margin: 3px 0; }
+.dci-day-reward{ font-size: 0.65rem; font-weight: 700; color: #f59e0b; }
+
+.dci-btn {
+  width: 100%;
+  padding: 11px;
+  background: linear-gradient(135deg, #d97706, #f59e0b);
+  border: none;
+  border-radius: 10px;
+  color: #0f172a;
+  font-size: 0.92rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.dci-btn:hover:not(:disabled) { opacity: .9; }
+.dci-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.dci-done { text-align: center; font-size: 0.82rem; color: #64748b; padding: 8px 0; }
+
+/* Overlay */
+.dci-claimed-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.75);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dci-claimed-modal {
+  background: linear-gradient(135deg, #1a1200, #2a1a00);
+  border: 2px solid #f59e0b;
+  border-radius: 24px;
+  padding: 36px 28px;
+  text-align: center;
+  box-shadow: 0 0 60px rgba(245,158,11,.3);
+  animation: dciPop .4s cubic-bezier(.17,.67,.3,1.2);
+  max-width: 300px; width: 90%;
+}
+@keyframes dciPop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.dci-claimed-emoji  { font-size: 3.5rem; margin-bottom: 8px; }
+.dci-claimed-title  { font-size: 1.3rem; font-weight: 900; color: #f59e0b; margin-bottom: 6px; }
+.dci-claimed-reward { font-size: 2.5rem; font-weight: 900; color: #fbbf24; text-shadow: 0 0 20px rgba(251,191,36,.5); margin-bottom: 4px; }
+.dci-claimed-streak { font-size: 0.85rem; color: #94a3b8; margin-bottom: 16px; }
+.dci-claimed-btn    { background: linear-gradient(135deg, #d97706, #f59e0b); border: none; border-radius: 10px; color: #0f172a; font-weight: 800; font-size: 0.95rem; padding: 11px 24px; cursor: pointer; }

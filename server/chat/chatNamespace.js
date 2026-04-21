@@ -3,6 +3,8 @@
 const cs = require('./chatStore');
 const { filter } = require('./chatFilter');
 const us = require('../userStore');
+const { getTierForWagered } = require('../vipStore');
+const xpStore = require('../xpStore');
 
 // In-memory state (resets on server restart — bans are persisted in chatStore)
 const lastMessageAt  = new Map(); // username → timestamp (ms) for slow-mode
@@ -56,6 +58,25 @@ function register(namespace) {
     socket.on('sendMessage', (data) => {
       const rawText = (data?.text || '').trim();
       if (!rawText) return;
+
+      // ── /stats command: show your own stats ────────────────────────────────
+      if (rawText.toLowerCase() === '/stats') {
+        const xpModule = require('../xpStore');
+        const profile  = xpModule.getProfile(username);
+        const statsText = profile
+          ? `📊 ${displayName} | Level ${profile.level} | ${(profile.xp || 0).toLocaleString()} XP | ${(profile.totalWins || 0)} wins | Best streak: ${profile.bestStreak || 0}`
+          : `📊 ${displayName} | No stats yet`;
+        const statsMsg = {
+          id: `${Date.now()}_stats`,
+          username: 'system',
+          displayName: '📊 Stats',
+          text: statsText,
+          timestamp: Date.now(),
+          isSystem: true,
+        };
+        socket.emit('newMessage', statsMsg);
+        return;
+      }
 
       // ── /tip command: /tip <username> <amount> ─────────────────────────────
       const tipMatch = rawText.match(/^\/tip\s+(\S+)\s+(\d+)\s*$/i);
@@ -146,7 +167,16 @@ function register(namespace) {
       }
 
       const msgId = `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-      const msg   = { id: msgId, username, displayName, text, timestamp: Date.now(), isAdmin };
+      // Attach VIP tier for chat badge
+      let vipTier = null;
+      try {
+        const profile = xpStore.getProfile(username);
+        if (profile && profile.totalWagered > 0) {
+          const tier = getTierForWagered(profile.totalWagered || 0);
+          if (tier.tier > 0) vipTier = { tier: tier.tier, name: tier.name, icon: tier.icon, color: tier.color };
+        }
+      } catch { /* non-critical */ }
+      const msg   = { id: msgId, username, displayName, text, timestamp: Date.now(), isAdmin, vipTier };
 
       // Shadow-muted: send back only to sender
       if (!isAdmin && shadowMutedSet.has(username) && settings.shadowMute) {

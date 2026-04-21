@@ -395,6 +395,45 @@ function BoostAdminCard({ token, authFetch }) {
   );
 }
 
+function JackpotRushAdminCard({ token, authFetch }) {
+  const [status,  setStatus]  = React.useState(null);
+  const [loading, setLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    authFetch('/api/jackpot-rush', token).then(d => { if (d.ok) setStatus(d); }).catch(() => {});
+  }, []);
+
+  async function forceStart() {
+    setLoading(true);
+    const d = await authFetch('/api/admin/jackpot-rush/start', token, { method: 'POST' });
+    if (d.ok) setStatus(d);
+    setLoading(false);
+  }
+
+  const active    = status?.active;
+  const remaining = status?.remaining ? Math.ceil(status.remaining / 60000) : 0;
+
+  return (
+    <div className="admin-site-card">
+      <div className="admin-site-card-title">⚡ Jackpot Rush</div>
+      <div className="admin-site-card-sub">Force-start a 1-hour double jackpot period for slots</div>
+      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
+        <span style={{ fontSize:'0.85rem', color: active ? '#22c55e' : '#64748b' }}>
+          {active ? `🟢 ACTIVE — ${remaining}m remaining` : '⚫ Inactive'}
+        </span>
+        <button
+          className="admin-btn admin-btn--primary admin-btn--sm"
+          onClick={forceStart}
+          disabled={loading || active}
+          style={{ marginLeft:'auto' }}
+        >
+          {loading ? '…' : active ? '⚡ Active' : '⚡ Start Rush'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function GiftCodeAdminCard({ token, authFetch }) {
   const [codes,    setCodes]    = React.useState([]);
   const [newCode,  setNewCode]  = React.useState('');
@@ -2002,6 +2041,9 @@ export default function AdminPage() {
 
           {/* ── Boost Tokens ──────────────────────────────────────────────── */}
           <BoostAdminCard token={token} authFetch={authFetch} />
+
+          {/* ── Jackpot Rush ──────────────────────────────────────────────── */}
+          <JackpotRushAdminCard token={token} authFetch={authFetch} />
 
           {/* ── Coin Rain ─────────────────────────────────────────────────── */}
           <CoinRainAdminCard token={token} authFetch={authFetch} />

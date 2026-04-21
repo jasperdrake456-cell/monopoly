@@ -73,6 +73,11 @@ import ReferralPage from './pages/ReferralPage';
 import BoostPage from './pages/BoostPage';
 import GiftCodePage from './pages/GiftCodePage';
 import PrestigePage from './pages/PrestigePage';
+import TitlesPage from './pages/TitlesPage';
+import HouseStatsPage from './pages/HouseStatsPage';
+import TransactionHistoryPage from './pages/TransactionHistoryPage';
+import PlayerSearchPage from './pages/PlayerSearchPage';
+import WinStreakLeaderboardPage from './pages/WinStreakLeaderboardPage';
 import './App.css';
 
 // Convenience wrapper: RequireAuth + GameGuard for a given slug
@@ -189,6 +194,11 @@ export default function App() {
             <Route path="/boost"        element={<RequireAuth><BoostPage /></RequireAuth>} />
             <Route path="/redeem"       element={<RequireAuth><GiftCodePage /></RequireAuth>} />
             <Route path="/prestige"     element={<RequireAuth><PrestigePage /></RequireAuth>} />
+            <Route path="/titles"      element={<RequireAuth><TitlesPage /></RequireAuth>} />
+            <Route path="/house-stats" element={<HouseStatsPage />} />
+            <Route path="/transactions" element={<RequireAuth><TransactionHistoryPage /></RequireAuth>} />
+            <Route path="/search"      element={<PlayerSearchPage />} />
+            <Route path="/win-streaks" element={<WinStreakLeaderboardPage />} />
             <Route path="*"            element={<Navigate to="/" replace />} />
           </Routes>
         </PasswordGate>

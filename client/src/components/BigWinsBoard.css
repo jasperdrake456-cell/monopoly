@@ -1,0 +1,151 @@
+.bwb-wrap {
+  width: 100%;
+}
+
+.bwb-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.bwb-title {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #f59e0b;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.bwb-sub {
+  font-size: 0.72rem;
+  color: #475569;
+}
+
+.bwb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.bwb-card {
+  background: #12122a;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  padding: 12px 14px;
+  transition: border-color .2s;
+  position: relative;
+}
+
+.bwb-card:hover {
+  border-color: rgba(245,158,11,.35);
+}
+
+.bwb-card-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.bwb-game-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.bwb-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.bwb-username {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bwb-game {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.bwb-profit {
+  font-weight: 900;
+  font-size: 1rem;
+  color: #22c55e;
+  flex-shrink: 0;
+}
+
+.bwb-card-bottom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bwb-time {
+  font-size: 0.7rem;
+  color: #334155;
+  flex: 1;
+}
+
+.bwb-react-sum {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.bwb-react-wrap {
+  position: relative;
+}
+
+.bwb-react-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  padding: 3px 7px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  transition: background .15s;
+}
+
+.bwb-react-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.1);
+}
+
+.bwb-react-btn--done {
+  border-color: rgba(245,158,11,.4);
+  background: rgba(245,158,11,0.08);
+  cursor: default;
+}
+
+.bwb-picker {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 6px 8px;
+  display: flex;
+  gap: 4px;
+  z-index: 100;
+  white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.bwb-picker-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 2px 3px;
+  border-radius: 4px;
+  transition: background .12s;
+}
+
+.bwb-picker-btn:hover {
+  background: rgba(255,255,255,0.1);
+}

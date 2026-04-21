@@ -191,6 +191,11 @@ export default function ChatPanel() {
                   >
                     {isAdm   && <span className="chat-admin-badge">👑</span>}
                     {isChamp && <span className="chat-admin-badge">👑</span>}
+                    {m.vipTier && !isAdm && !isChamp && (
+                      <span className="chat-vip-badge" style={{ color: m.vipTier.color }} title={`${m.vipTier.name} VIP`}>
+                        {m.vipTier.icon}
+                      </span>
+                    )}
                     {m.displayName || m.username}
                   </span>
                   <span className="chat-msg-time">{fmt(m.timestamp)}</span>
