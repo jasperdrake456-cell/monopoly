@@ -741,11 +741,36 @@ function spendBalance(username, amount) {
   return { ok: true, balance: u.casinoBalance };
 }
 
+/**
+ * Return a list of usernames that have been seen online within the last
+ * `minutes` minutes (based on lastSeen). Excludes the reserved admin sentinel.
+ * Used by coin-rain / community-rain payouts.
+ */
+function getOnlineUsers(minutes = 15) {
+  const windowMs = Math.max(1, minutes) * 60_000;
+  const now = Date.now();
+  const users = readUsers();
+  return Object.values(users)
+    .filter(u => u && u.username && u.username !== ADMIN_USERNAME)
+    .filter(u => u.lastSeen && (now - u.lastSeen) < windowMs)
+    .map(u => u.username);
+}
+
+/** Mark a user as currently online (updates lastSeen). */
+function touchLastSeen(username) {
+  const clean = (username || '').toLowerCase();
+  if (!clean) return;
+  const users = readUsers();
+  if (!users[clean]) return;
+  users[clean].lastSeen = Date.now();
+  writeUsers(users);
+}
+
 module.exports = {
   register, login, getMe, syncBalance, claimDaily, transfer, logout, userExists,
   deleteUser, adminGiveMoney, adminSetBalance, listUsers, isAdminToken, isOwnerToken, getTopBalances,
   recordIP, kickUser, addBonus, pruneZeroBalanceAccounts, adminGetStats, addBonusByAdmin,
   validateToken, bulkResetBalances, getDailySpinStatus, claimDailySpin,
   grantAdmin, revokeAdmin, listSecondaryAdmins, isSecondaryAdmin,
-  getBalance, spendBalance,
+  getBalance, spendBalance, getOnlineUsers, touchLastSeen,
 };

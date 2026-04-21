@@ -1,0 +1,129 @@
+.pred-page {
+  min-height: 100vh;
+  background: var(--gv-grad-bg);
+  background-attachment: fixed;
+  color: var(--gv-text);
+  font-family: var(--gv-font);
+  padding: 30px 20px 60px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.pred-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+.pred-back { color: var(--gv-text-dim); text-decoration: none; font-weight: 600; }
+.pred-back:hover { color: var(--gv-text); }
+.pred-title {
+  flex: 1; text-align: center;
+  font-family: var(--gv-font-display);
+  font-size: 1.8rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #ec4899, #a855f7);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.pred-bal { color: var(--gv-text-dim); font-weight: 600; }
+
+.pred-hero {
+  background: linear-gradient(135deg, rgba(236,72,153,0.12), rgba(168,85,247,0.08));
+  border: 1px solid rgba(236,72,153,0.35);
+  border-radius: 22px;
+  padding: 24px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+.pred-hero-title { font-family: var(--gv-font-display); font-size: 1.6rem; font-weight: 900; margin-bottom: 4px; }
+.pred-hero-sub   { color: var(--gv-text-dim); font-size: 0.95rem; }
+
+.pred-admin {
+  background: var(--gv-grad-card);
+  border: 1px solid rgba(255,215,0,0.3);
+  border-radius: var(--gv-r-md);
+  padding: 18px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pred-admin-label {
+  font-family: var(--gv-font-display);
+  color: var(--gv-gold);
+  font-weight: 800;
+  letter-spacing: 2px;
+  font-size: 0.85rem;
+}
+
+.pred-msg {
+  background: rgba(34,197,94,0.15);
+  border: 1px solid rgba(34,197,94,0.35);
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  text-align: center;
+  color: #86efac;
+}
+
+.pred-empty { text-align: center; color: var(--gv-text-mute); padding: 40px; }
+
+.pred-list { display: flex; flex-direction: column; gap: 14px; }
+
+.pred-card {
+  background: var(--gv-grad-card);
+  border: 1px solid var(--gv-border);
+  border-radius: var(--gv-r-md);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.pred-card:hover {
+  border-color: rgba(236,72,153,0.35);
+  box-shadow: 0 10px 30px rgba(236,72,153,0.18);
+}
+
+.pred-card-question { font-size: 1.15rem; font-weight: 800; color: #fff; }
+.pred-card-desc { color: var(--gv-text-dim); font-size: 0.88rem; }
+.pred-card-status { font-size: 0.82rem; font-weight: 700; }
+
+.pred-card-bar {
+  display: flex;
+  height: 34px;
+  border-radius: 10px;
+  overflow: hidden;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+.pred-card-bar-yes {
+  background: var(--gv-grad-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  transition: width 0.3s;
+}
+.pred-card-bar-no {
+  background: var(--gv-grad-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  transition: width 0.3s;
+}
+.pred-card-volume { color: var(--gv-text-mute); font-size: 0.8rem; }
+
+.pred-card-buys {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pred-card-admin-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255,255,255,0.1);
+}

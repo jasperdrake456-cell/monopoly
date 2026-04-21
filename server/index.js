@@ -54,6 +54,11 @@ const dg        = require('./dailyGoalsStore');
 const er        = require('./emojiReactionsStore');
 const cryptoFeed      = require('./cryptoPriceFeed');
 const cryptoPortfolio = require('./cryptoPortfolioStore');
+const bank            = require('./bankStore');
+const flashEvents     = require('./flashEventStore');
+const cryptoOrders    = require('./cryptoOrdersStore');
+const predMarket      = require('./predictionMarketStore');
+const memeCoins       = require('./memeCoinStore');
 
 const app = express();
 const server = http.createServer(app);
@@ -380,6 +385,8 @@ function requireAuth(req, res, next) {
   const me = us.getMe(getToken(req));
   if (!me.ok) return res.status(401).json({ ok: false, error: 'Not authenticated' });
   req.user = me;
+  // Mark user online for coin-rain / community-rain payouts
+  try { us.touchLastSeen(me.username); } catch {}
   next();
 }
 
@@ -1474,16 +1481,9 @@ app.post('/api/rain/contribute', requireAuth, (req, res) => {
   const { amount } = req.body || {};
   const amt = Math.min(Math.max(Math.floor(Number(amount) || cr.CONTRIBUTION_MIN), cr.CONTRIBUTION_MIN), cr.CONTRIBUTION_MAX);
 
-  // Admins can contribute too (pool is for the community, not a competition)
-  const me = us.getMe(getToken(req));
-  if (!me.ok) return res.status(401).json({ ok: false, error: 'Not authenticated' });
-  if ((me.balance || 0) < amt) {
-    return res.status(400).json({ ok: false, error: 'Insufficient balance' });
-  }
-
-  // Deduct from user
-  const deduct = us.addBonusByAdmin(req.user.username, -amt);
-  if (!deduct.ok) return res.status(400).json({ ok: false, error: 'Deduction failed' });
+  // Anyone logged in can contribute; admin sentinel has infinite balance.
+  const deduct = us.spendBalance(req.user.username, amt);
+  if (!deduct.ok) return res.status(400).json({ ok: false, error: deduct.error || 'Insufficient balance' });
   io.emit('balanceReset', { username: req.user.username, balance: deduct.balance });
 
   cr.addContributor(req.user.username, amt);
@@ -1852,6 +1852,260 @@ app.post('/api/crypto/close-short', requireAuth, (req, res) => {
   const r = us.addBonusByAdmin(req.user.username, result.payout);
   bh.log(req.user.username, { type: 'crypto-close-short', amount: result.pnl, balance: r.balance, description: `Closed short ${coinId} @ $${result.exitPrice} — P&L ${result.pnl >= 0 ? '+' : ''}$${result.pnl.toFixed(2)}` });
   io.emit('balanceReset', { username: req.user.username, balance: r.balance });
+  res.json({ ...result, balance: r.balance });
+});
+
+// ── Bank / Vault ───────────────────────────────────────────────────────────────
+
+app.get('/api/bank/positions', requireAuth, (req, res) => {
+  res.json({ ok: true, positions: bank.getPositions(req.user.username), tiers: bank.getTiers() });
+});
+
+app.post('/api/bank/deposit', requireAuth, (req, res) => {
+  const { tier, amount } = req.body || {};
+  const amt = Math.floor(Number(amount) || 0);
+  if (amt < 1000) return res.status(400).json({ ok: false, error: 'Min deposit: 1,000' });
+  const deduct = us.spendBalance(req.user.username, amt);
+  if (!deduct.ok) return res.status(400).json(deduct);
+  const result = bank.deposit(req.user.username, tier, amt);
+  if (!result.ok) {
+    // refund
+    us.addBonusByAdmin(req.user.username, amt);
+    return res.status(400).json(result);
+  }
+  bh.log(req.user.username, { type: 'bank-deposit', amount: -amt, balance: deduct.balance, description: `Bank deposit (${tier})` });
+  io.emit('balanceReset', { username: req.user.username, balance: deduct.balance });
+  res.json({ ...result, balance: deduct.balance });
+});
+
+app.post('/api/bank/withdraw', requireAuth, (req, res) => {
+  const { positionId } = req.body || {};
+  const result = bank.withdraw(req.user.username, positionId);
+  if (!result.ok) return res.status(400).json(result);
+  const r = us.addBonusByAdmin(req.user.username, result.payout);
+  bh.log(req.user.username, { type: 'bank-withdraw', amount: result.payout, balance: r.balance, description: `Bank withdraw` });
+  io.emit('balanceReset', { username: req.user.username, balance: r.balance });
+  res.json({ ...result, balance: r.balance });
+});
+
+// ── Flash Events ───────────────────────────────────────────────────────────────
+
+app.get('/api/flash-events/current', (req, res) => {
+  res.json({ ok: true, event: flashEvents.getCurrent(), types: flashEvents.getTypes() });
+});
+
+app.post('/api/admin/flash-events/trigger', requireAdmin, (req, res) => {
+  const { type } = req.body || {};
+  const ev = flashEvents.trigger(type);
+  io.emit('flashEventStart', ev);
+  al.log('flash_event_triggered', { admin: req.user.username, type: ev.type });
+  res.json({ ok: true, event: ev });
+});
+
+// Background tick — try to trigger random events (called periodically).
+setInterval(() => {
+  const ev = flashEvents.tick();
+  if (ev) {
+    io.emit('flashEventStart', ev);
+    console.log(`[FlashEvents] ⚡ ${ev.info.name} started (${Math.round((ev.endsAt - ev.startedAt)/1000)}s)`);
+  }
+}, 120_000); // every 2 min
+
+// ── Crypto: historical chart ──────────────────────────────────────────────────
+
+app.get('/api/crypto/chart/:coinId', async (req, res) => {
+  const { coinId } = req.params;
+  const days = ['1', '7', '30', '90'].includes(String(req.query.days)) ? String(req.query.days) : '1';
+  try {
+    const url = `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(coinId)}/market_chart?vs_currency=usd&days=${days}`;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    const r = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!r.ok) return res.status(502).json({ ok: false, error: 'Upstream failed' });
+    const d = await r.json();
+    // prices: [[timestamp, price], ...]
+    res.json({ ok: true, coinId, days, prices: d.prices || [] });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: 'Chart fetch failed' });
+  }
+});
+
+// ── Crypto: limit orders ──────────────────────────────────────────────────────
+
+app.get('/api/crypto/orders', requireAuth, (req, res) => {
+  res.json({ ok: true, orders: cryptoOrders.getUserOrders(req.user.username) });
+});
+
+app.post('/api/crypto/orders', requireAuth, (req, res) => {
+  const { type, coinId, amountUSD, targetPrice, direction } = req.body || {};
+  const amt = Math.floor(Number(amountUSD) || 0);
+
+  // For buy / short, reserve the funds NOW by spending balance (so user can't overspend)
+  if (type === 'buy' || type === 'short') {
+    if (amt < 100) return res.status(400).json({ ok: false, error: 'Min amount: 100' });
+    const deduct = us.spendBalance(req.user.username, amt);
+    if (!deduct.ok) return res.status(400).json(deduct);
+    io.emit('balanceReset', { username: req.user.username, balance: deduct.balance });
+  }
+
+  const result = cryptoOrders.placeOrder(req.user.username, { type, coinId, amountUSD: amt, targetPrice, direction });
+  if (!result.ok) {
+    // refund if we pre-deducted
+    if (type === 'buy' || type === 'short') us.addBonusByAdmin(req.user.username, amt);
+    return res.status(400).json(result);
+  }
+  res.json(result);
+});
+
+app.delete('/api/crypto/orders/:id', requireAuth, (req, res) => {
+  const order = cryptoOrders.getUserOrders(req.user.username).find(o => o.id === req.params.id);
+  const result = cryptoOrders.cancelOrder(req.user.username, req.params.id);
+  if (!result.ok) return res.status(400).json(result);
+  // Refund reserved funds for pending buy/short
+  if (order && (order.type === 'buy' || order.type === 'short') && order.status === 'pending') {
+    const r = us.addBonusByAdmin(req.user.username, order.amountUSD);
+    io.emit('balanceReset', { username: req.user.username, balance: r.balance });
+  }
+  res.json(result);
+});
+
+// Check limit orders on every price tick (called by cryptoPriceFeed after update).
+if (typeof cryptoFeed.onPriceUpdate === 'function') {
+  cryptoFeed.onPriceUpdate((prices) => {
+    // prices is array of { id, symbol, usd, ... } — convert to { id: usd }
+    const priceMap = {};
+    for (const p of prices) priceMap[p.id] = p.usd;
+    const triggered = cryptoOrders.checkTriggers(priceMap);
+    for (const o of triggered) {
+      try {
+        let result;
+        if (o.type === 'buy')          result = cryptoPortfolio.buy(o.username, o.coinId, o.amountUSD);
+        else if (o.type === 'short')   result = cryptoPortfolio.short(o.username, o.coinId, o.amountUSD);
+        else if (o.type === 'sell')    result = cryptoPortfolio.sell(o.username, o.coinId);
+        else if (o.type === 'close-short') result = cryptoPortfolio.closeShort(o.username, o.coinId);
+        if (result && result.ok && result.payout) us.addBonusByAdmin(o.username, result.payout);
+        cryptoOrders.markExecuted(o.id, result || { ok: false });
+        io.emit('cryptoOrderFilled', { username: o.username, order: o, result });
+      } catch (e) {
+        cryptoOrders.markExecuted(o.id, { ok: false, error: e.message });
+      }
+    }
+  });
+}
+
+// ── Prediction Markets ────────────────────────────────────────────────────────
+
+app.get('/api/prediction-markets', (req, res) => {
+  res.json({ ok: true, markets: predMarket.listMarkets(), sharePrice: predMarket.SHARE_PRICE, payout: predMarket.PAYOUT });
+});
+
+app.get('/api/prediction-markets/mine', requireAuth, (req, res) => {
+  res.json({ ok: true, bets: predMarket.getMyBets(req.user.username) });
+});
+
+app.post('/api/prediction-markets/buy', requireAuth, (req, res) => {
+  const { marketId, side, shares } = req.body || {};
+  const n = Math.floor(Number(shares) || 0);
+  if (n < 1) return res.status(400).json({ ok: false, error: 'Invalid share count' });
+  const cost = n * predMarket.SHARE_PRICE;
+  const deduct = us.spendBalance(req.user.username, cost);
+  if (!deduct.ok) return res.status(400).json(deduct);
+  const result = predMarket.buyShares(req.user.username, marketId, side, n);
+  if (!result.ok) {
+    us.addBonusByAdmin(req.user.username, cost);
+    return res.status(400).json(result);
+  }
+  bh.log(req.user.username, { type: 'prediction-buy', amount: -cost, balance: deduct.balance, description: `Bought ${n} ${side.toUpperCase()} share(s)` });
+  io.emit('balanceReset', { username: req.user.username, balance: deduct.balance });
+  io.emit('predictionMarketUpdate', { market: result.market });
+  res.json({ ...result, balance: deduct.balance });
+});
+
+app.post('/api/admin/prediction-markets', requireAdmin, (req, res) => {
+  const { question, description, endsAt } = req.body || {};
+  const result = predMarket.createMarket({ question, description, endsAt });
+  if (result.ok) {
+    io.emit('predictionMarketCreated', { market: result.market });
+    al.log('prediction_market_created', { admin: req.user.username, marketId: result.market.id });
+  }
+  res.json(result);
+});
+
+app.post('/api/admin/prediction-markets/:id/resolve', requireAdmin, (req, res) => {
+  const { outcome } = req.body || {};
+  const result = predMarket.resolveMarket(req.params.id, outcome);
+  if (!result.ok) return res.status(400).json(result);
+  for (const p of result.payouts) {
+    const r = us.addBonusByAdmin(p.username, p.amount);
+    if (r.ok) {
+      io.emit('balanceReset', { username: p.username, balance: r.balance });
+      bh.log(p.username, { type: 'prediction-payout', amount: p.amount, balance: r.balance, description: `Prediction market resolved ${outcome}` });
+    }
+  }
+  io.emit('predictionMarketResolved', { market: result.market, outcome });
+  al.log('prediction_market_resolved', { admin: req.user.username, marketId: req.params.id, outcome, payouts: result.payouts.length });
+  res.json({ ok: true, payouts: result.payouts.length });
+});
+
+// ── Meme Coin Creator ─────────────────────────────────────────────────────────
+
+app.get('/api/meme-coins', (req, res) => {
+  res.json({ ok: true, coins: memeCoins.listCoins(), creationFee: memeCoins.CREATION_FEE });
+});
+
+app.get('/api/meme-coins/holdings', requireAuth, (req, res) => {
+  res.json({ ok: true, holdings: memeCoins.getHoldings(req.user.username) });
+});
+
+app.post('/api/meme-coins/create', requireAuth, (req, res) => {
+  const { name, symbol, emoji } = req.body || {};
+  const fee = memeCoins.CREATION_FEE;
+  const deduct = us.spendBalance(req.user.username, fee);
+  if (!deduct.ok) return res.status(400).json(deduct);
+  const result = memeCoins.createCoin(req.user.username, { name, symbol, emoji });
+  if (!result.ok) {
+    us.addBonusByAdmin(req.user.username, fee);
+    return res.status(400).json(result);
+  }
+  bh.log(req.user.username, { type: 'meme-coin-create', amount: -fee, balance: deduct.balance, description: `Launched $${result.coin.symbol}` });
+  io.emit('balanceReset', { username: req.user.username, balance: deduct.balance });
+  io.emit('memeCoinCreated', { coin: result.coin });
+  res.json({ ...result, balance: deduct.balance });
+});
+
+app.post('/api/meme-coins/buy', requireAuth, (req, res) => {
+  const { symbol, amountUSD } = req.body || {};
+  const amt = Math.floor(Number(amountUSD) || 0);
+  if (amt < 100) return res.status(400).json({ ok: false, error: 'Min buy: 100' });
+  const deduct = us.spendBalance(req.user.username, amt);
+  if (!deduct.ok) return res.status(400).json(deduct);
+  const result = memeCoins.buyCoin(req.user.username, symbol, amt);
+  if (!result.ok) {
+    us.addBonusByAdmin(req.user.username, amt);
+    return res.status(400).json(result);
+  }
+  // Pay creator fee
+  if (result.creatorCut > 0 && result.coin.creator !== req.user.username.toLowerCase()) {
+    us.addBonusByAdmin(result.coin.creator, result.creatorCut);
+  }
+  bh.log(req.user.username, { type: 'meme-coin-buy', amount: -amt, balance: deduct.balance, description: `Bought $${symbol}` });
+  io.emit('balanceReset', { username: req.user.username, balance: deduct.balance });
+  io.emit('memeCoinTrade', { coin: result.coin, type: 'buy' });
+  res.json({ ...result, balance: deduct.balance });
+});
+
+app.post('/api/meme-coins/sell', requireAuth, (req, res) => {
+  const { symbol, tokens } = req.body || {};
+  const result = memeCoins.sellCoin(req.user.username, symbol, Number(tokens));
+  if (!result.ok) return res.status(400).json(result);
+  const r = us.addBonusByAdmin(req.user.username, result.payout);
+  if (result.creatorCut > 0 && result.coin.creator !== req.user.username.toLowerCase()) {
+    us.addBonusByAdmin(result.coin.creator, result.creatorCut);
+  }
+  bh.log(req.user.username, { type: 'meme-coin-sell', amount: result.payout, balance: r.balance, description: `Sold $${symbol}` });
+  io.emit('balanceReset', { username: req.user.username, balance: r.balance });
+  io.emit('memeCoinTrade', { coin: result.coin, type: 'sell' });
   res.json({ ...result, balance: r.balance });
 });
 

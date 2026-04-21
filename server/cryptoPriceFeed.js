@@ -19,6 +19,7 @@ const IDS = COINS.map(c => c.id).join(',');
 let _prices     = {};
 let _lastFetch  = 0;
 let _fetchError = false;
+const _subs     = []; // [(priceList) => void]
 
 async function fetchPrices() {
   try {
@@ -29,10 +30,18 @@ async function fetchPrices() {
     _prices     = data;
     _lastFetch  = Date.now();
     _fetchError = false;
+    // Notify subscribers (limit-order checker etc.)
+    const list = getPriceList();
+    for (const cb of _subs) { try { cb(list); } catch {} }
   } catch (e) {
     console.warn('[cryptoPriceFeed] Fetch error:', e.message);
     _fetchError = true;
   }
+}
+
+/** Subscribe to price updates. Callback receives the getPriceList() array. */
+function onPriceUpdate(cb) {
+  if (typeof cb === 'function') _subs.push(cb);
 }
 
 // Initial fetch + every 60s
@@ -53,4 +62,4 @@ function getPriceList() {
   }));
 }
 
-module.exports = { COINS, getPrices, getPrice, getPriceList, hasError, getLastFetch };
+module.exports = { COINS, getPrices, getPrice, getPriceList, hasError, getLastFetch, onPriceUpdate };

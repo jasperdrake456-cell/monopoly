@@ -1,0 +1,123 @@
+.meme-page {
+  min-height: 100vh;
+  background: var(--gv-grad-bg);
+  background-attachment: fixed;
+  color: var(--gv-text);
+  font-family: var(--gv-font);
+  padding: 30px 20px 60px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.meme-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+.meme-back { color: var(--gv-text-dim); text-decoration: none; font-weight: 600; }
+.meme-back:hover { color: var(--gv-text); }
+.meme-title {
+  flex: 1; text-align: center;
+  font-family: var(--gv-font-display);
+  font-size: 1.8rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #fb923c, #fbbf24, #ef4444);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.meme-bal { color: var(--gv-text-dim); font-weight: 600; }
+
+.meme-hero {
+  background: linear-gradient(135deg, rgba(251,146,60,0.12), rgba(239,68,68,0.08));
+  border: 1px solid rgba(251,146,60,0.35);
+  border-radius: 22px;
+  padding: 24px;
+  text-align: center;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+.meme-hero-title { font-family: var(--gv-font-display); font-size: 1.6rem; font-weight: 900; }
+.meme-hero-sub   { color: var(--gv-text-dim); font-size: 0.95rem; max-width: 600px; }
+
+.meme-create {
+  background: var(--gv-grad-card);
+  border: 1px solid rgba(255,215,0,0.35);
+  border-radius: var(--gv-r-md);
+  padding: 18px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.meme-msg {
+  background: rgba(34,197,94,0.12);
+  border: 1px solid rgba(34,197,94,0.28);
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  text-align: center;
+  color: #86efac;
+}
+
+.meme-section-title {
+  font-family: var(--gv-font-display);
+  font-size: 1.3rem;
+  margin: 26px 0 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.meme-empty { text-align: center; color: var(--gv-text-mute); padding: 40px; }
+
+.meme-holdings { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.meme-holding {
+  background: var(--gv-grad-card);
+  border: 1px solid var(--gv-border);
+  border-radius: var(--gv-r-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.meme-holding-top { display: flex; align-items: center; gap: 12px; }
+.meme-holding-sym { font-weight: 900; font-family: var(--gv-font-display); font-size: 1rem; }
+.meme-holding-tokens { color: var(--gv-text-dim); font-size: 0.82rem; }
+.meme-holding-val { font-weight: 800; font-size: 1.05rem; }
+
+.meme-pnl-pos { color: var(--gv-green); font-weight: 700; font-size: 0.85rem; }
+.meme-pnl-neg { color: var(--gv-red);   font-weight: 700; font-size: 0.85rem; }
+
+.meme-list { display: flex; flex-direction: column; gap: 10px; }
+.meme-coin {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr auto auto;
+  align-items: center;
+  gap: 14px;
+  background: var(--gv-grad-card);
+  border: 1px solid var(--gv-border);
+  border-radius: var(--gv-r-md);
+  padding: 14px 18px;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.meme-coin:hover {
+  border-color: rgba(251,146,60,0.35);
+  box-shadow: 0 10px 30px rgba(251,146,60,0.15);
+}
+.meme-coin-emoji { font-size: 2rem; }
+.meme-coin-sym { font-family: var(--gv-font-display); font-weight: 900; font-size: 1.05rem; color: #fb923c; }
+.meme-coin-name { font-size: 0.9rem; color: #fff; }
+.meme-coin-creator { font-size: 0.72rem; color: var(--gv-text-mute); }
+.meme-coin-chart  { min-width: 120px; max-width: 180px; }
+.meme-coin-price  { text-align: right; min-width: 110px; }
+.meme-coin-p      { font-weight: 800; font-family: var(--gv-font-display); }
+.meme-coin-mcap   { font-size: 0.72rem; color: var(--gv-text-mute); margin-top: 2px; }
+.meme-coin-buy    { display: flex; gap: 6px; align-items: center; }
+
+@media (max-width: 700px) {
+  .meme-coin {
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+  }
+  .meme-coin-chart { grid-column: 1 / -1; }
+}

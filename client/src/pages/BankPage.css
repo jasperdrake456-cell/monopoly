@@ -1,0 +1,175 @@
+.bank-page {
+  min-height: 100vh;
+  background: var(--gv-grad-bg);
+  background-attachment: fixed;
+  color: var(--gv-text);
+  font-family: var(--gv-font);
+  padding: 30px 20px 60px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.bank-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.bank-back {
+  color: var(--gv-text-dim);
+  text-decoration: none;
+  font-weight: 600;
+}
+.bank-back:hover { color: var(--gv-text); }
+
+.bank-title {
+  font-family: var(--gv-font-display);
+  font-size: 1.8rem;
+  font-weight: 900;
+  background: var(--gv-grad-gold);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  flex: 1;
+  text-align: center;
+}
+
+.bank-bal {
+  color: var(--gv-text-dim);
+  font-weight: 600;
+}
+
+.bank-hero {
+  background: linear-gradient(135deg, rgba(250,204,21,0.12), rgba(251,146,60,0.08));
+  border: 1px solid rgba(250,204,21,0.35);
+  border-radius: 22px;
+  padding: 28px;
+  text-align: center;
+  margin-bottom: 30px;
+  box-shadow: var(--gv-glow-gold);
+}
+.bank-hero-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--gv-gold);
+  margin-bottom: 10px;
+}
+.bank-hero-amount {
+  font-family: var(--gv-font-display);
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--gv-gold);
+  text-shadow: 0 0 30px rgba(255,215,0,0.5);
+  margin-bottom: 6px;
+}
+.bank-hero-sub { color: var(--gv-text-dim); font-size: 0.9rem; }
+
+.bank-tier-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.bank-tier {
+  background: var(--gv-grad-card);
+  border: 2px solid var(--gv-border);
+  border-radius: var(--gv-r-md);
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.18s;
+  text-align: center;
+  color: var(--gv-text);
+}
+.bank-tier:hover { transform: translateY(-2px); border-color: rgba(255,215,0,0.4); }
+.bank-tier--active {
+  border-color: var(--gv-gold);
+  box-shadow: 0 0 28px rgba(255,215,0,0.4);
+  background: linear-gradient(135deg, rgba(255,215,0,0.12), rgba(255,255,255,0.03));
+}
+
+.bank-tier-emoji { font-size: 2.2rem; margin-bottom: 6px; }
+.bank-tier-name { font-family: var(--gv-font-display); font-weight: 800; font-size: 0.95rem; margin-bottom: 4px; }
+.bank-tier-rate { color: var(--gv-green); font-weight: 800; font-size: 1.1rem; }
+.bank-tier-lock { color: var(--gv-text-mute); font-size: 0.78rem; margin-top: 4px; }
+
+.bank-deposit {
+  background: var(--gv-grad-card);
+  border: 1px solid var(--gv-border);
+  border-radius: var(--gv-r-md);
+  padding: 22px;
+  margin-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.bank-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--gv-text-mute);
+}
+.bank-preset { display: flex; gap: 8px; flex-wrap: wrap; }
+.bank-preset-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--gv-border);
+  color: var(--gv-text);
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.bank-preset-btn:hover { background: rgba(255,215,0,0.15); border-color: rgba(255,215,0,0.4); }
+
+.bank-msg {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--gv-text-dim);
+}
+
+.bank-section-title {
+  font-family: var(--gv-font-display);
+  font-size: 1.3rem;
+  margin: 20px 0 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.bank-empty {
+  text-align: center;
+  color: var(--gv-text-mute);
+  padding: 30px;
+  border: 1px dashed var(--gv-border);
+  border-radius: var(--gv-r-md);
+}
+
+.bank-positions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.bank-pos {
+  background: var(--gv-grad-card);
+  border: 1px solid var(--gv-border);
+  border-radius: var(--gv-r-md);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bank-pos--locked { opacity: 0.85; }
+
+.bank-pos-top { display: flex; align-items: center; gap: 10px; }
+.bank-pos-emoji { font-size: 1.6rem; }
+.bank-pos-name { font-weight: 800; }
+
+.bank-pos-rows { display: flex; flex-direction: column; gap: 5px; margin: 4px 0 8px; }
+.bank-pos-row { display: flex; justify-content: space-between; font-size: 0.88rem; color: var(--gv-text-dim); }
+.bank-pos-row b { color: #fff; }
+.bank-pos-earned { color: var(--gv-green) !important; }
+.bank-pos-locked { color: var(--gv-red) !important; }
+.bank-pos-free   { color: var(--gv-green) !important; }
