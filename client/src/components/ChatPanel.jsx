@@ -80,6 +80,16 @@ export default function ChatPanel() {
       violTimer.current = setTimeout(() => setViolation(null), 5000);
     });
 
+    sock.on('tipResult', (data) => {
+      if (data.ok) {
+        const sysMsg = { id: `tip_${Date.now()}`, username: 'system', displayName: '✅ Tip Sent', text: `You tipped ${data.to} $${(data.amount || 0).toLocaleString()}!`, timestamp: Date.now(), isSystem: true };
+        setMessages(prev => [...prev, sysMsg].slice(-MAX_DISPLAY));
+      } else {
+        const sysMsg = { id: `tip_err_${Date.now()}`, username: 'system', displayName: '❌ Tip Failed', text: data.error || 'Tip failed', timestamp: Date.now(), isSystem: true };
+        setMessages(prev => [...prev, sysMsg].slice(-MAX_DISPLAY));
+      }
+    });
+
     sock.on('chatSlowMode', ({ remaining }) => {
       setSlowLeft(remaining);
       clearInterval(slowTimer.current);
@@ -117,7 +127,8 @@ export default function ChatPanel() {
   const send = useCallback(() => {
     const text = input.trim();
     if (!text || !socket || !connected || slowLeft > 0 || banned) return;
-    socket.emit('sendMessage', { text });
+    const token = localStorage.getItem(TOKEN_KEY);
+    socket.emit('sendMessage', { text, token });
     setInput('');
   }, [input, socket, connected, slowLeft, banned]);
 

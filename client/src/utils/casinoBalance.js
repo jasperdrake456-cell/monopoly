@@ -87,17 +87,48 @@ export function subtractBalance(amount) {
   setBalance(getBalance() - amount);
 }
 
+// ── Hot Streak tracking (client-side, dispatches 'streakUpdate' events) ──────
+let _winStreak = 0;
+
+function _dispatchStreak(won) {
+  try {
+    window.dispatchEvent(new CustomEvent('streakUpdate', {
+      detail: { streak: _winStreak, won },
+    }));
+  } catch { /* non-fatal */ }
+}
+
 // ── XP / Mission bet tracking ────────────────────────────────────────────────
 // Games call this after each round to record the result server-side for XP and missions.
 // game = slug (e.g. 'crash', 'slots'), won = bool, multiplier = number, profit = number
 export function recordBetResult({ game, amount, won, multiplier = 1, profit = 0 } = {}) {
   if (!_authToken || !game || !amount) return;
+
+  // Update client-side streak immediately for responsive UI
+  if (won) { _winStreak++; } else { _winStreak = 0; }
+  _dispatchStreak(!!won);
+
   fetch(SERVER_URL + '/api/xp/record-bet', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${_authToken}` },
     body: JSON.stringify({ game, amount: Math.floor(amount), won: !!won, multiplier, profit }),
+  }).then(r => r.ok ? r.json() : null).then(data => {
+    // Sync streak from server for accuracy
+    if (data?.ok && typeof data.stats?.winStreak === 'number') {
+      _winStreak = data.stats.winStreak;
+      _dispatchStreak(!!won);
+    }
+    // Dispatch weekend bonus and boost notifications
+    if (data?.weekendBonus) {
+      try { window.dispatchEvent(new CustomEvent('weekendBonus', { detail: { bonus: data.weekendBonus } })); } catch {}
+    }
+    if (data?.boostTokenAwarded) {
+      try { window.dispatchEvent(new CustomEvent('boostTokenEarned')); } catch {}
+    }
   }).catch(() => { /* non-fatal */ });
 }
+
+export function getCurrentStreak() { return _winStreak; }
 
 // ── Hourly reward (client-side for guests; server handles logged-in users) ────
 

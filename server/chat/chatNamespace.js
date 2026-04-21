@@ -2,6 +2,7 @@
 
 const cs = require('./chatStore');
 const { filter } = require('./chatFilter');
+const us = require('../userStore');
 
 // In-memory state (resets on server restart — bans are persisted in chatStore)
 const lastMessageAt  = new Map(); // username → timestamp (ms) for slow-mode
@@ -24,6 +25,10 @@ function getMutedUsers() {
 }
 
 // ── Register namespace ────────────────────────────────────────────────────────
+
+let _globalEmit = () => {};
+
+function setGlobalEmit(fn) { _globalEmit = fn; }
 
 function register(namespace) {
   namespace.on('connection', (socket) => {
@@ -51,6 +56,37 @@ function register(namespace) {
     socket.on('sendMessage', (data) => {
       const rawText = (data?.text || '').trim();
       if (!rawText) return;
+
+      // ── /tip command: /tip <username> <amount> ─────────────────────────────
+      const tipMatch = rawText.match(/^\/tip\s+(\S+)\s+(\d+)\s*$/i);
+      if (tipMatch) {
+        const toUser  = tipMatch[1].toLowerCase();
+        const amount  = Math.min(Math.max(parseInt(tipMatch[2], 10), 1), 1_000_000);
+        const authToken = socket.handshake.auth?.token;
+        const result  = us.transfer(authToken, toUser, amount);
+        if (result.ok) {
+          // Broadcast balance updates to both users
+          _globalEmit('balanceReset', { username, balance: result.fromBalance });
+          _globalEmit('balanceReset', { username: toUser, balance: result.toBalance });
+          // Notify recipient
+          _globalEmit('moneyReceived', { to: toUser, from: username, amount });
+          // Broadcast a system message about the tip
+          const tipMsg = {
+            id:        `${Date.now()}_tip`,
+            username:  'system',
+            displayName: '💰 Tip',
+            text:      `${displayName} tipped ${toUser} $${amount.toLocaleString()}! 🎁`,
+            timestamp: Date.now(),
+            isSystem:  true,
+          };
+          namespace.emit('newMessage', tipMsg);
+          cs.addMessage(tipMsg);
+          socket.emit('tipResult', { ok: true, to: toUser, amount });
+        } else {
+          socket.emit('tipResult', { ok: false, error: result.error || 'Tip failed' });
+        }
+        return;
+      }
 
       const settings = cs.getSettings();
       const text     = rawText.slice(0, settings.maxLength);
@@ -133,4 +169,4 @@ function register(namespace) {
   });
 }
 
-module.exports = { register, muteUser, unmuteUser, getMutedUsers };
+module.exports = { register, muteUser, unmuteUser, getMutedUsers, setGlobalEmit };

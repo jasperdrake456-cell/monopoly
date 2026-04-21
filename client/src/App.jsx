@@ -68,6 +68,11 @@ import VIPPage from './pages/VIPPage';
 import GlobalStatsPage from './pages/GlobalStatsPage';
 import AchievementToast, { showAchievement, showLevelUp } from './components/AchievementToast';
 import CoinRain, { triggerCoinRain } from './components/CoinRain';
+import AchievementsPage from './pages/AchievementsPage';
+import ReferralPage from './pages/ReferralPage';
+import BoostPage from './pages/BoostPage';
+import GiftCodePage from './pages/GiftCodePage';
+import PrestigePage from './pages/PrestigePage';
 import './App.css';
 
 // Convenience wrapper: RequireAuth + GameGuard for a given slug
@@ -178,7 +183,12 @@ export default function App() {
             <Route path="/lottery"     element={<LotteryPage />} />
             <Route path="/pvp"         element={<RequireAuth><PvPPage /></RequireAuth>} />
             <Route path="/vip"         element={<VIPPage />} />
-            <Route path="/stats"       element={<GlobalStatsPage />} />
+            <Route path="/stats"        element={<GlobalStatsPage />} />
+            <Route path="/achievements" element={<AchievementsPage />} />
+            <Route path="/referral"     element={<RequireAuth><ReferralPage /></RequireAuth>} />
+            <Route path="/boost"        element={<RequireAuth><BoostPage /></RequireAuth>} />
+            <Route path="/redeem"       element={<RequireAuth><GiftCodePage /></RequireAuth>} />
+            <Route path="/prestige"     element={<RequireAuth><PrestigePage /></RequireAuth>} />
             <Route path="*"            element={<Navigate to="/" replace />} />
           </Routes>
         </PasswordGate>

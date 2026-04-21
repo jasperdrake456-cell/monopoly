@@ -1,0 +1,101 @@
+.mbox {
+  background: linear-gradient(135deg, #1a0a2e, #2a1040);
+  border: 1px solid rgba(168,85,247,.3);
+  border-radius: 16px;
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+}
+.mbox::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% -10%, rgba(168,85,247,.1), transparent 55%);
+  pointer-events: none;
+}
+
+.mbox-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.mbox-icon  { font-size: 2.2rem; }
+.mbox-title { font-size: 1rem; font-weight: 800; color: #e2e8f0; }
+.mbox-sub   { font-size: 0.78rem; color: #7c3aed; }
+
+.mbox-btn {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity .2s, transform .1s;
+}
+.mbox-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+.mbox-btn:disabled { opacity: .5; cursor: not-allowed; }
+.mbox-btn--shake { animation: mboxShake .4s ease-in-out; }
+@keyframes mboxShake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-6px) rotate(-3deg); }
+  40%       { transform: translateX(6px) rotate(3deg); }
+  60%       { transform: translateX(-4px) rotate(-2deg); }
+  80%       { transform: translateX(4px) rotate(2deg); }
+}
+
+.mbox-cd { text-align: center; padding: 4px 0; }
+.mbox-cd-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: .08em; color: #64748b; margin-bottom: 4px; }
+.mbox-cd-time  { font-size: 1.3rem; font-weight: 900; color: #7c3aed; font-variant-numeric: tabular-nums; }
+.mbox-last     { font-size: 0.8rem; color: #64748b; margin-top: 6px; }
+
+/* Reveal overlay */
+.mbox-reveal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.8);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: mboxFadeIn .2s ease;
+}
+@keyframes mboxFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.mbox-reveal-inner {
+  background: linear-gradient(135deg, #1a0a2e, #2a0a4e);
+  border: 2px solid var(--tc, #a855f7);
+  border-radius: 24px;
+  padding: 40px 32px;
+  text-align: center;
+  box-shadow: 0 0 80px color-mix(in srgb, var(--tc, #a855f7) 40%, transparent);
+  animation: mboxRevealPop .45s cubic-bezier(.17,.67,.3,1.3);
+  max-width: 320px;
+  width: 90%;
+}
+@keyframes mboxRevealPop {
+  from { transform: scale(.5) rotate(-8deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0deg);   opacity: 1; }
+}
+
+.mbox-reveal-emoji  { font-size: 5rem; margin-bottom: 10px; animation: mboxBounce .6s ease .2s both; }
+@keyframes mboxBounce {
+  0%   { transform: scale(0); }
+  60%  { transform: scale(1.25); }
+  80%  { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+.mbox-reveal-tier   { font-size: 0.72rem; letter-spacing: .15em; text-transform: uppercase; font-weight: 900; margin-bottom: 4px; }
+.mbox-reveal-label  { font-size: 1.1rem; font-weight: 700; color: #e2e8f0; margin-bottom: 8px; }
+.mbox-reveal-amount { font-size: 3rem; font-weight: 900; color: #f59e0b; text-shadow: 0 0 20px rgba(245,158,11,.5); margin-bottom: 4px; }
+.mbox-reveal-sub    { font-size: 0.88rem; color: #94a3b8; margin-bottom: 20px; }
+.mbox-reveal-close  {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  border: none; border-radius: 12px; color: #fff;
+  font-weight: 800; font-size: 1rem; padding: 12px 28px;
+  cursor: pointer; transition: opacity .15s;
+}
+.mbox-reveal-close:hover { opacity: .9; }

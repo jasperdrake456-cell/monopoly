@@ -6,6 +6,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { useChampion, invalidateChampionCache } from '../hooks/useChampion';
 import LiveWinsTicker from '../components/LiveWinsTicker';
 import DailyMissions from '../components/DailyMissions';
+import HotStreakBanner from '../components/HotStreakBanner';
+import CommunityRainPool from '../components/CommunityRainPool';
+import MysteryBox from '../components/MysteryBox';
+import NewsBanner from '../components/NewsBanner';
+import LiveJackpots from '../components/LiveJackpots';
+import OnlineCount from '../components/OnlineCount';
 import './HomePage.css';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
@@ -60,6 +66,40 @@ const MULTI_GAMES = [
   { path: '/pong', name: 'Pong', desc: 'Classic paddle battle — first to 7 wins', icon: '🏓', players: '2 players' },
   { path: '/tic-tac-toe', name: 'Tic-Tac-Toe', desc: 'Get 3 in a row to win', icon: '❌', players: '2 players' },
 ];
+
+// ── Lucky Game of the Day (per-user, deterministic by username+date) ──────────
+function getLuckyGame(username) {
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const str = (username || 'guest') + dateStr;
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
+    hash |= 0;
+  }
+  return CASINO_GAMES[Math.abs(hash) % CASINO_GAMES.length];
+}
+
+function LuckyGameWidget({ username }) {
+  const game = getLuckyGame(username);
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg,#0a2e1a,#0a1a0a)',
+      border: '1px solid rgba(34,197,94,.3)',
+      borderRadius: 14,
+      padding: '14px 16px',
+    }}>
+      <div style={{ fontSize:'0.72rem', textTransform:'uppercase', letterSpacing:'.08em', color:'#22c55e', marginBottom:6 }}>🍀 Your Lucky Game Today</div>
+      <Link to={game.path} style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:10 }}>
+        <span style={{ fontSize:'1.8rem' }}>{game.icon}</span>
+        <div>
+          <div style={{ fontWeight:800, color:'#e2e8f0', fontSize:'0.95rem' }}>{game.name}</div>
+          <div style={{ fontSize:'0.78rem', color:'#94a3b8' }}>The stars align for you today 🌟</div>
+        </div>
+        <div style={{ marginLeft:'auto', background:'linear-gradient(135deg,#22c55e,#16a34a)', color:'#fff', borderRadius:8, padding:'5px 12px', fontSize:'0.82rem', fontWeight:700 }}>Play Now</div>
+      </Link>
+    </div>
+  );
+}
 
 // Slug → display name lookup (must stay in sync with CASINO_GAMES below)
 const SLUG_NAMES = {
@@ -119,7 +159,7 @@ export default function HomePage() {
   return (
     <div className="home">
       <header className="home-header">
-        <div className="home-logo">🎮 Game Vault</div>
+        <div className="home-logo" style={{ display:'flex', alignItems:'center', gap:10 }}>🎮 Game Vault <OnlineCount /></div>
         <div className="home-header-right">
           <Link to="/daily-spin" className="home-trivia-btn" style={{ background: 'rgba(124,58,237,0.18)', borderColor: 'rgba(192,132,252,0.4)', color: '#c084fc' }}>🎡 Daily Spin</Link>
           <Link to="/lottery"    className="home-trivia-btn" style={{ background: 'rgba(168,85,247,0.14)', borderColor: 'rgba(168,85,247,0.4)', color: '#d8b4fe' }}>🎟️ Lottery</Link>
@@ -130,13 +170,32 @@ export default function HomePage() {
           <Link to="/trivia"     className="home-trivia-btn">🎯 Trivia</Link>
           <Link to="/leaderboard" className="home-trivia-btn">🏆 Leaderboard</Link>
           {isChampion && <Link to="/champion-panel" className="home-trivia-btn" style={{ background: 'rgba(255,215,0,0.12)', borderColor: 'rgba(255,215,0,0.45)', color: '#FFD700', fontWeight: 700 }}>👑 Champion Panel</Link>}
+          <Link to="/achievements" className="home-trivia-btn" style={{ background: 'rgba(245,158,11,0.1)', borderColor: 'rgba(245,158,11,0.35)', color: '#fcd34d' }}>🏅 Achievements</Link>
+          <Link to="/referral"    className="home-trivia-btn" style={{ background: 'rgba(34,197,94,0.1)',  borderColor: 'rgba(34,197,94,0.35)',  color: '#86efac' }}>🎁 Referral</Link>
+          <Link to="/redeem"      className="home-trivia-btn" style={{ background: 'rgba(251,191,36,0.1)', borderColor: 'rgba(251,191,36,0.35)', color: '#fbbf24' }}>🎟️ Redeem</Link>
+          {isLoggedIn && <Link to="/boost" className="home-trivia-btn" style={{ background: 'rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.35)', color: '#fca5a5' }}>🚀 Boost</Link>}
+          {isLoggedIn && <Link to="/profile" className="home-trivia-btn" style={{ background: 'rgba(96,165,250,0.1)', borderColor: 'rgba(96,165,250,0.35)', color: '#93c5fd' }}>👤 Profile</Link>}
+          {isLoggedIn && <Link to="/prestige" className="home-trivia-btn" style={{ background: 'rgba(251,191,36,0.1)', borderColor: 'rgba(251,191,36,0.35)', color: '#fbbf24' }}>⭐ Prestige</Link>}
           {isAdmin && <Link to="/admin" className="home-trivia-btn" style={{ background: 'rgba(239,68,68,0.15)', borderColor: 'rgba(239,68,68,0.4)', color: '#fca5a5' }}>🛡️ Admin</Link>}
           <AccountWidget />
         </div>
       </header>
 
       <main className="home-main">
+        <HotStreakBanner />
+        <NewsBanner />
+        <LiveJackpots />
         <LiveWinsTicker />
+
+        {/* ── Special Features row ── */}
+        <section className="home-section" style={{ paddingBottom: 0 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:12 }}>
+            <CommunityRainPool />
+            <MysteryBox />
+            {isLoggedIn && user && <LuckyGameWidget username={user.username} />}
+          </div>
+        </section>
+
         <section className="home-section">
           <h2 className="home-section-title" style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
             <span>🎰 Casino</span>

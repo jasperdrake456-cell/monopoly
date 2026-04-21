@@ -296,6 +296,105 @@ function CoinRainAdminCard({ token, authFetch }) {
   );
 }
 
+function NewsAdminCard({ token, authFetch }) {
+  const [items,   setItems]   = React.useState([]);
+  const [title,   setTitle]   = React.useState('');
+  const [body,    setBody]    = React.useState('');
+  const [type,    setType]    = React.useState('info');
+  const [pinned,  setPinned]  = React.useState(false);
+  const [status,  setStatus]  = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    fetch('/api/news').then(r => r.json()).then(d => { if (d.ok) setItems(d.news); }).catch(() => {});
+  }, []);
+
+  async function post() {
+    if (!title.trim() || loading) return;
+    setLoading(true); setStatus('');
+    const d = await authFetch('/api/admin/news', token, {
+      method: 'POST',
+      body: JSON.stringify({ title, body, type, pinned }),
+    });
+    if (d.ok) {
+      setItems(prev => [d.item, ...prev]);
+      setTitle(''); setBody('');
+      setStatus('✓ Posted!');
+    } else setStatus(`✗ ${d.error}`);
+    setLoading(false);
+  }
+
+  async function deleteItem(id) {
+    await authFetch(`/api/admin/news/${id}`, token, { method: 'DELETE' });
+    setItems(prev => prev.filter(i => i.id !== id));
+  }
+
+  return (
+    <div className="admin-site-card">
+      <div className="admin-site-card-title">📢 Site News & Announcements</div>
+      <div className="admin-site-card-sub">Post announcements shown on the homepage for all players</div>
+      <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:8 }}>
+        <input className="admin-input" style={{ flex:2, minWidth:160 }} placeholder="Title*" value={title} onChange={e => setTitle(e.target.value)} />
+        <select className="admin-input" value={type} onChange={e => setType(e.target.value)} style={{ width:100 }}>
+          <option value="info">📢 Info</option>
+          <option value="event">🎉 Event</option>
+          <option value="update">🆕 Update</option>
+          <option value="warning">⚠️ Warning</option>
+        </select>
+        <label style={{ display:'flex', alignItems:'center', gap:4, color:'#94a3b8', fontSize:'0.82rem' }}>
+          <input type="checkbox" checked={pinned} onChange={e => setPinned(e.target.checked)} /> Pin
+        </label>
+      </div>
+      <div style={{ display:'flex', gap:6, marginBottom:10 }}>
+        <input className="admin-input" style={{ flex:1 }} placeholder="Body (optional)" value={body} onChange={e => setBody(e.target.value)} />
+        <button className="admin-btn admin-btn--primary admin-btn--sm" onClick={post} disabled={loading || !title.trim()}>
+          {loading ? '…' : 'Post'}
+        </button>
+      </div>
+      {status && <div style={{ fontSize:'0.82rem', color: status.startsWith('✓') ? '#86efac' : '#fca5a5', marginBottom:8 }}>{status}</div>}
+      {items.slice(0, 5).map(n => (
+        <div key={n.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 0', borderTop:'1px solid #1e293b', fontSize:'0.82rem' }}>
+          <span style={{ flex:1 }}>{n.pinned ? '📌 ' : ''}{n.title}</span>
+          <button onClick={() => deleteItem(n.id)} style={{ background:'none', border:'none', color:'#ef4444', cursor:'pointer', fontSize:'0.8rem' }}>✕</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function BoostAdminCard({ token, authFetch }) {
+  const [username, setUsername] = React.useState('');
+  const [count,    setCount]    = React.useState('1');
+  const [status,   setStatus]   = React.useState('');
+  const [loading,  setLoading]  = React.useState(false);
+
+  async function award() {
+    if (!username.trim() || loading) return;
+    setLoading(true); setStatus('');
+    const d = await authFetch('/api/admin/boost/award', token, {
+      method: 'POST',
+      body: JSON.stringify({ username: username.trim(), count: Number(count) }),
+    });
+    setStatus(d.ok ? `✓ Awarded ${count} boost token(s) to ${username}` : `✗ ${d.error || 'Failed'}`);
+    setLoading(false);
+  }
+
+  return (
+    <div className="admin-site-card">
+      <div className="admin-site-card-title">🚀 Award Boost Tokens</div>
+      <div className="admin-site-card-sub">Give a player boost tokens (2× wins for 30 min each)</div>
+      <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:10 }}>
+        <input className="admin-input" style={{ flex:2, minWidth:140 }} placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} />
+        <input className="admin-input" style={{ width:70 }} type="number" min="1" max="10" value={count} onChange={e => setCount(e.target.value)} />
+        <button className="admin-btn admin-btn--primary admin-btn--sm" onClick={award} disabled={loading || !username.trim()}>
+          {loading ? '…' : '🚀 Award'}
+        </button>
+      </div>
+      {status && <div style={{ fontSize:'0.82rem', color: status.startsWith('✓') ? '#86efac' : '#fca5a5' }}>{status}</div>}
+    </div>
+  );
+}
+
 function GiftCodeAdminCard({ token, authFetch }) {
   const [codes,    setCodes]    = React.useState([]);
   const [newCode,  setNewCode]  = React.useState('');
@@ -1897,6 +1996,12 @@ export default function AdminPage() {
 
           {/* ── Gift Codes ────────────────────────────────────────────────── */}
           <GiftCodeAdminCard token={token} authFetch={authFetch} />
+
+          {/* ── News ──────────────────────────────────────────────────────── */}
+          <NewsAdminCard token={token} authFetch={authFetch} />
+
+          {/* ── Boost Tokens ──────────────────────────────────────────────── */}
+          <BoostAdminCard token={token} authFetch={authFetch} />
 
           {/* ── Coin Rain ─────────────────────────────────────────────────── */}
           <CoinRainAdminCard token={token} authFetch={authFetch} />

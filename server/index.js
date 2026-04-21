@@ -39,6 +39,12 @@ const wr        = require('./wagerRaceStore');
 const lt        = require('./lotteryStore');
 const vip       = require('./vipStore');
 const pvp       = require('./pvpStore');
+const cr        = require('./communityRainStore');
+const mb        = require('./mysteryBoxStore');
+const ns        = require('./newsStore');
+const bs        = require('./boostStore');
+const rf        = require('./referralStore');
+const pr        = require('./prestigeStore');
 
 const app = express();
 const server = http.createServer(app);
@@ -1131,7 +1137,36 @@ app.get('/api/xp/meta', (req, res) => {
 app.post('/api/xp/record-bet', requireAuth, (req, res) => {
   const { game, amount, won, multiplier, profit } = req.body || {};
   if (!game || amount == null) return res.status(400).json({ ok: false });
+
+  // Weekend XP bonus: 1.5× XP on Saturday (6) and Sunday (0) Pacific
+  const pacificOffset = (() => {
+    const d = new Date();
+    const jan = new Date(d.getFullYear(), 0, 1).getTimezoneOffset();
+    const jul = new Date(d.getFullYear(), 6, 1).getTimezoneOffset();
+    return Math.min(jan, jul) === 420 ? 7 : 8; // PDT vs PST
+  })();
+  const pacificDay = new Date(Date.now() - pacificOffset * 3_600_000).getUTCDay();
+  const xpMultiplier = (pacificDay === 0 || pacificDay === 6) ? 1.5 : 1;
+
   const result = xp.recordBet({ username: req.user.username, game, amount: Math.floor(amount), won: !!won, multiplier: multiplier ?? 1, profit: profit ?? 0 });
+  // Include boost status in response so client can display it
+  result.boostActive = bs.isBoostActive(req.user.username);
+
+  // Apply weekend XP multiplier to the result
+  if (xpMultiplier > 1 && result.xpGained > 0) {
+    const bonus = Math.floor(result.xpGained * (xpMultiplier - 1));
+    if (bonus > 0) {
+      const r2 = xp.awardXP(req.user.username, bonus);
+      result.xpGained += bonus;
+      result.newXp     = r2.newXp;
+      result.weekendBonus = bonus;
+      if (r2.leveledUp && !result.leveledUp) {
+        result.leveledUp = true;
+        result.newLevel  = r2.newLevel;
+        result.levelInfo = r2.levelInfo;
+      }
+    }
+  }
 
   // Mission progress
   ms.recordEvent(req.user.username, 'wager', game, Math.floor(amount), multiplier);
@@ -1144,7 +1179,7 @@ app.post('/api/xp/record-bet', requireAuth, (req, res) => {
     wr.recordWager(req.user.username, Math.floor(amount));
   }
 
-  // Level-up rewards: auto-credit coins when leveling up
+  // Level-up rewards: auto-credit coins + boost token when leveling up
   if (result.leveledUp) {
     const levelRewards = [0, 0, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 1000000];
     const reward = levelRewards[result.newLevel] || 0;
@@ -1155,6 +1190,17 @@ app.post('/api/xp/record-bet', requireAuth, (req, res) => {
         result.levelUpReward = reward;
       }
     }
+    // Award 1 boost token every even level
+    if (result.newLevel % 2 === 0) {
+      bs.awardToken(req.user.username, 1);
+      result.boostTokenAwarded = true;
+    }
+  }
+
+  // Award boost token for achievement unlocks (1 per 5 achievements batch)
+  if (result.unlocked.length >= 2) {
+    bs.awardToken(req.user.username, 1);
+    result.boostTokenAwarded = (result.boostTokenAwarded || false) || true;
   }
 
   if (result.unlocked.length > 0 || result.leveledUp) {
@@ -1388,6 +1434,206 @@ app.delete('/api/pvp/challenge/:id', requireAuth, (req, res) => {
   res.json(result);
 });
 
+// ── Community Rain Pool ────────────────────────────────────────────────────────
+
+app.get('/api/rain/status', (req, res) => {
+  res.json({ ok: true, ...cr.getStatus() });
+});
+
+app.post('/api/rain/contribute', requireAuth, (req, res) => {
+  const { amount } = req.body || {};
+  const amt = Math.min(Math.max(Math.floor(Number(amount) || cr.CONTRIBUTION_MIN), cr.CONTRIBUTION_MIN), cr.CONTRIBUTION_MAX);
+
+  // Admins can contribute too (pool is for the community, not a competition)
+  const me = us.getMe(getToken(req));
+  if (!me.ok) return res.status(401).json({ ok: false, error: 'Not authenticated' });
+  if ((me.balance || 0) < amt) {
+    return res.status(400).json({ ok: false, error: 'Insufficient balance' });
+  }
+
+  // Deduct from user
+  const deduct = us.addBonusByAdmin(req.user.username, -amt);
+  if (!deduct.ok) return res.status(400).json({ ok: false, error: 'Deduction failed' });
+  io.emit('balanceReset', { username: req.user.username, balance: deduct.balance });
+
+  cr.addContributor(req.user.username, amt);
+  const result = cr.contribute(amt);
+
+  // Broadcast pool update to everyone
+  io.emit('rainPoolUpdate', { pool: result.pool, target: result.target, contributor: req.user.username, amount: amt });
+
+  if (result.fired) {
+    // Pool hit target — pay out to all recently-online users
+    const onlineUsers = us.getOnlineUsers ? us.getOnlineUsers(30) : [];
+    const payout = cr.collectPool(onlineUsers);
+    if (payout) {
+      for (const username of payout.players) {
+        const r = us.addBonusByAdmin(username, payout.perUser);
+        if (r.ok) io.emit('balanceReset', { username, balance: r.balance });
+      }
+      io.emit('communityRain', {
+        totalPool: payout.totalPool,
+        perUser:   payout.perUser,
+        players:   payout.players.length,
+        triggeredBy: req.user.username,
+      });
+      al.log('community_rain', { totalPool: payout.totalPool, perUser: payout.perUser, players: payout.players.length });
+      console.log(`[CommunityRain] 💧 Pool exploded! $${payout.totalPool.toLocaleString()} split among ${payout.players.length} users ($${payout.perUser.toLocaleString()} each)`);
+    }
+  }
+
+  res.json({ ok: true, ...cr.getStatus() });
+});
+
+// ── Mystery Box ────────────────────────────────────────────────────────────────
+
+app.get('/api/mystery-box', requireAuth, (req, res) => {
+  res.json({ ok: true, ...mb.getStatus(req.user.username) });
+});
+
+app.post('/api/mystery-box/claim', requireAuth, (req, res) => {
+  const result = mb.claim(req.user.username);
+  if (!result.ok) {
+    return res.status(400).json(result);
+  }
+  // Credit reward
+  const r = us.addBonusByAdmin(req.user.username, result.reward.amount);
+  if (r.ok) {
+    io.emit('balanceReset', { username: req.user.username, balance: r.balance });
+    // If it's a legendary reward, announce it to everyone
+    if (result.reward.tier === 'legendary') {
+      io.emit('bigWin', {
+        username:   req.user.username,
+        game:       'mystery-box',
+        profit:     result.reward.amount,
+        multiplier: null,
+        timestamp:  Date.now(),
+      });
+    }
+  }
+  al.log('mystery_box', { username: req.user.username, reward: result.reward });
+  res.json({ ok: true, reward: result.reward, newBalance: r.balance });
+});
+
+// ── News / Announcements ──────────────────────────────────────────────────────
+
+app.get('/api/news', (req, res) => {
+  res.json({ ok: true, news: ns.getNews() });
+});
+
+app.post('/api/admin/news', requireAdmin, (req, res) => {
+  const { title, body, type, pinned } = req.body || {};
+  if (!title) return res.status(400).json({ ok: false, error: 'Title required' });
+  const item = ns.postNews({ title, body, type, pinned, adminName: req.user.username });
+  io.emit('newsBroadcast', item);
+  al.log('news_post', { admin: req.user.username, title });
+  res.json({ ok: true, item });
+});
+
+app.delete('/api/admin/news/:id', requireAdmin, (req, res) => {
+  ns.deleteNews(req.params.id);
+  io.emit('newsDeleted', { id: req.params.id });
+  res.json({ ok: true });
+});
+
+app.patch('/api/admin/news/:id/pin', requireAdmin, (req, res) => {
+  ns.pinNews(req.params.id, !!req.body?.pinned);
+  res.json({ ok: true });
+});
+
+// ── Boost Tokens ──────────────────────────────────────────────────────────────
+
+app.get('/api/boost', requireAuth, (req, res) => {
+  res.json({ ok: true, ...bs.getStatus(req.user.username) });
+});
+
+app.post('/api/boost/activate', requireAuth, (req, res) => {
+  const result = bs.activateBoost(req.user.username);
+  if (!result.ok) return res.status(400).json(result);
+  io.emit('boostActivated', { username: req.user.username, until: result.activeUntil });
+  al.log('boost_activated', { username: req.user.username });
+  res.json({ ok: true, ...result });
+});
+
+// Admin: award boost tokens to a user
+app.post('/api/admin/boost/award', requireAdmin, (req, res) => {
+  const { username, count = 1 } = req.body || {};
+  if (!username) return res.status(400).json({ ok: false, error: 'username required' });
+  const result = bs.awardToken(username.toLowerCase(), Math.min(Math.max(1, count), 10));
+  al.log('boost_award', { admin: req.user.username, username, count });
+  res.json({ ok: true, ...result });
+});
+
+// ── Referral System ────────────────────────────────────────────────────────────
+
+app.get('/api/referral', requireAuth, (req, res) => {
+  const stats = rf.getStats(req.user.username);
+  res.json({ ok: true, ...stats });
+});
+
+app.post('/api/referral/use', requireAuth, (req, res) => {
+  const { code } = req.body || {};
+  if (!code) return res.status(400).json({ ok: false, error: 'code required' });
+  const result = rf.useCode(code, req.user.username);
+  if (!result.ok) return res.status(400).json(result);
+  // Award bonus to new user
+  const newUserBonus = us.addBonusByAdmin(req.user.username, result.bonus);
+  if (newUserBonus.ok) io.emit('balanceReset', { username: req.user.username, balance: newUserBonus.balance });
+  // Award bonus to referrer
+  const refBonus = us.addBonusByAdmin(result.referredBy, result.bonus);
+  if (refBonus.ok) {
+    io.emit('balanceReset', { username: result.referredBy, balance: refBonus.balance });
+    io.emit('referralBonus', { username: result.referredBy, newUser: req.user.username, bonus: result.bonus });
+  }
+  al.log('referral_used', { newUser: req.user.username, referredBy: result.referredBy });
+  res.json({ ok: true, bonus: result.bonus });
+});
+
+// ── Prestige ──────────────────────────────────────────────────────────────────
+
+app.get('/api/prestige', requireAuth, (req, res) => {
+  const prestige = pr.getPrestige(req.user.username);
+  const profile  = xp.getProfile(req.user.username);
+  res.json({ ok: true, prestige, canPrestige: pr.canPrestige(profile?.level || 0), titles: pr.PRESTIGE_TITLES });
+});
+
+app.post('/api/prestige', requireAuth, (req, res) => {
+  const profile = xp.getProfile(req.user.username);
+  const result  = pr.prestige(req.user.username, profile?.level || 0);
+  if (!result.ok) return res.status(400).json(result);
+  // Award prestige bonus
+  const r = us.addBonusByAdmin(req.user.username, result.bonus);
+  if (r.ok) io.emit('balanceReset', { username: req.user.username, balance: r.balance });
+  // Reset XP to level 1 (award negative XP to bring to 0, then re-level)
+  if (profile) {
+    xp.resetXP(req.user.username);
+  }
+  io.emit('prestigeEvent', { username: req.user.username, prestige: result.prestige });
+  al.log('prestige', { username: req.user.username, level: result.prestige.level });
+  res.json({ ok: true, ...result, bonus: result.bonus, newBalance: r.balance });
+});
+
+// ── Today's Top Winners ────────────────────────────────────────────────────────
+
+app.get('/api/wins/today', (req, res) => {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const wins = wl.getWins()
+    .filter(w => w.timestamp >= todayStart.getTime())
+    .sort((a, b) => b.profit - a.profit)
+    .slice(0, 20);
+  res.json({ ok: true, wins });
+});
+
+// ── Online count (public) ──────────────────────────────────────────────────────
+
+app.get('/api/online-count', (req, res) => {
+  const stats = us.adminGetStats ? us.adminGetStats() : { onlineNow: 0 };
+  // Also include socket count as fallback
+  const socketCount = io.sockets.sockets.size;
+  res.json({ ok: true, online: Math.max(stats.onlineNow || 0, Math.floor(socketCount * 0.7)) });
+});
+
 // ── Global Stats ──────────────────────────────────────────────────────────────
 
 app.get('/api/stats/global', (req, res) => {
@@ -1397,6 +1643,7 @@ app.get('/api/stats/global', (req, res) => {
   const top    = xp.getTopPlayers(1)[0] || null;
   const raceInfo = wr.getLeaderboard(1);
   const lottery  = lt.getStatus();
+  const userStats = us.adminGetStats ? us.adminGetStats() : {};
   res.json({
     ok: true,
     biggestWinEver: topWin,
@@ -1406,6 +1653,8 @@ app.get('/api/stats/global', (req, res) => {
     wagerRacePool: raceInfo.prizePool,
     lotteryJackpot: lottery.jackpot,
     lotteryTickets: lottery.tickets,
+    onlineNow: userStats.onlineNow || 0,
+    totalUsers: userStats.totalUsers || 0,
   });
 });
 
@@ -1796,6 +2045,7 @@ app.get('*', (req, res) => {
 
 // ── Game namespaces ───────────────────────────────────────────────────────────
 
+chatNs.setGlobalEmit((event, data) => io.emit(event, data));
 chatNs.register(io.of('/chat'));
 require('./games/monopoly').register(io.of('/monopoly'));
 require('./games/chess').register(io.of('/chess'));

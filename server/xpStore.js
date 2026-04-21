@@ -294,6 +294,15 @@ function getProfile(username) {
   };
 }
 
+/** Reset a user's XP and level to 1 (used for prestige). Preserves all other stats. */
+function resetXP(username) {
+  const all = read();
+  const u   = getOrCreate(all, username);
+  u.xp      = 0;
+  u.level   = 1;
+  write(all);
+}
+
 function getTopPlayers(limit = 20) {
   const all = read();
   return Object.entries(all)
@@ -313,4 +322,5 @@ module.exports = {
   getProfile,
   getTopPlayers,
   awardXP,
+  resetXP,
 };
