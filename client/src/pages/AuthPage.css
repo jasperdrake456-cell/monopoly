@@ -58,7 +58,8 @@
   transition: all 0.2s;
 }
 
-.auth-tab.active {
+.auth-tab.active,
+.auth-tab--active {
   background: rgba(255,255,255,0.12);
   color: #fff;
 }
@@ -150,3 +151,17 @@
   transition: color 0.2s;
 }
 .auth-back:hover { color: rgba(255,255,255,0.7); }
+
+.auth-submit--register {
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+}
+.auth-submit--register:hover {
+  box-shadow: 0 6px 20px rgba(34,197,94,.4);
+}
+
+.auth-note {
+  text-align: center;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.35);
+}
+.auth-note strong { color: #22c55e; }

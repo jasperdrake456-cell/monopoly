@@ -717,10 +717,35 @@ function claimDailySpin(token) {
   };
 }
 
+/** Get a user's current balance. Returns null if user not found. */
+function getBalance(username) {
+  const users = readUsers();
+  const u = users[(username || '').toLowerCase()];
+  if (!u) return null;
+  if (u.username === ADMIN_USERNAME) return ADMIN_BALANCE;
+  return u.casinoBalance || 0;
+}
+
+/** Spend (deduct) balance from a user. Returns { ok, balance } or { ok: false, error }. */
+function spendBalance(username, amount) {
+  const clean = (username || '').toLowerCase();
+  const amt   = Math.floor(amount);
+  if (amt <= 0) return { ok: false, error: 'Invalid amount' };
+  const users = readUsers();
+  const u     = users[clean];
+  if (!u) return { ok: false, error: 'User not found' };
+  if (u.username === ADMIN_USERNAME) return { ok: true, balance: ADMIN_BALANCE };
+  if ((u.casinoBalance || 0) < amt) return { ok: false, error: 'Insufficient balance' };
+  u.casinoBalance -= amt;
+  writeUsers(users);
+  return { ok: true, balance: u.casinoBalance };
+}
+
 module.exports = {
   register, login, getMe, syncBalance, claimDaily, transfer, logout, userExists,
   deleteUser, adminGiveMoney, adminSetBalance, listUsers, isAdminToken, isOwnerToken, getTopBalances,
   recordIP, kickUser, addBonus, pruneZeroBalanceAccounts, adminGetStats, addBonusByAdmin,
   validateToken, bulkResetBalances, getDailySpinStatus, claimDailySpin,
   grantAdmin, revokeAdmin, listSecondaryAdmins, isSecondaryAdmin,
+  getBalance, spendBalance,
 };

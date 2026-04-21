@@ -78,6 +78,7 @@ import HouseStatsPage from './pages/HouseStatsPage';
 import TransactionHistoryPage from './pages/TransactionHistoryPage';
 import PlayerSearchPage from './pages/PlayerSearchPage';
 import WinStreakLeaderboardPage from './pages/WinStreakLeaderboardPage';
+import CryptoInvestPage from './pages/CryptoInvestPage';
 import './App.css';
 
 // Convenience wrapper: RequireAuth + GameGuard for a given slug
@@ -198,8 +199,9 @@ export default function App() {
             <Route path="/house-stats" element={<HouseStatsPage />} />
             <Route path="/transactions" element={<RequireAuth><TransactionHistoryPage /></RequireAuth>} />
             <Route path="/search"      element={<PlayerSearchPage />} />
-            <Route path="/win-streaks" element={<WinStreakLeaderboardPage />} />
-            <Route path="*"            element={<Navigate to="/" replace />} />
+            <Route path="/win-streaks"   element={<WinStreakLeaderboardPage />} />
+            <Route path="/crypto"         element={<RequireAuth><CryptoInvestPage /></RequireAuth>} />
+            <Route path="*"              element={<Navigate to="/" replace />} />
           </Routes>
         </PasswordGate>
       </SiteConfigProvider>

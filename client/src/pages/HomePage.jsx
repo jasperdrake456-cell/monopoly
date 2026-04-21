@@ -177,8 +177,8 @@ export default function HomePage() {
           <Link to="/leaderboard" className="home-trivia-btn">🏆 Leaderboard</Link>
           {isChampion && <Link to="/champion-panel" className="home-trivia-btn" style={{ background: 'rgba(255,215,0,0.12)', borderColor: 'rgba(255,215,0,0.45)', color: '#FFD700', fontWeight: 700 }}>👑 Champion Panel</Link>}
           <Link to="/achievements" className="home-trivia-btn" style={{ background: 'rgba(245,158,11,0.1)', borderColor: 'rgba(245,158,11,0.35)', color: '#fcd34d' }}>🏅 Achievements</Link>
-          <Link to="/referral"    className="home-trivia-btn" style={{ background: 'rgba(34,197,94,0.1)',  borderColor: 'rgba(34,197,94,0.35)',  color: '#86efac' }}>🎁 Referral</Link>
           <Link to="/redeem"      className="home-trivia-btn" style={{ background: 'rgba(251,191,36,0.1)', borderColor: 'rgba(251,191,36,0.35)', color: '#fbbf24' }}>🎟️ Redeem</Link>
+          {isLoggedIn && <Link to="/crypto" className="home-trivia-btn" style={{ background: 'rgba(34,197,94,0.12)', borderColor: 'rgba(34,197,94,0.45)', color: '#86efac', fontWeight:800 }}>📈 Crypto</Link>}
           {isLoggedIn && <Link to="/boost" className="home-trivia-btn" style={{ background: 'rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.35)', color: '#fca5a5' }}>🚀 Boost</Link>}
           {isLoggedIn && <Link to="/profile" className="home-trivia-btn" style={{ background: 'rgba(96,165,250,0.1)', borderColor: 'rgba(96,165,250,0.35)', color: '#93c5fd' }}>👤 Profile</Link>}
           {isLoggedIn && <Link to="/prestige" className="home-trivia-btn" style={{ background: 'rgba(251,191,36,0.1)', borderColor: 'rgba(251,191,36,0.35)', color: '#fbbf24' }}>⭐ Prestige</Link>}

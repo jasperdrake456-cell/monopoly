@@ -52,6 +52,8 @@ const bh        = require('./balanceHistoryStore');
 const jr        = require('./jackpotRushStore');
 const dg        = require('./dailyGoalsStore');
 const er        = require('./emojiReactionsStore');
+const cryptoFeed      = require('./cryptoPriceFeed');
+const cryptoPortfolio = require('./cryptoPortfolioStore');
 
 const app = express();
 const server = http.createServer(app);
@@ -142,9 +144,12 @@ function getToken(req) {
   return auth.startsWith('Bearer ') ? auth.slice(7) : null;
 }
 
-// Public registration is disabled — only admins can create accounts.
+// Public registration
 app.post('/api/accounts/register', (req, res) => {
-  res.status(403).json({ ok: false, error: 'Account creation is disabled. Contact the admin to get an account.' });
+  const { username, password } = req.body || {};
+  const ip = getClientIP(req);
+  const result = us.register(username, password, ip);
+  res.json(result);
 });
 
 app.post('/api/accounts/login', (req, res) => {
@@ -1782,6 +1787,72 @@ app.get('/api/leaderboard/streaks', (req, res) => {
     .sort((a, b) => b.streak - a.streak)
     .slice(0, 20);
   res.json({ ok: true, players });
+});
+
+// ── Crypto Investing ──────────────────────────────────────────────────────────
+
+app.get('/api/crypto/prices', (req, res) => {
+  const prices = cryptoFeed.getPriceList();
+  res.json({ ok: true, prices, lastFetch: cryptoFeed.getLastFetch() });
+});
+
+app.get('/api/crypto/portfolio', requireAuth, (req, res) => {
+  const portfolio = cryptoPortfolio.getPortfolio(req.user.username);
+  res.json({ ok: true, ...portfolio });
+});
+
+app.post('/api/crypto/buy', requireAuth, (req, res) => {
+  const { coinId, amountUSD } = req.body || {};
+  if (!coinId || !amountUSD) return res.status(400).json({ ok: false, error: 'Missing coinId or amountUSD' });
+  const amt = Math.round(parseFloat(amountUSD));
+  const spend = us.spendBalance(req.user.username, amt);
+  if (!spend.ok) return res.status(400).json({ ok: false, error: spend.error });
+  const result = cryptoPortfolio.buy(req.user.username, coinId, amt);
+  if (!result.ok) {
+    // Refund if portfolio action failed
+    us.addBonusByAdmin(req.user.username, amt);
+    return res.status(400).json(result);
+  }
+  bh.log(req.user.username, { type: 'crypto-buy', amount: -amt, balance: spend.balance, description: `Bought ${coinId} @ $${result.entryPrice?.toLocaleString()}` });
+  res.json({ ...result, balance: spend.balance });
+});
+
+app.post('/api/crypto/sell', requireAuth, (req, res) => {
+  const { coinId } = req.body || {};
+  if (!coinId) return res.status(400).json({ ok: false, error: 'Missing coinId' });
+  const result = cryptoPortfolio.sell(req.user.username, coinId);
+  if (!result.ok) return res.status(400).json(result);
+  // Credit payout
+  const r = us.addBonusByAdmin(req.user.username, result.payout);
+  bh.log(req.user.username, { type: 'crypto-sell', amount: result.pnl, balance: r.balance, description: `Sold ${coinId} @ $${result.exitPrice} — P&L ${result.pnl >= 0 ? '+' : ''}$${result.pnl.toFixed(2)}` });
+  io.emit('balanceReset', { username: req.user.username, balance: r.balance });
+  res.json({ ...result, balance: r.balance });
+});
+
+app.post('/api/crypto/short', requireAuth, (req, res) => {
+  const { coinId, amountUSD } = req.body || {};
+  if (!coinId || !amountUSD) return res.status(400).json({ ok: false, error: 'Missing coinId or amountUSD' });
+  const amt = Math.round(parseFloat(amountUSD));
+  const spend = us.spendBalance(req.user.username, amt);
+  if (!spend.ok) return res.status(400).json({ ok: false, error: spend.error });
+  const result = cryptoPortfolio.short(req.user.username, coinId, amt);
+  if (!result.ok) {
+    us.addBonusByAdmin(req.user.username, amt);
+    return res.status(400).json(result);
+  }
+  bh.log(req.user.username, { type: 'crypto-short', amount: -amt, balance: spend.balance, description: `Shorted ${coinId} @ $${result.entryPrice?.toLocaleString()}` });
+  res.json({ ...result, balance: spend.balance });
+});
+
+app.post('/api/crypto/close-short', requireAuth, (req, res) => {
+  const { coinId } = req.body || {};
+  if (!coinId) return res.status(400).json({ ok: false, error: 'Missing coinId' });
+  const result = cryptoPortfolio.closeShort(req.user.username, coinId);
+  if (!result.ok) return res.status(400).json(result);
+  const r = us.addBonusByAdmin(req.user.username, result.payout);
+  bh.log(req.user.username, { type: 'crypto-close-short', amount: result.pnl, balance: r.balance, description: `Closed short ${coinId} @ $${result.exitPrice} — P&L ${result.pnl >= 0 ? '+' : ''}$${result.pnl.toFixed(2)}` });
+  io.emit('balanceReset', { username: req.user.username, balance: r.balance });
+  res.json({ ...result, balance: r.balance });
 });
 
 // ── Online count (public) ──────────────────────────────────────────────────────
