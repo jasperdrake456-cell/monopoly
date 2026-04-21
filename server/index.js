@@ -63,6 +63,8 @@ const wishingWell     = require('./wishingWellStore');
 const liveFeed        = require('./liveFeedStore');
 const eggHunt         = require('./eggHuntStore');
 const tournaments     = require('./tournamentStore');
+const seasonPass      = require('./seasonPassStore');
+const pets            = require('./petStore');
 
 const app = express();
 const server = http.createServer(app);
@@ -1216,6 +1218,13 @@ app.post('/api/xp/record-bet', requireAuth, (req, res) => {
     gameSlug: game,
   });
 
+  // Season Pass & Pet Companion — earn passive XP from wagering
+  try {
+    const sp = seasonPass.addWagerXP(req.user.username, Math.floor(amount));
+    if (sp && sp.gained > 0) result.seasonXp = sp.newXp;
+    pets.addWagerXP(req.user.username, Math.floor(amount));
+  } catch {}
+
   // Mission progress
   ms.recordEvent(req.user.username, 'wager', game, Math.floor(amount), multiplier);
   if (won) ms.recordEvent(req.user.username, 'win', game, Math.floor(amount), multiplier);
@@ -2288,6 +2297,115 @@ setInterval(() => {
     console.log(`[Tournaments] 🏆 "${t.name}" ended. Winners:`, t.winners.map(w => `${w.username}=$${w.prize}`).join(', '));
   }
 }, 30_000);
+
+// ── Season Pass ──────────────────────────────────────────────────────────────
+
+app.get('/api/season-pass', (req, res) => {
+  const tok = getToken(req);
+  const u   = tok && us.validateToken(tok);
+  res.json({ ok: true, ...seasonPass.getStatus(u), premiumCost: seasonPass.getPremiumCost() });
+});
+
+app.post('/api/season-pass/upgrade', requireAuth, (req, res) => {
+  if (seasonPass.isPremium(req.user.username)) {
+    return res.status(400).json({ ok: false, error: 'Already premium' });
+  }
+  const cost = seasonPass.getPremiumCost();
+  const spend = us.spendBalance(req.user.username, cost);
+  if (!spend.ok) return res.status(400).json({ ok: false, error: spend.error || 'Insufficient balance' });
+  seasonPass.activatePremium(req.user.username);
+  bh.log(req.user.username, { type: 'season-pass-premium', amount: -cost, balance: spend.balance, description: 'Season Pass Premium upgrade' });
+  io.emit('balanceReset', { username: req.user.username, balance: spend.balance });
+  res.json({ ok: true, balance: spend.balance });
+});
+
+app.post('/api/season-pass/claim', requireAuth, (req, res) => {
+  const { tier, track } = req.body || {};
+  const r = seasonPass.claimTier(req.user.username, tier, track);
+  if (!r.ok) return res.status(400).json(r);
+
+  let balance = null;
+  const reward = r.reward;
+  if (reward.type === 'chips') {
+    const b = us.addBonusByAdmin(req.user.username, reward.amount);
+    if (b.ok) {
+      balance = b.balance;
+      bh.log(req.user.username, { type: 'season-pass-claim', amount: reward.amount, balance: b.balance, description: `Season Pass T${r.tier} (${r.track})` });
+    }
+  } else if (reward.type === 'xp') {
+    xp.awardXP(req.user.username, reward.amount);
+  } else if (reward.type === 'boost-token') {
+    bs.awardToken(req.user.username, reward.amount || 1);
+  } else if (reward.type === 'mystery-box') {
+    // Grant a virtual box — if mystery box store has a grant method, use it; else add chip equivalent
+    try {
+      if (mb.grantBox) mb.grantBox(req.user.username, reward.tier);
+      else {
+        const fallback = reward.tier === 'legendary' ? 50_000 : reward.tier === 'gold' ? 15_000 : 5_000;
+        const b = us.addBonusByAdmin(req.user.username, fallback);
+        if (b.ok) balance = b.balance;
+      }
+    } catch {
+      const fallback = reward.tier === 'legendary' ? 50_000 : reward.tier === 'gold' ? 15_000 : 5_000;
+      const b = us.addBonusByAdmin(req.user.username, fallback);
+      if (b.ok) balance = b.balance;
+    }
+  } else if (reward.type === 'title') {
+    try { if (tl && tl.awardTitle) tl.awardTitle(req.user.username, reward.id); } catch {}
+  }
+
+  if (balance !== null) io.emit('balanceReset', { username: req.user.username, balance });
+  res.json({ ok: true, reward, tier: r.tier, track: r.track, balance });
+});
+
+// ── Pet Companions ───────────────────────────────────────────────────────────
+
+app.get('/api/pets', (req, res) => {
+  const tok = getToken(req);
+  const u   = tok && us.validateToken(tok);
+  res.json({ ok: true, catalog: pets.listPets(), mine: u ? pets.getUserPet(u) : null });
+});
+
+app.post('/api/pets/adopt', requireAuth, (req, res) => {
+  const { petId } = req.body || {};
+  const catalog = pets.listPets();
+  const chosen  = catalog.find(p => p.id === petId);
+  if (!chosen) return res.status(400).json({ ok: false, error: 'Unknown pet' });
+  const spend = us.spendBalance(req.user.username, chosen.cost);
+  if (!spend.ok) return res.status(400).json({ ok: false, error: spend.error || 'Insufficient balance' });
+  pets.adopt(req.user.username, petId);
+  bh.log(req.user.username, { type: 'pet-adopt', amount: -chosen.cost, balance: spend.balance, description: `Adopted ${chosen.name}` });
+  io.emit('balanceReset', { username: req.user.username, balance: spend.balance });
+  liveFeed.push('pet-adopt', { user: req.user.username, pet: chosen.name, emoji: chosen.emoji });
+  res.json({ ok: true, balance: spend.balance, pet: pets.getUserPet(req.user.username) });
+});
+
+app.post('/api/pets/feed', requireAuth, (req, res) => {
+  const amt = Math.floor(Number(req.body?.amount) || 0);
+  if (amt < 100) return res.status(400).json({ ok: false, error: 'Feed at least 100 chips' });
+  const spend = us.spendBalance(req.user.username, amt);
+  if (!spend.ok) return res.status(400).json({ ok: false, error: spend.error || 'Insufficient balance' });
+  const r = pets.feed(req.user.username, amt);
+  if (!r.ok) {
+    // Refund
+    us.addBonusByAdmin(req.user.username, amt);
+    return res.status(400).json(r);
+  }
+  bh.log(req.user.username, { type: 'pet-feed', amount: -amt, balance: spend.balance, description: `Fed pet (${amt} XP)` });
+  io.emit('balanceReset', { username: req.user.username, balance: spend.balance });
+  res.json({ ok: true, balance: spend.balance, ...r, pet: pets.getUserPet(req.user.username) });
+});
+
+app.post('/api/pets/collect', requireAuth, (req, res) => {
+  const r = pets.collectTip(req.user.username);
+  if (!r.ok) return res.status(400).json(r);
+  const b = us.addBonusByAdmin(req.user.username, r.amount);
+  if (b.ok) {
+    bh.log(req.user.username, { type: 'pet-tip', amount: r.amount, balance: b.balance, description: 'Pet passive tip' });
+    io.emit('balanceReset', { username: req.user.username, balance: b.balance });
+  }
+  res.json({ ok: true, amount: r.amount, balance: b.balance, pet: pets.getUserPet(req.user.username) });
+});
 
 // ── Live Events Feed (public ticker) ─────────────────────────────────────────
 

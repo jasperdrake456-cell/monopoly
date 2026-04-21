@@ -1,0 +1,232 @@
+/* 🎫 Season Pass */
+
+.sp-page {
+  min-height: 100vh;
+  background: var(--gv-grad-bg, linear-gradient(135deg, #0a0e1a 0%, #151a2e 100%));
+  color: var(--gv-text, #e2e8f0);
+  padding: 24px 32px 80px;
+  font-family: var(--gv-font-body, 'Space Grotesk', system-ui, sans-serif);
+  position: relative;
+  overflow-x: hidden;
+}
+.sp-page::before {
+  content: '';
+  position: fixed; top: -180px; right: -180px;
+  width: 540px; height: 540px;
+  background: radial-gradient(circle, rgba(168,85,247,0.14), transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.sp-page::after {
+  content: '';
+  position: fixed; bottom: -220px; left: -220px;
+  width: 620px; height: 620px;
+  background: radial-gradient(circle, rgba(251,191,36,0.10), transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.sp-page > * { position: relative; z-index: 1; }
+
+.sp-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 22px; gap: 12px; flex-wrap: wrap;
+}
+.sp-back {
+  color: var(--gv-text-dim, #94a3b8); text-decoration: none; font-weight: 600;
+  padding: 8px 14px; border-radius: 8px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  transition: all 0.2s;
+}
+.sp-back:hover { background: rgba(255,255,255,0.08); color: #c084fc; border-color: rgba(168,85,247,0.4); }
+
+.sp-title {
+  font-family: var(--gv-font-display, 'Orbitron', sans-serif);
+  font-size: clamp(1.5rem, 3.5vw, 2.3rem);
+  font-weight: 900; letter-spacing: 2px;
+  background: linear-gradient(135deg, #c084fc 0%, #ec4899 50%, #fbbf24 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 2px 12px rgba(192,132,252,0.35));
+}
+
+.sp-bal {
+  font-size: 0.95rem; color: var(--gv-text-dim, #94a3b8);
+  padding: 8px 16px;
+  background: rgba(168,85,247,0.08);
+  border: 1px solid rgba(168,85,247,0.3);
+  border-radius: 10px;
+}
+.sp-bal b { color: #c084fc; font-family: var(--gv-font-display, 'Orbitron', sans-serif); }
+
+.sp-loading {
+  text-align: center; padding: 80px 20px; color: var(--gv-text-mute, #64748b);
+  font-size: 1.1rem;
+}
+
+/* Hero */
+.sp-hero {
+  display: flex; justify-content: space-between; align-items: center; gap: 20px;
+  padding: 24px 28px; margin-bottom: 22px;
+  background: linear-gradient(135deg, rgba(168,85,247,0.1), rgba(236,72,153,0.08));
+  border: 1px solid rgba(168,85,247,0.3);
+  border-radius: 18px;
+  box-shadow: 0 12px 40px rgba(168,85,247,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+  flex-wrap: wrap;
+}
+.sp-hero-season {
+  font-family: var(--gv-font-display, 'Orbitron', sans-serif);
+  font-size: 1.6rem; font-weight: 800; color: #c084fc;
+  letter-spacing: 1.5px;
+}
+.sp-hero-time { font-size: 0.95rem; color: var(--gv-text-dim, #94a3b8); margin-top: 6px; }
+.sp-hero-right { min-width: 260px; flex: 1; max-width: 420px; }
+.sp-hero-tier {
+  font-family: var(--gv-font-display, 'Orbitron', sans-serif);
+  font-size: 1.1rem; color: var(--gv-text, #e2e8f0); margin-bottom: 8px;
+}
+.sp-hero-tier b { color: #fbbf24; font-size: 1.4rem; }
+
+.sp-progress {
+  position: relative; height: 22px;
+  background: rgba(15,23,42,0.7); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 11px; overflow: hidden;
+}
+.sp-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #c084fc 0%, #ec4899 50%, #fbbf24 100%);
+  box-shadow: 0 0 14px rgba(236,72,153,0.5);
+  transition: width 0.6s ease;
+}
+.sp-progress-label {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 0.78rem; font-weight: 700; color: white;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8); letter-spacing: 0.5px;
+}
+.sp-hero-hint { font-size: 0.78rem; color: var(--gv-text-mute, #64748b); margin-top: 6px; }
+
+/* Upgrade banner */
+.sp-upgrade-banner {
+  display: flex; justify-content: space-between; align-items: center; gap: 20px;
+  padding: 18px 24px; margin-bottom: 22px;
+  background: linear-gradient(135deg, rgba(251,191,36,0.15), rgba(236,72,153,0.08));
+  border: 1px solid rgba(251,191,36,0.45);
+  border-radius: 14px;
+  animation: spUpgradePulse 3s ease-in-out infinite;
+  flex-wrap: wrap;
+}
+@keyframes spUpgradePulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.2); }
+  50%     { box-shadow: 0 0 0 6px rgba(251,191,36,0.05); }
+}
+.sp-upgrade-title {
+  font-family: var(--gv-font-display, 'Orbitron', sans-serif);
+  font-weight: 800; font-size: 1.1rem; color: #fbbf24; letter-spacing: 1px;
+}
+.sp-upgrade-sub { font-size: 0.9rem; color: var(--gv-text-dim, #94a3b8); margin-top: 4px; }
+
+.sp-msg {
+  padding: 12px 20px; margin-bottom: 16px;
+  background: rgba(15,23,42,0.7); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px; text-align: center; font-weight: 600;
+  backdrop-filter: blur(10px);
+}
+
+/* Track labels */
+.sp-track-labels {
+  display: grid;
+  grid-template-columns: 1fr 80px 1fr;
+  gap: 10px; margin-bottom: 8px;
+}
+.sp-track-label {
+  font-family: var(--gv-font-display, 'Orbitron', sans-serif);
+  font-size: 0.78rem; letter-spacing: 2px; text-transform: uppercase;
+  padding: 8px 12px; border-radius: 8px; text-align: center; font-weight: 800;
+}
+.sp-track-label--premium {
+  background: linear-gradient(135deg, rgba(251,191,36,0.18), rgba(245,158,11,0.1));
+  color: #fbbf24; border: 1px solid rgba(251,191,36,0.45);
+}
+.sp-track-label--free {
+  background: rgba(94,234,212,0.1); color: #5eead4; border: 1px solid rgba(94,234,212,0.3);
+  grid-column: 3;
+}
+
+/* Track grid: horizontal scroll */
+.sp-track {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 16px; border-radius: 14px;
+  background: rgba(15,23,42,0.35);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.sp-tier {
+  display: grid;
+  grid-template-columns: 1fr 80px 1fr;
+  gap: 10px; align-items: stretch;
+  padding: 4px 0;
+}
+
+.sp-tier-num {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px;
+}
+.sp-tier-badge {
+  width: 46px; height: 46px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--gv-font-display, 'Orbitron', sans-serif);
+  font-size: 1.05rem; font-weight: 800;
+  background: linear-gradient(135deg, rgba(51,65,85,0.8), rgba(30,41,59,0.95));
+  color: var(--gv-text-mute, #64748b);
+  border: 2px solid rgba(255,255,255,0.08);
+  transition: all 0.25s;
+}
+.sp-tier--reached .sp-tier-badge {
+  background: linear-gradient(135deg, #fbbf24 0%, #ec4899 100%);
+  color: white;
+  border-color: #fbbf24;
+  box-shadow: 0 0 18px rgba(251,191,36,0.5);
+}
+.sp-tier-xp {
+  font-size: 0.68rem; color: var(--gv-text-mute, #64748b); letter-spacing: 0.5px;
+  font-family: var(--gv-font-display, 'Orbitron', sans-serif);
+}
+
+.sp-reward {
+  display: flex; flex-direction: column; justify-content: center; gap: 6px;
+  padding: 12px 14px; border-radius: 10px;
+  background: rgba(15,23,42,0.7);
+  border: 1px solid rgba(255,255,255,0.06);
+  min-height: 62px;
+  transition: all 0.25s;
+}
+.sp-reward--premium {
+  background: linear-gradient(135deg, rgba(251,191,36,0.08), rgba(245,158,11,0.04));
+  border-color: rgba(251,191,36,0.2);
+}
+.sp-reward--premium .sp-reward-label { color: #fbbf24; font-weight: 700; }
+.sp-reward--free .sp-reward-label { color: #5eead4; font-weight: 700; }
+
+.sp-reward--claimable {
+  animation: spRewardGlow 2s ease-in-out infinite;
+  border-color: rgba(34,197,94,0.5);
+}
+@keyframes spRewardGlow {
+  0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.25); }
+  50%     { box-shadow: 0 0 0 6px rgba(34,197,94,0.05); }
+}
+
+.sp-reward-label { font-size: 0.92rem; line-height: 1.3; }
+.sp-reward-claimed { font-size: 0.82rem; color: #4ade80; font-weight: 700; letter-spacing: 0.5px; }
+.sp-reward-locked  { font-size: 0.78rem; color: var(--gv-text-mute, #64748b); font-style: italic; }
+.sp-reward .gv-btn { padding: 5px 10px; font-size: 0.82rem; align-self: flex-start; }
+
+/* Mobile */
+@media (max-width: 640px) {
+  .sp-page { padding: 16px 14px 60px; }
+  .sp-hero { padding: 18px; }
+  .sp-hero-season { font-size: 1.3rem; }
+  .sp-hero-tier b { font-size: 1.2rem; }
+  .sp-tier { grid-template-columns: 1fr 60px 1fr; gap: 6px; }
+  .sp-tier-badge { width: 38px; height: 38px; font-size: 0.9rem; }
+  .sp-reward { padding: 10px; min-height: 54px; }
+  .sp-reward-label { font-size: 0.82rem; }
+  .sp-track-labels { grid-template-columns: 1fr 60px 1fr; }
+  .sp-track-label { font-size: 0.68rem; padding: 6px 8px; }
+}

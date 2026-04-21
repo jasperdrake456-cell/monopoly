@@ -1,0 +1,230 @@
+/* 🐾 Pets Page */
+
+.pets-page {
+  min-height: 100vh;
+  background: var(--gv-grad-bg, linear-gradient(135deg, #0a0e1a 0%, #151a2e 100%));
+  color: var(--gv-text, #e2e8f0);
+  padding: 24px 32px 80px;
+  font-family: var(--gv-font-body, 'Space Grotesk', system-ui, sans-serif);
+  position: relative; overflow-x: hidden;
+}
+.pets-page::before {
+  content: '';
+  position: fixed; top: -200px; right: -200px;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(94,234,212,0.12), transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.pets-page::after {
+  content: '';
+  position: fixed; bottom: -250px; left: -250px;
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, rgba(251,146,60,0.10), transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.pets-page > * { position: relative; z-index: 1; }
+
+.pets-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 22px; gap: 12px; flex-wrap: wrap;
+}
+.pets-back {
+  color: var(--gv-text-dim, #94a3b8); text-decoration: none; font-weight: 600;
+  padding: 8px 14px; border-radius: 8px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  transition: all 0.2s;
+}
+.pets-back:hover { background: rgba(255,255,255,0.08); color: #5eead4; border-color: rgba(94,234,212,0.4); }
+
+.pets-title {
+  font-family: var(--gv-font-display, 'Orbitron', sans-serif);
+  font-size: clamp(1.5rem, 3.5vw, 2.3rem);
+  font-weight: 900; letter-spacing: 2px;
+  background: linear-gradient(135deg, #5eead4 0%, #a78bfa 50%, #fb923c 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 2px 12px rgba(94,234,212,0.35));
+}
+
+.pets-bal {
+  font-size: 0.95rem; color: var(--gv-text-dim, #94a3b8);
+  padding: 8px 16px;
+  background: rgba(94,234,212,0.08);
+  border: 1px solid rgba(94,234,212,0.3);
+  border-radius: 10px;
+}
+.pets-bal b { color: #5eead4; font-family: var(--gv-font-display, 'Orbitron', sans-serif); }
+
+/* Hero */
+.pets-hero {
+  text-align: center;
+  padding: 28px 20px; margin-bottom: 22px;
+  background: linear-gradient(135deg, rgba(94,234,212,0.08), rgba(167,139,250,0.05));
+  border: 1px solid rgba(94,234,212,0.22);
+  border-radius: 18px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+  position: relative; overflow: hidden;
+}
+.pets-hero::before {
+  content: '🐾'; position: absolute; top: 50%; left: 8%;
+  transform: translateY(-50%); font-size: 6rem; opacity: 0.06;
+}
+.pets-hero::after {
+  content: '🦈'; position: absolute; top: 50%; right: 8%;
+  transform: translateY(-50%); font-size: 6rem; opacity: 0.06;
+}
+.pets-hero-title {
+  font-family: var(--gv-font-display, 'Orbitron', sans-serif);
+  font-size: clamp(1.3rem, 3vw, 1.9rem); font-weight: 800; letter-spacing: 1px;
+  color: #5eead4; margin-bottom: 8px;
+  text-shadow: 0 2px 20px rgba(94,234,212,0.4);
+}
+.pets-hero-sub {
+  color: var(--gv-text-dim, #94a3b8);
+  max-width: 560px; margin: 0 auto;
+}
+
+/* Current pet card */
+.pets-mine {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+  padding: 24px 28px; margin-bottom: 22px;
+  background: linear-gradient(135deg, rgba(94,234,212,0.12), rgba(167,139,250,0.08));
+  border: 1px solid rgba(94,234,212,0.4);
+  border-radius: 18px;
+  box-shadow: 0 12px 50px rgba(94,234,212,0.15);
+  align-items: center;
+}
+.pets-mine-left { display: flex; gap: 18px; align-items: center; }
+.pets-mine-emoji {
+  font-size: 5rem; line-height: 1;
+  filter: drop-shadow(0 6px 18px rgba(94,234,212,0.4));
+  animation: petsFloat 3s ease-in-out infinite alternate;
+}
+@keyframes petsFloat {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-6px); }
+}
+.pets-mine-name {
+  font-family: var(--gv-font-display, 'Orbitron', sans-serif);
+  font-size: 1.5rem; font-weight: 800; letter-spacing: 0.8px;
+}
+.pets-mine-rarity {
+  font-size: 0.72rem; letter-spacing: 2px;
+  color: var(--gv-text-mute, #64748b);
+  margin: 4px 0 8px;
+  font-family: var(--gv-font-display, 'Orbitron', sans-serif);
+}
+.pets-mine-perk { font-size: 0.88rem; color: var(--gv-text-dim, #94a3b8); }
+
+.pets-mine-right { display: flex; flex-direction: column; gap: 10px; }
+.pets-mine-level { font-family: var(--gv-font-display, 'Orbitron', sans-serif); letter-spacing: 1px; }
+.pets-mine-level b { color: #fbbf24; font-size: 1.3rem; }
+.pets-mine-progress {
+  height: 14px; background: rgba(15,23,42,0.7);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 7px; overflow: hidden;
+}
+.pets-mine-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #5eead4 0%, #a78bfa 100%);
+  box-shadow: 0 0 10px rgba(94,234,212,0.5);
+  transition: width 0.6s ease;
+}
+.pets-mine-xp { font-size: 0.78rem; color: var(--gv-text-mute, #64748b); }
+
+.pets-mine-actions {
+  display: flex; flex-direction: column; gap: 10px; margin-top: 6px;
+}
+.pets-mine-feed { display: flex; gap: 8px; }
+.pets-mine-feed input { flex: 1; }
+
+.pets-msg {
+  padding: 12px 20px; margin-bottom: 16px;
+  background: rgba(15,23,42,0.7);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px; text-align: center; font-weight: 600;
+  backdrop-filter: blur(10px);
+}
+
+.pets-section {
+  font-family: var(--gv-font-display, 'Orbitron', sans-serif);
+  font-size: 1.2rem; letter-spacing: 2px; text-transform: uppercase;
+  font-weight: 800; margin: 28px 0 16px;
+  padding-left: 8px; border-left: 4px solid #5eead4;
+}
+
+/* Pet cards */
+.pets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.pets-card {
+  padding: 20px;
+  background: linear-gradient(160deg, rgba(30,41,59,0.85) 0%, rgba(15,23,42,0.95) 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center;
+  transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+}
+.pets-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+}
+.pets-card--common    { border-color: rgba(148,163,184,0.3); }
+.pets-card--common:hover { box-shadow: 0 12px 40px rgba(148,163,184,0.2); }
+.pets-card--rare      { border-color: rgba(96,165,250,0.35); }
+.pets-card--rare:hover { box-shadow: 0 12px 40px rgba(96,165,250,0.2); }
+.pets-card--epic      { border-color: rgba(192,132,252,0.4); }
+.pets-card--epic:hover { box-shadow: 0 12px 40px rgba(192,132,252,0.25); }
+.pets-card--legendary {
+  border-color: rgba(251,191,36,0.5);
+  animation: petsLegendaryGlow 3s ease-in-out infinite alternate;
+}
+@keyframes petsLegendaryGlow {
+  from { box-shadow: 0 0 0 0 rgba(251,191,36,0.25); }
+  to   { box-shadow: 0 0 0 6px rgba(251,191,36,0.08); }
+}
+
+.pets-card--mine {
+  background: linear-gradient(160deg, rgba(94,234,212,0.15) 0%, rgba(15,23,42,0.95) 100%);
+  border-color: #5eead4;
+}
+
+.pets-card-emoji {
+  font-size: 3.5rem; line-height: 1;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+}
+.pets-card-name {
+  font-family: var(--gv-font-display, 'Orbitron', sans-serif);
+  font-weight: 800; font-size: 1.1rem; letter-spacing: 0.8px;
+}
+.pets-card-rarity {
+  font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 6px; border: 1px solid;
+  font-family: var(--gv-font-display, 'Orbitron', sans-serif); font-weight: 700;
+}
+.pets-card-perk {
+  font-size: 0.82rem; color: var(--gv-text-dim, #94a3b8);
+  line-height: 1.4; min-height: 2.8em;
+}
+.pets-card-cost {
+  font-family: var(--gv-font-display, 'Orbitron', sans-serif);
+  font-weight: 800; font-size: 1.15rem; color: #fbbf24;
+  letter-spacing: 1px; text-shadow: 0 0 10px rgba(251,191,36,0.3);
+}
+.pets-card-mine-badge {
+  padding: 8px 14px;
+  background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.4);
+  color: #4ade80; font-weight: 700; border-radius: 8px;
+  font-size: 0.85rem; letter-spacing: 0.5px;
+}
+.pets-card .gv-btn { width: 100%; }
+
+/* Mobile */
+@media (max-width: 640px) {
+  .pets-page { padding: 16px 14px 60px; }
+  .pets-mine { grid-template-columns: 1fr; gap: 16px; padding: 18px; }
+  .pets-mine-emoji { font-size: 3.8rem; }
+  .pets-hero { padding: 22px 16px; }
+  .pets-hero::before, .pets-hero::after { font-size: 4rem; }
+}
