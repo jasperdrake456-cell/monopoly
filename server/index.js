@@ -65,6 +65,8 @@ const eggHunt         = require('./eggHuntStore');
 const tournaments     = require('./tournamentStore');
 const seasonPass      = require('./seasonPassStore');
 const pets            = require('./petStore');
+const factories       = require('./factoryStore');
+const duels           = require('./duelStore');
 
 const app = express();
 const server = http.createServer(app);
@@ -2406,6 +2408,159 @@ app.post('/api/pets/collect', requireAuth, (req, res) => {
   }
   res.json({ ok: true, amount: r.amount, balance: b.balance, pet: pets.getUserPet(req.user.username) });
 });
+
+// ── Chip Factory (idle/tycoon) ──────────────────────────────────────────────
+
+app.get('/api/factories', (req, res) => {
+  const tok = getToken(req);
+  const u   = tok && us.validateToken(tok);
+  res.json({ ok: true, ...factories.getStatus(u) });
+});
+
+app.post('/api/factories/buy', requireAuth, (req, res) => {
+  const { factoryId } = req.body || {};
+  const f = factories.FACTORIES[factoryId];
+  if (!f) return res.status(400).json({ ok: false, error: 'Unknown factory' });
+  const status = factories.getStatus(req.user.username);
+  if (status.owned[factoryId]) return res.status(400).json({ ok: false, error: 'Already owned' });
+  const spend = us.spendBalance(req.user.username, f.baseCost);
+  if (!spend.ok) return res.status(400).json({ ok: false, error: spend.error || 'Insufficient balance' });
+  factories.buy(req.user.username, factoryId);
+  bh.log(req.user.username, { type: 'factory-buy', amount: -f.baseCost, balance: spend.balance, description: `Bought ${f.name}` });
+  io.emit('balanceReset', { username: req.user.username, balance: spend.balance });
+  res.json({ ok: true, balance: spend.balance, ...factories.getStatus(req.user.username) });
+});
+
+app.post('/api/factories/upgrade', requireAuth, (req, res) => {
+  const { factoryId } = req.body || {};
+  const status = factories.getStatus(req.user.username);
+  const owned  = status.owned[factoryId];
+  if (!owned) return res.status(400).json({ ok: false, error: 'Not owned' });
+  if (owned.atMax) return res.status(400).json({ ok: false, error: 'Already max level' });
+  const cost = owned.upgradeCost;
+  const spend = us.spendBalance(req.user.username, cost);
+  if (!spend.ok) return res.status(400).json({ ok: false, error: spend.error || 'Insufficient balance' });
+  // Auto-collect the factory's pending chips first so the new level doesn't retroactively apply
+  if (owned.pending > 0) {
+    const creditR = us.addBonusByAdmin(req.user.username, owned.pending);
+    if (creditR.ok) {
+      bh.log(req.user.username, { type: 'factory-collect', amount: owned.pending, balance: creditR.balance, description: `Auto-collect before upgrade` });
+    }
+  }
+  const r = factories.upgrade(req.user.username, factoryId);
+  if (!r.ok) {
+    // Refund cost
+    us.addBonusByAdmin(req.user.username, cost);
+    return res.status(400).json(r);
+  }
+  // Fetch final balance after potential credit + spend
+  const finalBal = us.getBalance ? us.getBalance(req.user.username) : spend.balance;
+  bh.log(req.user.username, { type: 'factory-upgrade', amount: -cost, balance: finalBal, description: `Upgrade ${factoryId} → L${r.newLevel}` });
+  io.emit('balanceReset', { username: req.user.username, balance: finalBal });
+  res.json({ ok: true, balance: finalBal, newLevel: r.newLevel, ...factories.getStatus(req.user.username) });
+});
+
+app.post('/api/factories/collect', requireAuth, (req, res) => {
+  const r = factories.collect(req.user.username);
+  if (r.amount <= 0) return res.json({ ok: true, amount: 0, ...factories.getStatus(req.user.username) });
+  const credit = us.addBonusByAdmin(req.user.username, r.amount);
+  if (!credit.ok) return res.status(500).json({ ok: false, error: 'Credit failed' });
+  bh.log(req.user.username, { type: 'factory-collect', amount: r.amount, balance: credit.balance, description: 'Factory yield collected' });
+  io.emit('balanceReset', { username: req.user.username, balance: credit.balance });
+  res.json({ ok: true, amount: r.amount, balance: credit.balance, ...factories.getStatus(req.user.username) });
+});
+
+// ── Duels (1v1 Coin Flip) ───────────────────────────────────────────────────
+
+app.get('/api/duels', (req, res) => {
+  res.json({
+    ok: true,
+    open: duels.listOpen(),
+    history: duels.listHistory(20),
+    minWager: duels.MIN_WAGER,
+    maxWager: duels.MAX_WAGER,
+    houseCut: duels.HOUSE_CUT,
+    expiryMinutes: Math.floor(duels.EXPIRY_MS / 60_000),
+  });
+});
+
+app.post('/api/duels/create', requireAuth, (req, res) => {
+  const { wager, side } = req.body || {};
+  const w = Math.floor(Number(wager) || 0);
+  // Pre-check before deducting
+  const probe = duels.create({ username: req.user.username, wager: w, side });
+  if (!probe.ok) return res.status(400).json(probe);
+  // Created successfully — now deduct. If deduction fails, cancel.
+  const spend = us.spendBalance(req.user.username, w);
+  if (!spend.ok) {
+    duels.cancel(probe.duel.id, req.user.username);
+    return res.status(400).json({ ok: false, error: spend.error || 'Insufficient balance' });
+  }
+  bh.log(req.user.username, { type: 'duel-create', amount: -w, balance: spend.balance, description: `Created duel for $${w}` });
+  io.emit('balanceReset', { username: req.user.username, balance: spend.balance });
+  io.emit('duelCreated', { duel: probe.duel });
+  liveFeed.push('duel-created', { user: req.user.username, wager: w, side });
+  res.json({ ok: true, duel: probe.duel, balance: spend.balance });
+});
+
+app.post('/api/duels/cancel/:id', requireAuth, (req, res) => {
+  const r = duels.cancel(req.params.id, req.user.username);
+  if (!r.ok) return res.status(400).json(r);
+  const credit = us.addBonusByAdmin(req.user.username, r.refund);
+  if (credit.ok) {
+    bh.log(req.user.username, { type: 'duel-cancel', amount: r.refund, balance: credit.balance, description: 'Duel cancelled refund' });
+    io.emit('balanceReset', { username: req.user.username, balance: credit.balance });
+  }
+  io.emit('duelCancelled', { id: req.params.id });
+  res.json({ ok: true, refund: r.refund, balance: credit.balance });
+});
+
+app.post('/api/duels/accept/:id', requireAuth, (req, res) => {
+  const duel = duels.getById(req.params.id);
+  if (!duel) return res.status(400).json({ ok: false, error: 'Duel not found' });
+  if (duel.status !== 'open') return res.status(400).json({ ok: false, error: 'Duel not open' });
+  if (duel.createdBy === req.user.username.toLowerCase()) {
+    return res.status(400).json({ ok: false, error: 'Cannot accept your own duel' });
+  }
+  // Deduct acceptor's wager first
+  const spend = us.spendBalance(req.user.username, duel.wager);
+  if (!spend.ok) return res.status(400).json({ ok: false, error: spend.error || 'Insufficient balance' });
+  const r = duels.accept(req.params.id, req.user.username);
+  if (!r.ok) {
+    // Refund
+    us.addBonusByAdmin(req.user.username, duel.wager);
+    return res.status(400).json(r);
+  }
+  const settled = r.duel;
+  // Credit winner
+  const winnerCredit = us.addBonusByAdmin(settled.winner, settled.winnerPayout);
+  if (winnerCredit.ok) {
+    bh.log(settled.winner, { type: 'duel-win', amount: settled.winnerPayout, balance: winnerCredit.balance, description: `Won duel vs ${settled.loser}` });
+    io.emit('balanceReset', { username: settled.winner, balance: winnerCredit.balance });
+  }
+  // Log acceptor wager
+  bh.log(req.user.username, { type: 'duel-accept', amount: -duel.wager, balance: spend.balance, description: `Accepted duel vs ${duel.createdBy}` });
+  io.emit('balanceReset', { username: req.user.username, balance: spend.balance });
+  io.emit('duelSettled', { duel: settled });
+  liveFeed.push('duel-settled', {
+    winner: settled.winner, loser: settled.loser,
+    pool: settled.pool, payout: settled.winnerPayout, coin: settled.coin,
+  });
+  res.json({ ok: true, duel: settled });
+});
+
+// Tick: refund expired duels
+setInterval(() => {
+  const refunds = duels.tick();
+  for (const r of refunds) {
+    const credit = us.addBonusByAdmin(r.username, r.amount);
+    if (credit.ok) {
+      bh.log(r.username, { type: 'duel-expire', amount: r.amount, balance: credit.balance, description: `Duel expired unfilled — refund` });
+      io.emit('balanceReset', { username: r.username, balance: credit.balance });
+    }
+    io.emit('duelCancelled', { id: r.duelId });
+  }
+}, 60_000);
 
 // ── Live Events Feed (public ticker) ─────────────────────────────────────────
 

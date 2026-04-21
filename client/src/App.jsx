@@ -85,6 +85,8 @@ import MemeCoinsPage from './pages/MemeCoinsPage';
 import TournamentsPage from './pages/TournamentsPage';
 import SeasonPassPage from './pages/SeasonPassPage';
 import PetsPage from './pages/PetsPage';
+import FactoryPage from './pages/FactoryPage';
+import DuelsPage from './pages/DuelsPage';
 import './App.css';
 
 // Convenience wrapper: RequireAuth + GameGuard for a given slug
@@ -213,6 +215,8 @@ export default function App() {
             <Route path="/tournaments"    element={<TournamentsPage />} />
             <Route path="/season-pass"    element={<SeasonPassPage />} />
             <Route path="/pets"           element={<PetsPage />} />
+            <Route path="/factory"        element={<FactoryPage />} />
+            <Route path="/duels"          element={<DuelsPage />} />
             <Route path="*"              element={<Navigate to="/" replace />} />
           </Routes>
         </PasswordGate>
