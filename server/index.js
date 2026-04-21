@@ -233,6 +233,25 @@ autoSync.start();
 // Auto-settle sports games every 5 minutes using Odds API scores
 autoSettle.start(5 * 60 * 1000, io);
 
+// Auto-draw lottery at noon Pacific — check every 30 seconds
+setInterval(() => {
+  try {
+    const result = lt.autoDrawIfTime();
+    if (!result) return; // not time yet or already drawn
+    if (result.winner) {
+      const r = us.addBonusByAdmin(result.winner, result.jackpot);
+      if (r.ok) io.emit('balanceReset', { username: result.winner, balance: r.balance });
+      io.emit('lotteryDraw', { winner: result.winner, ticketId: result.ticketId, ticketNum: result.ticketNum, jackpot: result.jackpot });
+      console.log(`[Lottery] 🎟️ Auto-draw! ${result.winner} wins $${result.jackpot.toLocaleString()}`);
+    } else {
+      io.emit('lotteryDraw', { winner: null, jackpot: result.jackpot, carry: result.carry });
+      console.log('[Lottery] Auto-draw: no tickets sold today');
+    }
+  } catch (e) {
+    console.error('[Lottery auto-draw]', e);
+  }
+}, 30_000);
+
 // Game reports current activity (or null to clear)
 app.post('/api/accounts/activity', (req, res) => {
   const token = getToken(req);
@@ -1233,15 +1252,12 @@ app.get('/api/lottery/my-tickets', requireAuth, (req, res) => {
 });
 
 app.post('/api/lottery/buy', requireAuth, (req, res) => {
-  const status = lt.getStatus();
-  if (status.drawn) return res.status(400).json({ ok: false, error: 'Draw has already happened this week' });
-
-  // Charge the player
+  // Charge the player — check balance first
   const me = us.getMe(getToken(req));
   if (!me.ok) return res.status(401).json({ ok: false, error: 'Not authenticated' });
-  // Balance check via sync
-  const userTickets = lt.getUserTickets(req.user.username).length;
-  if (userTickets >= lt.MAX_TICKETS) return res.status(400).json({ ok: false, error: `Max ${lt.MAX_TICKETS} tickets per week` });
+  if ((me.balance || 0) < lt.TICKET_PRICE) {
+    return res.status(400).json({ ok: false, error: `Insufficient balance — you need $${lt.TICKET_PRICE.toLocaleString()} to buy a ticket` });
+  }
 
   const result = lt.buyTicket(req.user.username);
   if (!result.ok) return res.status(400).json(result);

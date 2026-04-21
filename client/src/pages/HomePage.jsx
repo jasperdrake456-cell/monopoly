@@ -122,7 +122,12 @@ export default function HomePage() {
         <div className="home-logo">🎮 Game Vault</div>
         <div className="home-header-right">
           <Link to="/daily-spin" className="home-trivia-btn" style={{ background: 'rgba(124,58,237,0.18)', borderColor: 'rgba(192,132,252,0.4)', color: '#c084fc' }}>🎡 Daily Spin</Link>
-          <Link to="/trivia" className="home-trivia-btn">🎯 Daily Trivia</Link>
+          <Link to="/lottery"    className="home-trivia-btn" style={{ background: 'rgba(168,85,247,0.14)', borderColor: 'rgba(168,85,247,0.4)', color: '#d8b4fe' }}>🎟️ Lottery</Link>
+          <Link to="/wager-race" className="home-trivia-btn" style={{ background: 'rgba(245,158,11,0.12)', borderColor: 'rgba(245,158,11,0.4)', color: '#fcd34d' }}>🏁 Wager Race</Link>
+          <Link to="/pvp"        className="home-trivia-btn" style={{ background: 'rgba(239,68,68,0.12)',  borderColor: 'rgba(239,68,68,0.4)',  color: '#fca5a5' }}>🪙 PvP Flip</Link>
+          <Link to="/vip"        className="home-trivia-btn" style={{ background: 'rgba(167,139,250,0.12)', borderColor: 'rgba(167,139,250,0.4)', color: '#a78bfa' }}>👑 VIP</Link>
+          <Link to="/stats"      className="home-trivia-btn" style={{ background: 'rgba(59,130,246,0.12)',  borderColor: 'rgba(59,130,246,0.4)',  color: '#93c5fd' }}>📊 Stats</Link>
+          <Link to="/trivia"     className="home-trivia-btn">🎯 Trivia</Link>
           <Link to="/leaderboard" className="home-trivia-btn">🏆 Leaderboard</Link>
           {isChampion && <Link to="/champion-panel" className="home-trivia-btn" style={{ background: 'rgba(255,215,0,0.12)', borderColor: 'rgba(255,215,0,0.45)', color: '#FFD700', fontWeight: 700 }}>👑 Champion Panel</Link>}
           {isAdmin && <Link to="/admin" className="home-trivia-btn" style={{ background: 'rgba(239,68,68,0.15)', borderColor: 'rgba(239,68,68,0.4)', color: '#fca5a5' }}>🛡️ Admin</Link>}
