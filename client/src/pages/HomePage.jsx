@@ -19,6 +19,8 @@ import JackpotRushBanner from '../components/JackpotRushBanner';
 import DailyGoals from '../components/DailyGoals';
 import BigWinsBoard from '../components/BigWinsBoard';
 import FlashEventBanner from '../components/FlashEventBanner';
+import WishingWell from '../components/WishingWell';
+import LiveFeedTicker from '../components/LiveFeedTicker';
 import './HomePage.css';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
@@ -217,6 +219,7 @@ export default function HomePage() {
 
       <main className="home-main">
         <FlashEventBanner />
+        <LiveFeedTicker />
         <HotStreakBanner />
         <NewsBanner />
         <JackpotRushBanner />
@@ -237,6 +240,7 @@ export default function HomePage() {
         <section className="home-section" style={{ paddingBottom: 0 }}>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:12 }}>
             <CommunityRainPool />
+            <WishingWell />
             <MysteryBox />
             {isLoggedIn && user && <LuckyGameWidget username={user.username} />}
             {isLoggedIn && <DailyCheckIn />}

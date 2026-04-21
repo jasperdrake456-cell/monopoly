@@ -59,6 +59,8 @@ const flashEvents     = require('./flashEventStore');
 const cryptoOrders    = require('./cryptoOrdersStore');
 const predMarket      = require('./predictionMarketStore');
 const memeCoins       = require('./memeCoinStore');
+const wishingWell     = require('./wishingWellStore');
+const liveFeed        = require('./liveFeedStore');
 
 const app = express();
 const server = http.createServer(app);
@@ -1875,6 +1877,7 @@ app.post('/api/bank/deposit', requireAuth, (req, res) => {
   }
   bh.log(req.user.username, { type: 'bank-deposit', amount: -amt, balance: deduct.balance, description: `Bank deposit (${tier})` });
   io.emit('balanceReset', { username: req.user.username, balance: deduct.balance });
+  if (amt >= 100000) liveFeed.push('bank-deposit', { user: req.user.username, amount: amt, tier });
   res.json({ ...result, balance: deduct.balance });
 });
 
@@ -2019,6 +2022,7 @@ app.post('/api/prediction-markets/buy', requireAuth, (req, res) => {
   bh.log(req.user.username, { type: 'prediction-buy', amount: -cost, balance: deduct.balance, description: `Bought ${n} ${side.toUpperCase()} share(s)` });
   io.emit('balanceReset', { username: req.user.username, balance: deduct.balance });
   io.emit('predictionMarketUpdate', { market: result.market });
+  if (n >= 5) liveFeed.push('prediction-buy', { user: req.user.username, question: result.market.question, side, shares: n, cost });
   res.json({ ...result, balance: deduct.balance });
 });
 
@@ -2044,6 +2048,7 @@ app.post('/api/admin/prediction-markets/:id/resolve', requireAdmin, (req, res) =
     }
   }
   io.emit('predictionMarketResolved', { market: result.market, outcome });
+  liveFeed.push('prediction-resolve', { question: result.market.question, outcome, winnerCount: result.payouts.length });
   al.log('prediction_market_resolved', { admin: req.user.username, marketId: req.params.id, outcome, payouts: result.payouts.length });
   res.json({ ok: true, payouts: result.payouts.length });
 });
@@ -2071,6 +2076,7 @@ app.post('/api/meme-coins/create', requireAuth, (req, res) => {
   bh.log(req.user.username, { type: 'meme-coin-create', amount: -fee, balance: deduct.balance, description: `Launched $${result.coin.symbol}` });
   io.emit('balanceReset', { username: req.user.username, balance: deduct.balance });
   io.emit('memeCoinCreated', { coin: result.coin });
+  liveFeed.push('meme-launch', { user: req.user.username, symbol: result.coin.symbol, name: result.coin.name, emoji: result.coin.emoji });
   res.json({ ...result, balance: deduct.balance });
 });
 
@@ -2092,6 +2098,7 @@ app.post('/api/meme-coins/buy', requireAuth, (req, res) => {
   bh.log(req.user.username, { type: 'meme-coin-buy', amount: -amt, balance: deduct.balance, description: `Bought $${symbol}` });
   io.emit('balanceReset', { username: req.user.username, balance: deduct.balance });
   io.emit('memeCoinTrade', { coin: result.coin, type: 'buy' });
+  if (amt >= 1000) liveFeed.push('meme-trade', { user: req.user.username, symbol, amount: amt, type: 'buy' });
   res.json({ ...result, balance: deduct.balance });
 });
 
@@ -2106,7 +2113,50 @@ app.post('/api/meme-coins/sell', requireAuth, (req, res) => {
   bh.log(req.user.username, { type: 'meme-coin-sell', amount: result.payout, balance: r.balance, description: `Sold $${symbol}` });
   io.emit('balanceReset', { username: req.user.username, balance: r.balance });
   io.emit('memeCoinTrade', { coin: result.coin, type: 'sell' });
+  if (result.payout >= 1000) liveFeed.push('meme-trade', { user: req.user.username, symbol, amount: result.payout, type: 'sell' });
   res.json({ ...result, balance: r.balance });
+});
+
+// ── Wishing Well ──────────────────────────────────────────────────────────────
+
+app.get('/api/wishing-well', (req, res) => {
+  res.json({ ok: true, ...wishingWell.getStatus() });
+});
+
+app.post('/api/wishing-well/throw', requireAuth, (req, res) => {
+  const cost = wishingWell.THROW_AMOUNT;
+  const deduct = us.spendBalance(req.user.username, cost);
+  if (!deduct.ok) return res.status(400).json(deduct);
+  const r = wishingWell.throwIn(req.user.username);
+  if (!r.ok) {
+    us.addBonusByAdmin(req.user.username, cost);
+    return res.status(400).json(r);
+  }
+  bh.log(req.user.username, { type: 'wishing-well', amount: -cost, balance: deduct.balance, description: 'Wishing Well entry' });
+  io.emit('balanceReset', { username: req.user.username, balance: deduct.balance });
+  io.emit('wishingWellThrow', { username: req.user.username, wishes: r.wishes, nextDrawIn: r.nextDrawIn });
+  res.json({ ok: true, ...r, balance: deduct.balance });
+});
+
+// Tick every minute — draw winner if enough time passed
+setInterval(() => {
+  const result = wishingWell.draw();
+  if (result) {
+    const r = us.addBonusByAdmin(result.winner, result.prize);
+    if (r.ok) io.emit('balanceReset', { username: result.winner, balance: r.balance });
+    bh.log(result.winner, { type: 'wishing-well-win', amount: result.prize, balance: r.balance, description: `🌟 Wishing Well jackpot!` });
+    io.emit('wishingWellWinner', result);
+    liveFeed.push('wishing-well-win', result);
+    al.log('wishing_well_win', result);
+    console.log(`[WishingWell] 🌟 ${result.winner} won $${result.prize} from ${result.participants} wishes`);
+  }
+}, 60_000);
+
+// ── Live Events Feed (public ticker) ─────────────────────────────────────────
+
+app.get('/api/live-feed', (req, res) => {
+  const limit = Math.min(Math.max(parseInt(req.query.limit) || 30, 1), 100);
+  res.json({ ok: true, events: liveFeed.recent(limit) });
 });
 
 // ── Online count (public) ──────────────────────────────────────────────────────
