@@ -67,6 +67,7 @@ const seasonPass      = require('./seasonPassStore');
 const pets            = require('./petStore');
 const factories       = require('./factoryStore');
 const duels           = require('./duelStore');
+const lootDrops       = require('./lootDropStore');
 
 const app = express();
 const server = http.createServer(app);
@@ -2561,6 +2562,60 @@ setInterval(() => {
     io.emit('duelCancelled', { id: r.duelId });
   }
 }, 60_000);
+
+// ── Loot Drops (global first-to-click chip) ─────────────────────────────────
+
+app.get('/api/loot', (req, res) => {
+  res.json({
+    ok: true,
+    current: lootDrops.getCurrent(),
+    history: lootDrops.getHistory(10),
+  });
+});
+
+app.post('/api/loot/grab/:id', requireAuth, (req, res) => {
+  const active = lootDrops.getCurrent();
+  if (!active || active.id !== req.params.id) {
+    return res.status(400).json({ ok: false, error: 'Drop not available' });
+  }
+  const r = lootDrops.claim(req.user.username);
+  if (!r.ok) return res.status(400).json(r);
+  const credit = us.addBonusByAdmin(req.user.username, r.drop.amount);
+  if (credit.ok) {
+    bh.log(req.user.username, { type: 'loot-drop', amount: r.drop.amount, balance: credit.balance, description: `${r.drop.tier} loot drop (${r.drop.emoji})` });
+    io.emit('balanceReset', { username: req.user.username, balance: credit.balance });
+  }
+  io.emit('lootDropClaimed', { drop: r.drop });
+  liveFeed.push('loot-drop', { user: req.user.username, amount: r.drop.amount, tier: r.drop.tier, emoji: r.drop.emoji });
+  console.log(`[LootDrop] 🎁 ${req.user.username} grabbed ${r.drop.emoji} ${r.drop.tier} drop $${r.drop.amount.toLocaleString()}`);
+  res.json({ ok: true, drop: r.drop, balance: credit.balance });
+});
+
+// Spawner: random interval between 2-7 minutes
+function scheduleLootDrop() {
+  const delay = 120_000 + Math.floor(Math.random() * 300_000); // 2-7 min
+  setTimeout(() => {
+    // Clear any expired first
+    lootDrops.tick();
+    const drop = lootDrops.spawn();
+    if (drop) {
+      io.emit('lootDropSpawned', { drop });
+      liveFeed.push('loot-drop-spawn', { tier: drop.tier, emoji: drop.emoji, amount: drop.amount });
+      console.log(`[LootDrop] 🎁 Spawned ${drop.emoji} ${drop.tier} drop $${drop.amount.toLocaleString()} (${drop.ttl}s)`);
+    }
+    scheduleLootDrop();
+  }, delay);
+}
+scheduleLootDrop();
+
+// Sweep expired drops every 15s
+setInterval(() => {
+  const swept = lootDrops.tick();
+  if (swept) {
+    io.emit('lootDropExpired', { id: swept.id });
+    console.log(`[LootDrop] ⏰ ${swept.emoji} drop expired unclaimed`);
+  }
+}, 15_000);
 
 // ── Live Events Feed (public ticker) ─────────────────────────────────────────
 

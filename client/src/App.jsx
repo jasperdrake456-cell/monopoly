@@ -7,6 +7,7 @@ import ChatPanel from './components/ChatPanel';
 import PasswordGate from './components/PasswordGate';
 import AnnouncementOverlay from './components/AnnouncementOverlay';
 import MoneyRainOverlay from './components/MoneyRainOverlay';
+import LootDropOverlay from './components/LootDropOverlay';
 import HomePage from './pages/HomePage';
 import AuthPage from './pages/AuthPage';
 import TransferPage from './pages/TransferPage';
@@ -129,6 +130,7 @@ export default function App() {
         <ChatPanel />
         <AnnouncementOverlay />
         <MoneyRainOverlay />
+        <LootDropOverlay />
         <PasswordGate>
           <Routes>
             <Route path="/" element={<HomePage />} />
