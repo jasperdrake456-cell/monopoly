@@ -448,7 +448,12 @@ app.post('/api/admin/users/create', requireAdmin, (req, res) => {
 app.post('/api/admin/give-money', requireAdmin, (req, res) => {
   const { username, amount } = req.body || {};
   const result = us.adminGiveMoney(getToken(req), username, amount);
-  if (result.ok) al.log('give_money', { target: username, amount });
+  if (result.ok) {
+    al.log('give_money', { target: username, amount });
+    // Push new balance to recipient's browser immediately so the 800ms sync
+    // timer can't push a stale pre-gift balance back to the server.
+    io.emit('balanceReset', { username: (username || '').trim().toLowerCase(), balance: result.balance });
+  }
   res.json(result);
 });
 

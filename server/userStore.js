@@ -501,6 +501,8 @@ function listUsers(adminToken) {
 
 /**
  * Admin only: set a user's balance to an exact value.
+ * The admin-sync lock (`adminSetAt`) is only armed when the balance is being
+ * LOWERED (reset/clawback). Raising is a gift — no need to reject user syncs.
  */
 function adminSetBalance(adminToken, username, amount) {
   const callerUsername = validateToken(adminToken);
@@ -513,8 +515,17 @@ function adminSetBalance(adminToken, username, amount) {
   const users = readUsers();
   if (!users[clean]) return { ok: false, error: 'User not found' };
 
+  const oldBalance = users[clean].casinoBalance || 0;
   users[clean].casinoBalance = newBalance;
-  users[clean].adminSetAt = Date.now(); // lock against client sync overwriting this
+  // Only lock against upward sync if admin LOWERED the balance (reset/clawback).
+  // Otherwise the stale cached-higher value on the client would push back in.
+  // If admin RAISED the balance, the user winning more is legitimate — don't block.
+  if (newBalance < oldBalance) {
+    users[clean].adminSetAt = Date.now();
+  } else {
+    // Clear any prior lock so old admin resets don't keep blocking new wins.
+    delete users[clean].adminSetAt;
+  }
   writeUsers(users);
   return { ok: true, balance: newBalance };
 }
@@ -597,17 +608,27 @@ function pruneZeroBalanceAccounts() {
 }
 
 /**
- * Server-internal: add chips to a user by username (no token required).
+ * Server-internal: adjust a user's casino balance by `amount` (positive to add,
+ * negative to deduct). Used for XP rewards, missions, daily login, lottery,
+ * PvP, mystery box, referrals, gifts, crypto, tournaments, etc.
+ *
+ * CRITICAL: this function MUST NOT set `adminSetAt`. Doing so creates a
+ * rolling 10-minute admin-lock on every bonus — which causes `syncBalance`
+ * to reject any UPWARD client sync afterward, silently wiping out real
+ * game winnings (user bets $1M, wins $3M, sync rejected, balance reverts).
+ * Only explicit `adminSetBalance` (reset/clawback) should set the lock.
+ *
  * Returns { ok, balance } or { ok: false, error }
  */
 function addBonusByAdmin(username, amount) {
   const clean = (username || '').trim().toLowerCase();
   const amt   = Math.floor(amount);
-  if (!clean || !amt || amt < 1) return { ok: false, error: 'Invalid params' };
+  if (!clean || !amt || !Number.isFinite(amt)) return { ok: false, error: 'Invalid params' };
   const users = readUsers();
   if (!users[clean]) return { ok: false, error: 'User not found' };
-  users[clean].casinoBalance = (users[clean].casinoBalance || 0) + amt;
-  users[clean].adminSetAt = Date.now(); // lock against client sync overwriting the bonus
+  const cur = users[clean].casinoBalance || 0;
+  const next = cur + amt;
+  users[clean].casinoBalance = next < 0 ? 0 : next;
   writeUsers(users);
   return { ok: true, balance: users[clean].casinoBalance };
 }

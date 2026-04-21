@@ -95,7 +95,7 @@ export default function Crash() {
         const payout = Math.floor(betRef.current * mult * boostRef.current);
         addBalance(payout);
         setBalance(getBalance());
-        if (payout >= betRef.current * 5) reportBigWin && reportBigWin(payout);
+        if (payout - betRef.current >= 50_000) reportBigWin('crash', betRef.current, payout, mult, `Auto-cashout at ${mult.toFixed(2)}×`);
         recordBetResult({ game: 'crash', amount: betRef.current, won: true, multiplier: mult, profit: payout - betRef.current });
         setCashedOut(true);
         setCashoutMult(mult);
@@ -124,7 +124,7 @@ export default function Crash() {
     const payout = Math.floor(betRef.current * mult * (boost || 1));
     addBalance(payout);
     syncBalance();
-    if (payout >= betRef.current * 5) reportBigWin && reportBigWin(payout);
+    if (payout - betRef.current >= 50_000) reportBigWin('crash', betRef.current, payout, mult, `Auto-cashout at ${mult.toFixed(2)}×`);
     setCashedOut(true);
     setCashoutMult(mult);
     setHistory(h => [{ mult, win: true }, ...h].slice(0, MAX_HISTORY));
@@ -139,7 +139,7 @@ export default function Crash() {
     const payout = Math.floor(betRef.current * mult * (boost || 1));
     addBalance(payout);
     syncBalance();
-    if (payout >= betRef.current * 5) reportBigWin && reportBigWin(payout);
+    if (payout - betRef.current >= 50_000) reportBigWin('crash', betRef.current, payout, mult, `Manual cashout at ${mult.toFixed(2)}×`);
     setCashedOut(true);
     setCashoutMult(mult);
     setHistory(h => [{ mult, win: true }, ...h].slice(0, MAX_HISTORY));
