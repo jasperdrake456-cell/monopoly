@@ -62,6 +62,7 @@ const memeCoins       = require('./memeCoinStore');
 const wishingWell     = require('./wishingWellStore');
 const liveFeed        = require('./liveFeedStore');
 const eggHunt         = require('./eggHuntStore');
+const tournaments     = require('./tournamentStore');
 
 const app = express();
 const server = http.createServer(app);
@@ -1207,6 +1208,14 @@ app.post('/api/xp/record-bet', requireAuth, (req, res) => {
   // Daily goals — track wagered amount
   dg.addWager(req.user.username, Math.floor(amount));
 
+  // Tournament tracking — updates standings for any active tournament the
+  // user is enrolled in that matches this game (or '*')
+  tournaments.recordBet(req.user.username, {
+    profit: Number(profit) || 0,
+    wager: Math.floor(amount),
+    gameSlug: game,
+  });
+
   // Mission progress
   ms.recordEvent(req.user.username, 'wager', game, Math.floor(amount), multiplier);
   if (won) ms.recordEvent(req.user.username, 'win', game, Math.floor(amount), multiplier);
@@ -2200,6 +2209,85 @@ app.post('/api/gift', requireAuth, (req, res) => {
   liveFeed.push('gift', { from: req.user.username, to: rec, amount: netGift });
   res.json({ ok: true, sent: amt, received: netGift, tax, balance: deduct.balance });
 });
+
+// ── 🏆 Tournaments ────────────────────────────────────────────────────────────
+
+app.get('/api/tournaments', (req, res) => {
+  res.json({
+    ok: true,
+    active:    tournaments.activeTournaments(),
+    upcoming:  tournaments.upcomingTournaments(10),
+    all:       tournaments.listAll().slice(0, 30),
+  });
+});
+
+app.get('/api/tournaments/:id', (req, res) => {
+  const t = tournaments.getById(req.params.id);
+  if (!t) return res.status(404).json({ ok: false, error: 'Not found' });
+  const leaderboard = tournaments.getLeaderboard(req.params.id) || [];
+  res.json({ ok: true, tournament: t, leaderboard });
+});
+
+app.post('/api/tournaments/:id/join', requireAuth, (req, res) => {
+  const t = tournaments.getById(req.params.id);
+  if (!t) return res.status(404).json({ ok: false, error: 'Not found' });
+  if (t.entryFee > 0) {
+    const deduct = us.spendBalance(req.user.username, t.entryFee);
+    if (!deduct.ok) return res.status(400).json(deduct);
+    io.emit('balanceReset', { username: req.user.username, balance: deduct.balance });
+    bh.log(req.user.username, { type: 'tournament-join', amount: -t.entryFee, balance: deduct.balance, description: `Joined ${t.name}` });
+  }
+  const result = tournaments.join(req.params.id, req.user.username);
+  if (!result.ok) {
+    if (t.entryFee > 0) us.addBonusByAdmin(req.user.username, t.entryFee);
+    return res.status(400).json(result);
+  }
+  io.emit('tournamentUpdate', { tournament: result.tournament });
+  liveFeed.push('tournament-join', { user: req.user.username, name: t.name, prizePool: result.tournament.prizePool });
+  res.json({ ok: true, tournament: result.tournament });
+});
+
+app.post('/api/admin/tournaments', requireAdmin, (req, res) => {
+  const result = tournaments.create(req.body || {});
+  if (!result.ok) return res.status(400).json(result);
+  io.emit('tournamentCreated', { tournament: result.tournament });
+  al.log('tournament_created', { admin: req.user.username, tournamentId: result.tournament.id, name: result.tournament.name });
+  res.json(result);
+});
+
+app.post('/api/admin/tournaments/:id/cancel', requireAdmin, (req, res) => {
+  const result = tournaments.cancel(req.params.id);
+  if (!result.ok) return res.status(400).json(result);
+  for (const p of result.payouts) {
+    const r = us.addBonusByAdmin(p.username, p.amount);
+    if (r.ok) io.emit('balanceReset', { username: p.username, balance: r.balance });
+    bh.log(p.username, { type: 'tournament-refund', amount: p.amount, balance: r.balance, description: `Refund: ${result.tournament.name}` });
+  }
+  io.emit('tournamentUpdate', { tournament: result.tournament });
+  al.log('tournament_cancelled', { admin: req.user.username, tournamentId: req.params.id });
+  res.json({ ok: true });
+});
+
+// Auto-tick: activate scheduled tournaments and finalize expired ones
+setInterval(() => {
+  const { started, finalized } = tournaments.tick();
+  for (const t of started) {
+    io.emit('tournamentStarted', { tournament: t });
+    liveFeed.push('tournament-started', { name: t.name, prizePool: t.prizePool, entries: t.entries.length });
+    console.log(`[Tournaments] 🏁 "${t.name}" started (${t.entries.length} entries, prize pool $${t.prizePool})`);
+  }
+  for (const { tournament: t, payouts } of finalized) {
+    for (const p of payouts) {
+      const r = us.addBonusByAdmin(p.username, p.amount);
+      if (r.ok) io.emit('balanceReset', { username: p.username, balance: r.balance });
+      bh.log(p.username, { type: 'tournament-payout', amount: p.amount, balance: r.balance, description: `${t.name} — ${p.reason}` });
+    }
+    io.emit('tournamentEnded', { tournament: t, winners: t.winners });
+    liveFeed.push('tournament-ended', { name: t.name, winners: t.winners });
+    al.log('tournament_ended', { tournamentId: t.id, winners: t.winners });
+    console.log(`[Tournaments] 🏆 "${t.name}" ended. Winners:`, t.winners.map(w => `${w.username}=$${w.prize}`).join(', '));
+  }
+}, 30_000);
 
 // ── Live Events Feed (public ticker) ─────────────────────────────────────────
 

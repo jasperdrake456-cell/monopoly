@@ -82,6 +82,7 @@ import CryptoInvestPage from './pages/CryptoInvestPage';
 import BankPage from './pages/BankPage';
 import PredictionMarketsPage from './pages/PredictionMarketsPage';
 import MemeCoinsPage from './pages/MemeCoinsPage';
+import TournamentsPage from './pages/TournamentsPage';
 import './App.css';
 
 // Convenience wrapper: RequireAuth + GameGuard for a given slug
@@ -207,6 +208,7 @@ export default function App() {
             <Route path="/bank"           element={<RequireAuth><BankPage /></RequireAuth>} />
             <Route path="/predictions"    element={<PredictionMarketsPage />} />
             <Route path="/meme-coins"     element={<MemeCoinsPage />} />
+            <Route path="/tournaments"    element={<TournamentsPage />} />
             <Route path="*"              element={<Navigate to="/" replace />} />
           </Routes>
         </PasswordGate>
