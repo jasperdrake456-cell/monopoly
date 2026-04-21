@@ -14,7 +14,7 @@ const VIP_TIERS = [
   },
   {
     tier: 1, name: 'Bronze',    color: '#cd7f32', icon: '🥉',
-    minWagered: 250_000,
+    minWagered: 50_000_000,
     perks: ['1.01× payout boost on all casino games', '+$100 daily spin bonus'],
     payoutBoost: 0.01,
     jackpotShare: 0,
@@ -22,7 +22,7 @@ const VIP_TIERS = [
   },
   {
     tier: 2, name: 'Silver',    color: '#94a3b8', icon: '🥈',
-    minWagered: 2_500_000,
+    minWagered: 500_000_000,
     perks: ['1.02× payout boost', '+$250 daily spin bonus', 'Silver chat badge'],
     payoutBoost: 0.02,
     jackpotShare: 0,
@@ -30,7 +30,7 @@ const VIP_TIERS = [
   },
   {
     tier: 3, name: 'Gold',      color: '#f59e0b', icon: '🥇',
-    minWagered: 15_000_000,
+    minWagered: 2_500_000_000,
     perks: ['1.03× payout boost', '+$750 daily spin bonus', 'Gold chat badge', 'Priority support'],
     payoutBoost: 0.03,
     jackpotShare: 0.01,
@@ -38,7 +38,7 @@ const VIP_TIERS = [
   },
   {
     tier: 4, name: 'Platinum',  color: '#22d3ee', icon: '💎',
-    minWagered: 75_000_000,
+    minWagered: 10_000_000_000,
     perks: ['1.05× payout boost', '+$2,000 daily spin bonus', 'Platinum badge', '1% extra jackpot share'],
     payoutBoost: 0.05,
     jackpotShare: 0.02,
@@ -46,7 +46,7 @@ const VIP_TIERS = [
   },
   {
     tier: 5, name: 'Diamond',   color: '#a78bfa', icon: '👑',
-    minWagered: 500_000_000,
+    minWagered: 50_000_000_000,
     perks: ['1.10× payout boost', '+$5,000 daily spin bonus', 'Diamond badge', '3% extra jackpot share', 'Exclusive Diamond lounge'],
     payoutBoost: 0.10,
     jackpotShare: 0.03,

@@ -1139,8 +1139,10 @@ app.post('/api/xp/record-bet', requireAuth, (req, res) => {
   if (won) ms.recordEvent(req.user.username, 'game_win', game, Math.floor(amount), multiplier);
   ms.recordEvent(req.user.username, 'game_wager', game, Math.floor(amount), multiplier);
 
-  // Wager race
-  wr.recordWager(req.user.username, Math.floor(amount));
+  // Wager race — admins are excluded from competing
+  if (!us.isAdminToken(getToken(req))) {
+    wr.recordWager(req.user.username, Math.floor(amount));
+  }
 
   // Level-up rewards: auto-credit coins when leveling up
   if (result.leveledUp) {
@@ -1252,6 +1254,10 @@ app.get('/api/lottery/my-tickets', requireAuth, (req, res) => {
 });
 
 app.post('/api/lottery/buy', requireAuth, (req, res) => {
+  // Admins cannot participate in the lottery
+  if (us.isAdminToken(getToken(req))) {
+    return res.status(403).json({ ok: false, error: 'Admins cannot participate in the lottery' });
+  }
   // Charge the player — check balance first
   const me = us.getMe(getToken(req));
   if (!me.ok) return res.status(401).json({ ok: false, error: 'Not authenticated' });
@@ -1313,6 +1319,9 @@ app.get('/api/pvp/my-challenges', requireAuth, (req, res) => {
 });
 
 app.post('/api/pvp/challenge', requireAuth, (req, res) => {
+  if (us.isAdminToken(getToken(req))) {
+    return res.status(403).json({ ok: false, error: 'Admins cannot create PvP challenges' });
+  }
   const { opponent, amount } = req.body || {};
   const amt = Math.floor(Number(amount));
   const result = pvp.createChallenge(req.user.username, opponent?.toLowerCase() || null, amt);
@@ -1330,6 +1339,9 @@ app.post('/api/pvp/challenge', requireAuth, (req, res) => {
 });
 
 app.post('/api/pvp/accept/:id', requireAuth, (req, res) => {
+  if (us.isAdminToken(getToken(req))) {
+    return res.status(403).json({ ok: false, error: 'Admins cannot accept PvP challenges' });
+  }
   // Pre-check: get challenge details for balance deduction
   const challenges = pvp.getOpenChallenges();
   const challenge  = challenges.find(c => c.id === req.params.id);

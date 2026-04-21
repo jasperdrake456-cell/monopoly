@@ -798,6 +798,15 @@ export default function AdminPage() {
             <CoinRainAdminCard token={token} authFetch={authFetch} />
           </div>
 
+          {/* Admin Management — owner only */}
+          {isOwner && (
+            <>
+              <div className="admin-section-title">🛡️ Admin Management <span style={{ fontSize:'0.72rem', color:'#64748b', fontWeight:400 }}>(only you can see this)</span></div>
+              <SecondaryAdminsCard token={token} authFetch={authFetch} />
+              <div style={{ marginBottom: 24 }} />
+            </>
+          )}
+
           {/* Stats grid */}
           <div className="admin-section-title">📊 Platform Statistics</div>
           {!platformStats ? (
