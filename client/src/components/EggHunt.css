@@ -1,0 +1,106 @@
+.egg-hunt {
+  position: relative;
+  background: linear-gradient(135deg, rgba(245,158,11,0.14), rgba(236,72,153,0.08));
+  border: 1px solid rgba(245,158,11,0.35);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.egg-hunt-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.egg-hunt-label {
+  font-family: var(--gv-font-display);
+  font-weight: 900;
+  font-size: 0.88rem;
+  letter-spacing: 2px;
+  color: #fbbf24;
+}
+
+.egg-hunt-count {
+  margin-left: auto;
+  background: rgba(0,0,0,0.3);
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-family: var(--gv-font-display);
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: #fbbf24;
+}
+
+.egg-hunt-sub {
+  font-size: 0.84rem;
+  color: var(--gv-text-dim);
+}
+
+.egg-hunt-btn {
+  justify-content: center;
+}
+
+.egg-hunt-popup {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0,0,0,0.92), rgba(20,20,40,0.92));
+  backdrop-filter: blur(16px);
+  border-radius: 14px;
+  border: 2px solid;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: gv-fade-in 0.25s ease-out;
+  z-index: 2;
+  padding: 16px;
+}
+
+.egg-hunt-popup-emoji {
+  font-size: 4rem;
+  animation: gv-pulse 0.9s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px currentColor);
+}
+
+.egg-hunt-popup-rarity {
+  font-family: var(--gv-font-display);
+  font-weight: 900;
+  letter-spacing: 3px;
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
+.egg-hunt-popup-label {
+  font-weight: 700;
+  color: #fff;
+  font-size: 1rem;
+  margin-top: 2px;
+}
+
+.egg-hunt-popup-amount {
+  font-family: var(--gv-font-display);
+  font-weight: 900;
+  font-size: 2.2rem;
+  color: #22c55e;
+  text-shadow: 0 0 30px rgba(34,197,94,0.6);
+  margin-top: 6px;
+}
+
+.egg-hunt-history {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  border-top: 1px dashed rgba(255,255,255,0.08);
+  padding-top: 6px;
+}
+
+.egg-hunt-hist-pill {
+  font-size: 0.75rem;
+  background: rgba(255,255,255,0.05);
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+}

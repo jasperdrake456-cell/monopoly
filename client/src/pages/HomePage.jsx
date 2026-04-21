@@ -21,6 +21,8 @@ import BigWinsBoard from '../components/BigWinsBoard';
 import FlashEventBanner from '../components/FlashEventBanner';
 import WishingWell from '../components/WishingWell';
 import LiveFeedTicker from '../components/LiveFeedTicker';
+import EggHunt from '../components/EggHunt';
+import GiftButton from '../components/GiftButton';
 import './HomePage.css';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
@@ -183,6 +185,7 @@ export default function HomePage() {
           <Link to="/redeem"      className="home-trivia-btn" style={{ background: 'rgba(251,191,36,0.1)', borderColor: 'rgba(251,191,36,0.35)', color: '#fbbf24' }}>🎟️ Redeem</Link>
           {isLoggedIn && <Link to="/crypto" className="home-trivia-btn" style={{ background: 'rgba(34,197,94,0.12)', borderColor: 'rgba(34,197,94,0.45)', color: '#86efac', fontWeight:800 }}>📈 Crypto</Link>}
           {isLoggedIn && <Link to="/bank" className="home-trivia-btn" style={{ background: 'rgba(250,204,21,0.12)', borderColor: 'rgba(250,204,21,0.45)', color: '#fde047', fontWeight:800 }}>🏦 Bank</Link>}
+          {isLoggedIn && <GiftButton />}
           <Link to="/predictions" className="home-trivia-btn" style={{ background: 'rgba(236,72,153,0.12)', borderColor: 'rgba(236,72,153,0.45)', color: '#f9a8d4', fontWeight:800 }}>🔮 Predict</Link>
           <Link to="/meme-coins" className="home-trivia-btn" style={{ background: 'rgba(251,146,60,0.12)', borderColor: 'rgba(251,146,60,0.45)', color: '#fdba74', fontWeight:800 }}>🪙 Meme Coins</Link>
           {isLoggedIn && <Link to="/boost" className="home-trivia-btn" style={{ background: 'rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.35)', color: '#fca5a5' }}>🚀 Boost</Link>}
@@ -241,6 +244,7 @@ export default function HomePage() {
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:12 }}>
             <CommunityRainPool />
             <WishingWell />
+            {isLoggedIn && <EggHunt />}
             <MysteryBox />
             {isLoggedIn && user && <LuckyGameWidget username={user.username} />}
             {isLoggedIn && <DailyCheckIn />}

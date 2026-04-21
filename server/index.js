@@ -61,6 +61,7 @@ const predMarket      = require('./predictionMarketStore');
 const memeCoins       = require('./memeCoinStore');
 const wishingWell     = require('./wishingWellStore');
 const liveFeed        = require('./liveFeedStore');
+const eggHunt         = require('./eggHuntStore');
 
 const app = express();
 const server = http.createServer(app);
@@ -2151,6 +2152,54 @@ setInterval(() => {
     console.log(`[WishingWell] 🌟 ${result.winner} won $${result.prize} from ${result.participants} wishes`);
   }
 }, 60_000);
+
+// ── Daily Egg Hunt ───────────────────────────────────────────────────────────
+
+app.get('/api/eggs', requireAuth, (req, res) => {
+  res.json({ ok: true, ...eggHunt.getStatus(req.user.username), dailyMax: eggHunt.DAILY_EGGS });
+});
+
+app.post('/api/eggs/crack', requireAuth, (req, res) => {
+  const result = eggHunt.crackEgg(req.user.username);
+  if (!result.ok) return res.status(400).json(result);
+  const r = us.addBonusByAdmin(req.user.username, result.reward.amount);
+  bh.log(req.user.username, { type: 'egg-hunt', amount: result.reward.amount, balance: r.balance, description: `${result.reward.label} (${result.reward.rarity})` });
+  io.emit('balanceReset', { username: req.user.username, balance: r.balance });
+  if (result.reward.rarity === 'jackpot' || result.reward.rarity === 'mythic') {
+    liveFeed.push('egg-jackpot', { user: req.user.username, reward: result.reward });
+    io.emit('eggJackpot', { user: req.user.username, reward: result.reward });
+  }
+  res.json({ ok: true, ...result, balance: r.balance });
+});
+
+// ── Player Gifting ───────────────────────────────────────────────────────────
+
+app.post('/api/gift', requireAuth, (req, res) => {
+  const { recipient, amount, message = '' } = req.body || {};
+  const amt = Math.floor(Number(amount) || 0);
+  if (amt < 100)      return res.status(400).json({ ok: false, error: 'Minimum gift: 100' });
+  if (amt > 500_000)  return res.status(400).json({ ok: false, error: 'Maximum gift: 500,000' });
+  const rec = (recipient || '').trim().toLowerCase();
+  if (!rec || rec === req.user.username.toLowerCase()) {
+    return res.status(400).json({ ok: false, error: 'Invalid recipient' });
+  }
+  if (!us.userExists(rec)) return res.status(404).json({ ok: false, error: 'Recipient not found' });
+
+  // 5% tax to burn (house take)
+  const tax = Math.floor(amt * 0.05);
+  const netGift = amt - tax;
+
+  const deduct = us.spendBalance(req.user.username, amt);
+  if (!deduct.ok) return res.status(400).json(deduct);
+  const r = us.addBonusByAdmin(rec, netGift);
+  bh.log(req.user.username, { type: 'gift-sent',     amount: -amt,     balance: deduct.balance, description: `Gift to ${rec}` });
+  bh.log(rec,                { type: 'gift-received', amount: netGift, balance: r.balance,       description: `Gift from ${req.user.username}${message ? ': ' + String(message).slice(0,100) : ''}` });
+  io.emit('balanceReset', { username: req.user.username, balance: deduct.balance });
+  io.emit('balanceReset', { username: rec, balance: r.balance });
+  io.emit('giftReceived', { from: req.user.username, to: rec, amount: netGift, message: String(message).slice(0, 100) });
+  liveFeed.push('gift', { from: req.user.username, to: rec, amount: netGift });
+  res.json({ ok: true, sent: amt, received: netGift, tax, balance: deduct.balance });
+});
 
 // ── Live Events Feed (public ticker) ─────────────────────────────────────────
 
