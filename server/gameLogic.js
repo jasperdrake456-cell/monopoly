@@ -280,9 +280,10 @@ function landOnSpace(state, playerId) {
         const diceTotal = (state.lastDice || [0, 0]).reduce((a, b) => a + b, 0);
         const rent = calcRent(state, space, playerId, diceTotal);
         if (p.cash >= rent) {
-          // Full payment
+          // Full payment — reset missed-rent streak since they made it through
           p.cash -= rent;
           owner.cash += rent;
+          p.missedRentCount = 0;
           addLog(state, `${p.name} paid $${rent} rent to ${owner.name} for ${space.name}`);
         } else {
           // Can't afford — partial payment, track missed rent
@@ -325,7 +326,7 @@ function landOnSpace(state, playerId) {
       if (state.freeParkingEnabled && state.freeParking > 0) {
         p.cash += state.freeParking;
         addLog(state, `${p.name} collected $${state.freeParking} from Free Parking!`);
-        state.freeParking = 500;
+        state.freeParking = 0; // pot resets to empty — next taxes/fees start fresh
       } else {
         addLog(state, `${p.name} landed on Free Parking`);
       }
@@ -456,7 +457,7 @@ function initGame(players, freeParkingEnabled, boardType) {
     communityDeck: decks.community,
     communityIdx: 0,
     activeCard: null,
-    freeParking: 500,
+    freeParking: 0,
     auction: null,
     activeTrade: null,
     pendingLand: false,

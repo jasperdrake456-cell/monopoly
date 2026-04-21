@@ -2,15 +2,19 @@
 .action-panel {
   display: flex;
   flex-direction: column;
-  background: rgba(0,0,0,0.4);
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.1);
+  background:
+    linear-gradient(180deg, rgba(15,40,20,0.6) 0%, rgba(0,0,0,0.45) 100%);
+  border-radius: 14px;
+  border: 1px solid rgba(255,215,0,0.22);
   flex-shrink: 0;
-  /* cap height so dashboard is still visible below */
   max-height: 55vh;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,.15) transparent;
+  scrollbar-color: rgba(255,215,0,.3) transparent;
+  box-shadow:
+    0 10px 32px rgba(0,0,0,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    0 0 0 1px rgba(255,215,0,0.06);
 }
 
 /* On mobile: let the action panel expand fully */
@@ -40,13 +44,22 @@
 
 /* ── Header ────────────────────────────────────────────────────────────── */
 .ap-header {
-  font-size: 0.82rem;
-  font-weight: 800;
-  color: #FFD700;
+  font-size: 0.85rem;
+  font-weight: 900;
+  background: linear-gradient(90deg, #fbbf24, #fde68a, #fbbf24);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  letter-spacing: 1.5px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255,215,0,0.25);
+  animation: header-shimmer 4s linear infinite;
+}
+@keyframes header-shimmer {
+  from { background-position: 0% 50%; }
+  to   { background-position: 200% 50%; }
 }
 
 /* ── Status / waiting ──────────────────────────────────────────────────── */
@@ -64,11 +77,16 @@
 
 /* ── Position pill ─────────────────────────────────────────────────────── */
 .ap-position {
-  font-size: .75rem; color: rgba(255,255,255,.8);
-  background: rgba(255,255,255,.09);
-  border-radius: 6px; padding: 4px 8px;
-  display: flex; align-items: center; gap: 5px;
+  font-size: .78rem; color: rgba(255,255,255,.92);
+  background:
+    linear-gradient(90deg, rgba(255,215,0,0.09), rgba(255,255,255,.08));
+  border: 1px solid rgba(255,215,0,0.2);
+  border-radius: 8px;
+  padding: 6px 10px;
+  display: flex; align-items: center; gap: 6px;
   flex-wrap: wrap;
+  font-weight: 600;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
 }
 .jail-indicator { color: #e74c3c; font-weight: 600; }
 .ap-pos-dot {
@@ -80,46 +98,126 @@
 .ap-actions { display: flex; flex-direction: column; gap: 5px; }
 .ap-row     { display: flex; gap: 5px; }
 
-/* ── Buttons ───────────────────────────────────────────────────────────── */
+/* ── Buttons — casino chip style ──────────────────────────────────────── */
 .ap-btn {
-  padding: 8px 10px;
-  border-radius: 9px;
+  padding: 9px 12px;
+  border-radius: 10px;
   border: none;
-  font-size: .82rem;
-  font-weight: 700;
+  font-size: .83rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
   cursor: pointer;
-  transition: filter .1s, transform .1s;
+  transition: filter .12s ease, transform .12s ease, box-shadow .12s ease;
   flex: 1;
   min-width: 0;
   white-space: nowrap;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.22);
 }
-.ap-btn:hover:not(:disabled)  { filter: brightness(1.12); transform: translateY(-1px); }
-.ap-btn:active:not(:disabled) { transform: translateY(0); }
-.ap-btn:disabled { opacity: .4; cursor: not-allowed; }
+.ap-btn:hover:not(:disabled)  { filter: brightness(1.14); transform: translateY(-1px); }
+.ap-btn:active:not(:disabled) { transform: translateY(1px); filter: brightness(0.95); }
+.ap-btn:disabled { opacity: .4; cursor: not-allowed; filter: saturate(0.6); }
 
-.ap-btn.primary      { background: #FFD700; color: #1a3a1a; }
-.ap-btn.secondary    { background: rgba(255,255,255,.13); color: #fff; border: 1px solid rgba(255,255,255,.22); }
-.ap-btn.danger       { background: #c0392b; color: #fff; }
-.ap-btn.danger-subtle{ background: transparent; border: 1px solid rgba(192,57,43,.45); color: rgba(220,100,90,.85); font-size: .72rem; padding: 5px 8px; }
+.ap-btn.primary {
+  background: linear-gradient(180deg, #ffeb87 0%, #FFD700 45%, #d4a600 100%);
+  color: #2a1c00;
+  box-shadow:
+    0 4px 0 #8a6d00,
+    0 6px 12px rgba(0,0,0,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.6),
+    inset 0 -1px 0 rgba(0,0,0,0.2);
+}
+.ap-btn.primary:active:not(:disabled) {
+  box-shadow:
+    0 2px 0 #8a6d00,
+    0 3px 6px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.6);
+}
+.ap-btn.secondary {
+  background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06));
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.24);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 3px 8px rgba(0,0,0,0.3);
+}
+.ap-btn.danger {
+  background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%);
+  color: #fff;
+  box-shadow:
+    0 4px 0 #7f1d1d,
+    0 6px 10px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.ap-btn.danger-subtle{
+  background: transparent;
+  border: 1px solid rgba(192,57,43,.45);
+  color: rgba(220,100,90,.85);
+  font-size: .72rem;
+  padding: 5px 8px;
+  box-shadow: none;
+  text-shadow: none;
+}
 .ap-btn.danger-subtle:hover:not(:disabled) { background: rgba(192,57,43,.15); filter: none; transform: none; }
-.ap-btn.large        { padding: 10px 10px; font-size: .9rem; }
+.ap-btn.large {
+  padding: 12px 12px;
+  font-size: .95rem;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+.ap-btn.primary.large {
+  animation: primary-btn-glow 2.4s ease-in-out infinite alternate;
+}
+@keyframes primary-btn-glow {
+  from { box-shadow: 0 4px 0 #8a6d00, 0 6px 12px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.6), 0 0 0 0 rgba(255,215,0,0.0); }
+  to   { box-shadow: 0 4px 0 #8a6d00, 0 6px 12px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.6), 0 0 18px 2px rgba(255,215,0,0.55); }
+}
 
-/* ── Buy decision card ─────────────────────────────────────────────────── */
+/* ── Buy decision card — looks like a title deed ──────────────────────── */
 .buy-decision {
-  background: rgba(255,255,255,.07);
-  border-radius: 10px; padding: .75rem;
-  display: flex; flex-direction: column; gap: 5px;
-  border: 1px solid rgba(255,255,255,.1);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%);
+  border-radius: 12px;
+  padding: .8rem;
+  display: flex; flex-direction: column; gap: 6px;
+  border: 1px solid rgba(255,215,0,0.25);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 4px 16px rgba(0,0,0,0.35);
+  position: relative;
+  overflow: hidden;
 }
-.buy-color-bar { height: 7px; border-radius: 4px; margin-bottom: 3px; }
-.buy-space-name { font-weight: 700; font-size: .9rem; }
-.buy-price, .buy-cash { font-size: .8rem; color: rgba(255,255,255,.8); }
+.buy-decision::before {
+  content: 'TITLE DEED';
+  position: absolute;
+  top: 6px; right: 10px;
+  font-size: 0.52rem;
+  letter-spacing: 1.5px;
+  color: rgba(255,215,0,0.45);
+  font-weight: 900;
+}
+.buy-color-bar {
+  height: 10px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 1px 4px rgba(0,0,0,0.3);
+}
+.buy-space-name {
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+  color: #fff8d0;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+.buy-price, .buy-cash { font-size: .82rem; color: rgba(255,255,255,.85); }
+.buy-price strong { color: #FFD700; font-size: 0.95rem; }
 .buy-rent-table {
-  font-size: .68rem; color: rgba(255,255,255,.6);
-  background: rgba(0,0,0,.2); border-radius: 5px; padding: 4px 6px;
-  line-height: 1.6;
+  font-size: .7rem;
+  color: rgba(255,255,255,.72);
+  background: rgba(0,0,0,.28);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 6px;
+  padding: 5px 8px;
+  line-height: 1.7;
 }
-.buy-rent-table strong { color: rgba(255,255,255,.85); }
+.buy-rent-table strong { color: rgba(255,255,255,.95); }
 
 /* ── Chance / Community card ───────────────────────────────────────────── */
 .ap-card {
@@ -148,23 +246,54 @@
 .trade-prop  { background:rgba(255,255,255,.12); padding:2px 5px; border-radius:4px; font-size:.7rem; }
 .trade-cash  { color:#FFD700; font-weight:600; }
 
-/* ── Dice display ──────────────────────────────────────────────────────── */
+/* ── Dice display — 3D gold-trimmed dice ──────────────────────────────── */
 .dice-row {
   display: flex; align-items: center; justify-content: center;
-  gap: 8px;
+  gap: 12px;
+  padding: 6px 0 2px;
 }
 .die {
-  width: 36px; height: 36px;
-  background: #fff; border-radius: 8px;
-  border: 2px solid #333;
+  width: 44px; height: 44px;
+  background:
+    radial-gradient(circle at 32% 28%, #ffffff 0%, #f4f4f4 45%, #dcdcdc 100%);
+  border-radius: 10px;
+  border: 2px solid #1a1a1a;
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.4rem; font-weight: 900; color: #111;
-  box-shadow: 0 3px 8px rgba(0,0,0,.4);
+  font-size: 1.7rem; font-weight: 900; color: #111;
+  box-shadow:
+    0 6px 14px rgba(0,0,0,.55),
+    0 0 0 2px rgba(255,215,0,0.25),
+    inset 0 2px 4px rgba(255,255,255,0.9),
+    inset 0 -3px 6px rgba(0,0,0,0.25);
   transition: transform .15s;
+  position: relative;
 }
-.die.rolling { animation: dieRoll .3s ease-in-out infinite; }
-@keyframes dieRoll { 0%,100%{transform:rotate(-8deg)} 50%{transform:rotate(8deg)} }
-.dice-label { font-size:.7rem; color:rgba(255,255,255,.6); margin-top:2px; text-align:center; }
+.die::after {
+  /* Subtle gold inner glow */
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 6px rgba(255,215,0,0.18);
+  pointer-events: none;
+}
+.die.rolling {
+  animation: dieRoll3D .35s ease-in-out infinite;
+}
+@keyframes dieRoll3D {
+  0%   { transform: rotate(-20deg) translateY(-4px) scale(1.05); }
+  50%  { transform: rotate(20deg)  translateY(2px)  scale(0.97); }
+  100% { transform: rotate(-15deg) translateY(-2px) scale(1.02); }
+}
+.dice-label {
+  font-size:.78rem;
+  color: #fcd34d;
+  margin-top: 4px;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
 .dice-doubles { font-size:.7rem; color:#FFD700; font-weight:700; text-align:center; }
 
 /* ── Opponent info (waiting state) ─────────────────────────────────────── */
@@ -188,16 +317,29 @@
 
 /* ── Doubles banner ─────────────────────────────────────────────────────── */
 .ap-doubles-banner {
-  background: linear-gradient(90deg, #1a3a0a, #2d6a14);
+  background:
+    linear-gradient(90deg, #1a3a0a 0%, #2d6a14 50%, #1a3a0a 100%);
+  background-size: 200% 100%;
   border: 1px solid #FFD700;
-  border-radius: 7px;
-  padding: 6px 10px;
-  font-size: .78rem;
-  font-weight: 700;
+  border-radius: 9px;
+  padding: 8px 12px;
+  font-size: .82rem;
+  font-weight: 800;
   color: #FFD700;
   text-align: center;
+  letter-spacing: 0.6px;
+  box-shadow:
+    0 0 16px rgba(255,215,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+  animation: doubles-shimmer 2s linear infinite;
+  text-shadow: 0 0 6px rgba(255,215,0,0.6);
+}
+@keyframes doubles-shimmer {
+  from { background-position: 0% 50%; }
+  to   { background-position: 200% 50%; }
 }
 .ap-doubles-warn {
-  color: #e74c3c;
-  font-size: .72rem;
+  color: #f87171;
+  font-size: .74rem;
+  text-shadow: 0 0 6px rgba(239,68,68,0.5);
 }

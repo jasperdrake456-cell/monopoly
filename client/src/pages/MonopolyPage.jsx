@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../hooks/useSocket';
 import Lobby from '../components/Lobby';
 import Game from '../components/Game';
+import './MonopolyPage.css';
 
 const SESSION_KEY = 'monopoly_session';
 

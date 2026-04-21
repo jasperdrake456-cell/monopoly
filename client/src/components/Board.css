@@ -117,18 +117,37 @@
   .board { zoom: 40%; }
 }
 
-/* ── The board grid ────────────────────────────────────────────────────── */
+/* ── The board grid — premium casino felt ─────────────────────────────── */
 .board {
   display: grid;
   grid-template-columns: 100px repeat(9, 64px) 100px;
   grid-template-rows:    100px repeat(9, 64px) 100px;
   border: 6px solid #111;
-  background: #cde8c4;
-  box-shadow: 0 0 0 10px #13320a, 0 24px 80px rgba(0,0,0,.7);
+  background:
+    radial-gradient(ellipse at 50% 50%, #d7eacc 0%, #bfdcb2 100%);
+  box-shadow:
+    0 0 0 4px #7a5b18,
+    0 0 0 10px #13320a,
+    0 0 0 12px rgba(255,215,0,0.35),
+    0 0 60px rgba(255,215,0,0.2),
+    0 30px 100px rgba(0,0,0,.85);
   outline: 3px solid #111;
-  outline-offset: 10px;
+  outline-offset: 12px;
   flex-shrink: 0;
   position: relative;
+}
+.board::before {
+  /* Ambient gold shimmer inside the board edges */
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 4px;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(255,215,0,0.15), transparent 35%, transparent 65%, rgba(255,215,0,0.15));
+  mix-blend-mode: screen;
+  opacity: 0.55;
+  z-index: 0;
 }
 
 /* ── Grid cell wrapper ──────────────────────────────────────────────────── */
@@ -137,9 +156,9 @@
   height: 100%;
 }
 
-/* ── Base tile ─────────────────────────────────────────────────────────── */
+/* ── Base tile — subtle cream, inner shadow, hover lift ────────────────── */
 .tile {
-  background: #fdf9f0;
+  background: linear-gradient(180deg, #fffbf2 0%, #f7efdd 100%);
   border: 1px solid #444;
   overflow: hidden;
   display: flex;
@@ -154,12 +173,39 @@
   width: 100%;
   height: 100%;
   box-sizing: border-box;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.tile:hover { z-index: 5; box-shadow: inset 0 0 0 2px #555; }
+.tile:hover {
+  z-index: 5;
+  box-shadow:
+    inset 0 0 0 2px #555,
+    0 4px 12px rgba(0,0,0,0.35);
+}
 .tile--highlighted {
-  background: #fffbe6;
-  box-shadow: inset 0 0 0 3px #FFD700;
-  z-index: 2;
+  background: linear-gradient(180deg, #fffdd9 0%, #fff4a6 100%);
+  box-shadow:
+    inset 0 0 0 3px #FFD700,
+    0 0 18px rgba(255,215,0,0.7),
+    0 0 2px rgba(255,215,0,0.9);
+  z-index: 3;
+  animation: tile-highlight-pulse 1.6s ease-in-out infinite;
+}
+@keyframes tile-highlight-pulse {
+  0%,100% { box-shadow: inset 0 0 0 3px #FFD700, 0 0 18px rgba(255,215,0,0.7); }
+  50%     { box-shadow: inset 0 0 0 3px #FFD700, 0 0 28px rgba(255,215,0,1); }
+}
+
+/* Owned (non-mortgaged) property: the tile itself gets a neon frame matching the owner color */
+.tile.tile--owned {
+  box-shadow:
+    inset 0 0 0 2px var(--owner-color, #FFD700),
+    0 0 10px var(--owner-glow, rgba(255,215,0,0.45));
+  animation: tile-owned-shimmer 3.2s ease-in-out infinite;
+}
+@keyframes tile-owned-shimmer {
+  0%,100% { filter: brightness(1); }
+  50%     { filter: brightness(1.08); }
 }
 
 /* ── Orientation ───────────────────────────────────────────────────────── */
@@ -266,11 +312,43 @@
 .tile--community_chest { background: #e8f4fd; }
 .tile--tax            { background: #fff3f3; }
 
-/* ── Buildings ─────────────────────────────────────────────────────────── */
-.tile-buildings { display: flex; flex-wrap: wrap; justify-content: center; gap: 1px; padding: 1px 0; }
-.building       { font-size: 0.65rem; line-height: 1; }
-.building.house { color: #1e8449; }
-.building.hotel { color: #c0392b; font-size: 0.75rem; }
+/* ── Buildings — 3D houses + glowing hotel ────────────────────────────── */
+.tile-buildings {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 2px; padding: 2px 0;
+  z-index: 3;
+}
+.building {
+  font-size: 0.68rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 9px; height: 9px;
+  border-radius: 2px;
+  text-indent: -9999px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 1px 2px rgba(0,0,0,0.4);
+}
+.building.house {
+  background: linear-gradient(180deg, #2ecc71 0%, #145a32 100%);
+  border: 1px solid #0e3a22;
+}
+.building.hotel {
+  background: linear-gradient(180deg, #ff6b6b 0%, #8b0000 100%);
+  border: 1px solid #4a0000;
+  width: 18px; height: 11px;
+  border-radius: 2px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.5),
+    0 1px 2px rgba(0,0,0,0.4),
+    0 0 8px rgba(255,107,107,0.6);
+  animation: hotel-glow 2s ease-in-out infinite alternate;
+}
+@keyframes hotel-glow {
+  from { box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 1px 2px rgba(0,0,0,0.4), 0 0 5px rgba(255,107,107,0.4); }
+  to   { box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 1px 2px rgba(0,0,0,0.4), 0 0 14px rgba(255,107,107,0.9); }
+}
 
 /* ── Mortgage overlay ──────────────────────────────────────────────────── */
 .mortgage-overlay {
@@ -287,8 +365,20 @@
 /* ── Owner color strip (bottom) ────────────────────────────────────────── */
 .tile-owner-strip {
   position: absolute; bottom: 0; left: 0; right: 0;
-  height: 5px;
+  height: 6px;
   z-index: 2;
+  box-shadow: 0 0 8px var(--owner-color, currentColor), inset 0 1px 0 rgba(255,255,255,0.45);
+}
+.tile-owner-strip::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+  animation: strip-shimmer 2.4s linear infinite;
+}
+@keyframes strip-shimmer {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%);  }
 }
 
 /* ── Player token badges ───────────────────────────────────────────────── */
@@ -305,8 +395,12 @@
   border-radius: 50%;
   border: 2px solid rgba(0,0,0,.4);
   font-size: .95rem; line-height: 1;
-  box-shadow: 0 2px 5px rgba(0,0,0,.5);
-  background: rgba(255,255,255,.95);
+  box-shadow:
+    0 3px 7px rgba(0,0,0,.55),
+    inset 0 2px 4px rgba(255,255,255,0.6),
+    inset 0 -2px 4px rgba(0,0,0,0.2);
+  background:
+    radial-gradient(circle at 35% 30%, rgba(255,255,255,0.95), rgba(255,255,255,0.7) 50%, rgba(220,220,220,0.85) 100%);
 }
 .tile-token-badge.is-current {
   animation: tokPulse .9s ease-in-out infinite;
@@ -402,56 +496,109 @@
 .gtj-icon    { font-size:2.2rem; }
 .gtj-label   { font-size:.58rem; font-weight:900; color:#c0392b; line-height:1.2; text-transform:uppercase; }
 
-/* ── Board center ──────────────────────────────────────────────────────── */
+/* ── Board center — felt with gold crest ──────────────────────────────── */
 .board-center {
-  background: #cde8c4;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.07) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 60%, #bfdcb2 0%, #9cc487 100%);
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
+  position: relative;
+}
+.board-center::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgba(255,255,255,0.035) 0 2px,
+      transparent 2px 16px);
+  pointer-events: none;
 }
 .board-center-content {
   display: flex; flex-direction: column;
   align-items: center; gap: 0.5rem;
-  padding: 0.5rem; width: 100%; z-index: 1;
+  padding: 0.5rem; width: 100%;
+  position: relative;
+  z-index: 1;
 }
 .board-logo {
   font-family:'Georgia','Times New Roman',serif;
   font-size: clamp(1.6rem, 2.4vw, 3.2rem);
   font-weight: 900; font-style: italic;
   color: #fff;
-  background: #e8192c;
-  padding: 5px 16px;
-  border: 3px solid #900;
-  border-radius: 4px;
-  text-shadow: 2px 2px 0 #900, -1px -1px 0 #900;
+  background:
+    linear-gradient(180deg, #ff3044 0%, #c91022 60%, #8b0014 100%);
+  padding: 6px 18px;
+  border: 3px solid #700;
+  border-radius: 6px;
+  text-shadow: 2px 2px 0 #700, -1px -1px 0 #700, 0 0 18px rgba(255,48,68,0.6);
   letter-spacing: 3px;
   transform: rotate(-4deg);
-  box-shadow: 3px 3px 0 rgba(0,0,0,.3);
+  box-shadow:
+    3px 3px 0 rgba(0,0,0,.35),
+    0 0 24px rgba(255,48,68,0.35),
+    inset 0 2px 0 rgba(255,255,255,0.25),
+    inset 0 -2px 0 rgba(0,0,0,0.35);
+  animation: logo-float 4s ease-in-out infinite alternate;
+}
+@keyframes logo-float {
+  from { transform: rotate(-4deg) translateY(0); }
+  to   { transform: rotate(-3deg) translateY(-3px); }
 }
 .free-parking-pot {
-  background: rgba(255,215,0,.35);
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255,255,255,0.4), transparent 50%),
+    linear-gradient(180deg, rgba(255,215,0,0.55) 0%, rgba(255,140,0,0.45) 100%);
   border: 2px solid #FFD700;
-  border-radius: 8px;
-  padding: .25rem .7rem;
-  font-size: .72rem; text-align:center; color:#333;
-  display:flex; flex-direction:column; gap:1px;
+  border-radius: 12px;
+  padding: .35rem .9rem;
+  font-size: .72rem; text-align:center; color:#3a2a00;
+  display:flex; flex-direction:column; gap:2px;
+  box-shadow:
+    0 0 14px rgba(255,215,0,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.6),
+    inset 0 -2px 6px rgba(180,100,0,0.25);
+  animation: pot-glow 2.5s ease-in-out infinite alternate;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
 }
-.pot-amount { font-weight:700; font-size:.95rem; color:#1a6b2a; }
+@keyframes pot-glow {
+  from { box-shadow: 0 0 14px rgba(255,215,0,0.45), inset 0 1px 0 rgba(255,255,255,0.6); }
+  to   { box-shadow: 0 0 28px rgba(255,215,0,0.85), inset 0 1px 0 rgba(255,255,255,0.6); }
+}
+.pot-amount {
+  font-weight: 900;
+  font-size: 1.1rem;
+  color: #1a3a0a;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+  letter-spacing: 0.5px;
+}
 
 /* Center player list */
 .board-players-list { display:flex; flex-direction:column; gap:4px; width:100%; max-width:280px; }
 .board-player-row {
-  display:flex; align-items:center; gap:5px;
-  padding:4px 7px; border-left:5px solid #ccc;
-  background:rgba(255,255,255,.88);
-  border-radius:0 6px 6px 0;
-  font-size:.7rem; color:#222;
+  display:flex; align-items:center; gap:6px;
+  padding:5px 8px; border-left:5px solid #ccc;
+  background: linear-gradient(90deg, rgba(255,255,255,0.92), rgba(255,255,255,0.82));
+  border-radius:0 8px 8px 0;
+  font-size:.72rem; color:#222;
   font-family:'Georgia',serif;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  transition: transform 0.15s ease;
 }
-.board-player-row.active  { background:rgba(255,255,200,.97); font-weight:700; box-shadow:0 0 0 1px rgba(255,200,0,.6); }
-.board-player-row.bankrupt{ opacity:.3; border-left-color:#aaa; }
-.bpr-token { font-size:.95rem; }
+.board-player-row:hover { transform: translateX(2px); }
+.board-player-row.active  {
+  background: linear-gradient(90deg, #fff8b3, #fff2a1);
+  font-weight:700;
+  box-shadow: 0 0 0 1px rgba(255,200,0,.7), 0 0 14px rgba(255,215,0,0.45);
+}
+.board-player-row.bankrupt{ opacity:.35; border-left-color:#aaa; filter: grayscale(0.7); }
+.bpr-token { font-size:1.05rem; }
 .bpr-name  { flex:1; }
-.bpr-cash  { font-weight:700; color:#1a6b2a; }
+.bpr-cash  { font-weight:800; color:#1a6b2a; text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
 
 /* ── World Board Theme ─────────────────────────────────────────────────── */
 

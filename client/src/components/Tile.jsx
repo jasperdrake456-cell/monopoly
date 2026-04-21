@@ -1,6 +1,17 @@
 import React from 'react';
 import { GROUP_COLORS, TOKENS, TOKEN_COLORS, getTileOrientation } from '../boardData';
 
+// Convert a hex color like "#ff8800" to an rgba glow string with given alpha.
+function hexToGlow(hex, alpha = 0.5) {
+  if (!hex || typeof hex !== 'string') return `rgba(255,215,0,${alpha})`;
+  const clean = hex.replace('#', '');
+  if (clean.length !== 6) return `rgba(255,215,0,${alpha})`;
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
 export default function Tile({ space, propertyState, playersHere, isHighlighted, currentPlayerId }) {
   const orient = getTileOrientation(space.id);
   const isCorner = orient === 'corner';
@@ -16,19 +27,27 @@ export default function Tile({ space, propertyState, playersHere, isHighlighted,
     else if (orient === 'right')  barStyle.borderLeft   = `${t} solid ${colorBar}`;
   }
 
+  const houseCount = propertyState?.houses || 0;
+  const isHotel    = houseCount === 5;
+  const ownerColor = propertyState?.ownerColor;
+  const isOwned    = !!ownerColor && !propertyState?.mortgaged;
+
   const tileClass = [
     'tile',
     `tile--${orient}`,
     `tile--${space.type}`,
     isHighlighted ? 'tile--highlighted' : '',
+    isOwned ? 'tile--owned' : '',
   ].filter(Boolean).join(' ');
 
-  const houseCount = propertyState?.houses || 0;
-  const isHotel    = houseCount === 5;
-  const ownerColor = propertyState?.ownerColor;
+  const style = { ...barStyle };
+  if (isOwned && ownerColor) {
+    style['--owner-color'] = ownerColor;
+    style['--owner-glow']  = hexToGlow(ownerColor, 0.55);
+  }
 
   return (
-    <div className={tileClass} style={barStyle} title={space.name}>
+    <div className={tileClass} style={style} title={space.name}>
       {isCorner ? <CornerContent space={space} /> : (
         <div className="tile-inner">
           <div className="tile-name">{space.name}</div>

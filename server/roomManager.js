@@ -96,7 +96,10 @@ function leaveRoom(roomCode, socketId) {
   if (!room) return null;
 
   const player = room.players.find(p => p.id === socketId);
-  if (player) player.connected = false;
+  if (player) {
+    player.connected = false;
+    player.disconnectedAt = Date.now();
+  }
 
   // If host leaves in lobby, assign new host
   if (room.status === 'lobby' && room.hostId === socketId) {
@@ -107,7 +110,33 @@ function leaveRoom(roomCode, socketId) {
     }
   }
 
+  // Mark room last-activity time for stale cleanup
+  room.lastActivity = Date.now();
+
+  // In lobby, actually remove the player record so the room shrinks (lobby players aren't mid-game)
+  if (room.status === 'lobby' && player) {
+    room.players = room.players.filter(p => p.id !== socketId);
+  }
+
   return room;
+}
+
+/** Remove rooms where ALL players have been disconnected for longer than ttlMs. */
+function sweepStaleRooms(ttlMs) {
+  const now = Date.now();
+  const toDelete = [];
+  for (const [code, room] of rooms.entries()) {
+    const anyConnected = room.players.some(p => p.connected);
+    if (anyConnected) continue;
+    // If any player is still within the grace window, keep
+    const lastSeen = Math.max(
+      room.lastActivity || 0,
+      ...room.players.map(p => p.disconnectedAt || 0),
+    );
+    if (now - lastSeen > ttlMs) toDelete.push(code);
+  }
+  toDelete.forEach(code => rooms.delete(code));
+  return toDelete.length;
 }
 
 function getRoom(roomCode) {
@@ -139,4 +168,4 @@ function deleteRoom(roomCode) {
   rooms.delete(roomCode);
 }
 
-module.exports = { createRoom, joinRoom, reconnect, leaveRoom, getRoom, getRoomBySocketId, selectToken, deleteRoom };
+module.exports = { createRoom, joinRoom, reconnect, leaveRoom, getRoom, getRoomBySocketId, selectToken, deleteRoom, sweepStaleRooms };

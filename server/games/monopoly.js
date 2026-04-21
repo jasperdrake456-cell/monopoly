@@ -302,6 +302,29 @@ function register(ns) {
       }
     });
 
+    socket.on('leaveRoom', ({ roomCode }) => {
+      try {
+        const room = rm.getRoom(roomCode);
+        if (!room) return;
+        const wasPlayer = room.players.find(p => p.id === socket.id);
+        if (!wasPlayer) return;
+        rm.leaveRoom(roomCode, socket.id);
+        socket.leave(roomChannel(roomCode));
+        const updated = rm.getRoom(roomCode);
+        if (updated) {
+          // If everyone disconnected, delete the room
+          const anyConnected = updated.players.some(p => p.connected);
+          if (!anyConnected) {
+            rm.deleteRoom(roomCode);
+          } else {
+            broadcastState(ns, updated);
+          }
+        }
+      } catch (err) {
+        console.error('[Monopoly] leaveRoom handler error:', err);
+      }
+    });
+
     socket.on('disconnect', () => {
       try {
         const room = rm.getRoomBySocketId(socket.id);
@@ -314,6 +337,15 @@ function register(ns) {
       }
     });
   });
+
+  // Periodic stale-room cleanup: rooms where everyone has been disconnected for 30+ min get dropped
+  setInterval(() => {
+    try {
+      rm.sweepStaleRooms(30 * 60 * 1000);
+    } catch (err) {
+      console.error('[Monopoly] sweepStaleRooms error:', err);
+    }
+  }, 5 * 60 * 1000);
 }
 
 module.exports = { register };
