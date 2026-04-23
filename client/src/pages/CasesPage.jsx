@@ -122,20 +122,36 @@ export default function CasesPage() {
       setReelOffset(0);
 
       // Animate the reel: slide so that item index 50 lands under the cursor.
-      // Each reel cell is 120px wide, cursor sits in center of container.
-      const CELL_W  = 120;
+      // We MEASURE the actual rendered cell instead of hard-coding a width —
+      // each cell has border + padding + margin, and the mobile breakpoint
+      // changes the cell size. A hardcoded CELL_W drifts by ~8 cells over 50
+      // cells, which made the cursor land on a different item than the modal.
       const WINNING = 50;
-      const container = reelRef.current;
-      const containerW = container ? container.offsetWidth : 800;
-      // Centre of cell WINNING should land at centre of container
-      const targetX = (WINNING * CELL_W) + (CELL_W / 2) - (containerW / 2);
-      // Add jitter so it doesn't always stop dead-centre
-      const jitter = (Math.random() - 0.5) * (CELL_W * 0.6);
-      const finalX = targetX + jitter;
 
-      // Trigger CSS transition
+      // Wait two frames so React renders the reel cells, then measure.
       requestAnimationFrame(() => {
-        setReelOffset(finalX);
+        requestAnimationFrame(() => {
+          const container = reelRef.current;
+          if (!container) return;
+          const containerW = container.offsetWidth;
+          const cells = container.querySelectorAll('.cases-reel-cell');
+          const winCell = cells[WINNING];
+          if (!winCell) {
+            // Fallback (shouldn't happen): rough estimate
+            setReelOffset(WINNING * 144 + 72 - containerW / 2);
+            return;
+          }
+          // Centre of winning cell relative to the track's left edge.
+          // offsetLeft is relative to the positioned container; at translate=0
+          // the track's left edge aligns with the container's left edge, so
+          // this is the correct absolute position within the reel.
+          const cellCenter = winCell.offsetLeft + winCell.offsetWidth / 2;
+          // Jitter up to ±35% of cell width so the cursor doesn't always land
+          // dead-centre, but stays comfortably within the winning cell.
+          const jitter = (Math.random() - 0.5) * winCell.offsetWidth * 0.7;
+          const finalX = cellCenter - containerW / 2 + jitter;
+          setReelOffset(finalX);
+        });
       });
 
       // Reveal after ~6s (matches CSS transition duration)
