@@ -12,6 +12,7 @@ const { Server }  = require('socket.io');
 const cors        = require('cors');
 const compression = require('compression');
 const path = require('path');
+const nodeCrypto  = require('crypto');
 const { getPassword, setPassword, generatePassword } = require('./passwordStore');
 const { sendPasswordEmail } = require('./email');
 const lb = require('./leaderboard');
@@ -2792,6 +2793,12 @@ app.post('/api/jokers/unequip', requireAuth, (req, res) => {
   const r = jokers.unequip(req.user.username, instanceId);
   if (!r.ok) return res.status(400).json(r);
   res.json({ ok: true, abilities: jokers.getEquippedAbilities(req.user.username) });
+});
+
+// Joker collection leaderboard (total market value)
+app.get('/api/jokers/leaderboard', (req, res) => {
+  const rows = jokers.getCollectionLeaderboard((jokerId, base) => auction.marketValue(jokerId, base), 50);
+  res.json({ ok: true, leaderboard: rows, rarities: jokers.getRarities() });
 });
 
 // ── Auction House ─────────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import './Plinko.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -87,6 +88,7 @@ export default function Plinko() {
   const animRef = useRef(null);
 
   React.useEffect(() => {
+    initJokerBonuses();
     function tick() {
       const ms = msUntilNextDaily();
       const h = Math.floor(ms / 3600000);
@@ -128,6 +130,8 @@ export default function Plinko() {
         addBalance(totalPayout);
         syncBalance();
         reportBigWin('plinko', totalBet, totalPayout, parseFloat((totalPayout / totalBet).toFixed(2)), `${numBalls} ball(s) · ${risk} risk · buckets: [${buckets.join(', ')}]`);
+        if (totalPayout > totalBet) applyJokerBonus(totalBet, totalPayout, true);
+        else if (totalPayout < totalBet) applyJokerBonus(totalBet, 0, false);
         setFinalBuckets(buckets);
         setLastPayout(totalPayout);
         setLastTotalBet(totalBet);

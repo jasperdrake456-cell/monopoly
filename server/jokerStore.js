@@ -114,6 +114,45 @@ const JOKERS = [
   J('multiverse',     'Multiverse',      '🌌', 'mythic', 0.02, 666_000_000,
     { payoutMultiplier: 0.75, luckBoost: 0.30, cashbackPct: 0.15, xpMultiplier: 2.0, jackpotChance: 0.05 },
     'All bonuses maxed — the rarest card in existence'),
+
+  // ── NEW COMMON ─────────────────────────────────────────────────────────
+  J('penny_jar',      'Penny Jar',       '🏺', 'common', 24, 450_000,
+    { cashbackPct: 0.015 },
+    '1.5% cashback on losses'),
+  J('wild_card',      'Wild Card',       '🎴', 'common', 22, 500_000,
+    { luckBoost: 0.015, payoutMultiplier: 0.01 },
+    '+1.5% luck, +1% payouts'),
+
+  // ── NEW UNCOMMON ───────────────────────────────────────────────────────
+  J('fortune_cookie', 'Fortune Cookie',  '🥠', 'uncommon', 12, 1_600_000,
+    { luckBoost: 0.04, jackpotChance: 0.005 },
+    '+4% luck, 0.5% jackpot chance'),
+  J('tipped_scale',   'Tipped Scale',    '⚖️', 'uncommon', 10, 2_000_000,
+    { payoutMultiplier: 0.05 },
+    '+5% to all payouts'),
+
+  // ── NEW RARE ───────────────────────────────────────────────────────────
+  J('moneybags',      'Moneybags',       '💰', 'rare', 5, 5_000_000,
+    { payoutMultiplier: 0.06, cashbackPct: 0.04 },
+    '+6% payouts, 4% cashback'),
+  J('gambler_hat',    'Gambler\u2019s Hat',   '🎩', 'rare', 4, 6_000_000,
+    { jackpotChance: 0.02, luckBoost: 0.03 },
+    '2% jackpot chance, +3% luck'),
+
+  // ── NEW EPIC ───────────────────────────────────────────────────────────
+  J('jester_hat',     'Jester\u2019s Hat',    '🃏', 'epic', 2, 18_000_000,
+    { luckBoost: 0.12, jackpotChance: 0.015, payoutMultiplier: 0.04 },
+    '+12% luck, 1.5% jackpot, +4% payouts'),
+
+  // ── NEW LEGENDARY ──────────────────────────────────────────────────────
+  J('dragon_coin',    'Dragon Coin',     '🐉', 'legendary', 0.4, 85_000_000,
+    { payoutMultiplier: 0.30, cashbackPct: 0.08, xpMultiplier: 0.5 },
+    '+30% payouts, 8% cashback, +50% XP'),
+
+  // ── NEW MYTHIC (EVENT-TIER) ────────────────────────────────────────────
+  J('black_diamond',  'Black Diamond',   '◆',  'mythic', 0.05, 300_000_000,
+    { payoutMultiplier: 0.50, cashbackPct: 0.15 },
+    '+50% payouts, 15% cashback — limited edition'),
 ];
 
 const JOKER_MAP = Object.fromEntries(JOKERS.map(j => [j.id, j]));
@@ -281,6 +320,41 @@ function getEquippedAbilities(username) {
   return agg;
 }
 
+// ── Leaderboard: aggregate every user's collection value ─────────────────
+// Accepts a (jokerId, baseValue) -> marketValue resolver from caller so we
+// don't have to import auctionStore here (avoids circular deps).
+function getCollectionLeaderboard(marketResolver, limit = 50) {
+  const data = load();
+  const rows = [];
+  for (const [username, u] of Object.entries(data.byUser)) {
+    if (!u.owned || u.owned.length === 0) continue;
+    let total = 0;
+    let rarest = 'common';
+    const rarityOrder = { common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4, mythic: 5 };
+    const rarityBreakdown = { common: 0, uncommon: 0, rare: 0, epic: 0, legendary: 0, mythic: 0 };
+    for (const inst of u.owned) {
+      const def = JOKER_MAP[inst.jokerId];
+      if (!def) continue;
+      const mv = typeof marketResolver === 'function'
+        ? marketResolver(def.id, def.baseValue)
+        : def.baseValue;
+      total += mv;
+      rarityBreakdown[def.rarity] = (rarityBreakdown[def.rarity] || 0) + 1;
+      if (rarityOrder[def.rarity] > rarityOrder[rarest]) rarest = def.rarity;
+    }
+    rows.push({
+      username,
+      totalValue: total,
+      jokerCount: u.owned.length,
+      equippedCount: (u.equipped || []).length,
+      rarest,
+      rarityBreakdown,
+    });
+  }
+  rows.sort((a, b) => b.totalValue - a.totalValue);
+  return rows.slice(0, limit);
+}
+
 module.exports = {
   JOKERS,
   RARITY,
@@ -300,4 +374,5 @@ module.exports = {
   addInstance,
   ownsInstance,
   getEquippedAbilities,
+  getCollectionLeaderboard,
 };

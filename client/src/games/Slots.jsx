@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import './Slots.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -132,6 +133,8 @@ export default function Slots() {
     return () => clearInterval(countdownRef.current);
   }, [broke]);
 
+  useEffect(() => { initJokerBonuses(); }, []);
+
   // ── Jackpot: load current amount + listen for wins ─────────────────────────
   useEffect(() => {
     fetch(SERVER_URL + '/api/jackpot')
@@ -229,6 +232,9 @@ export default function Slots() {
             payout = Math.floor(betSnapshot * outcome.mult * boost);
             addBalance(payout);
             reportBigWin('slots', betSnapshot, payout, outcome.mult, `${outcome.label} · ${outcome.mult}×`);
+            applyJokerBonus(betSnapshot, payout, true);
+          } else {
+            applyJokerBonus(betSnapshot, 0, false);
           }
           setBalance(getBalance());
 

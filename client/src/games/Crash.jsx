@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode, recordBetResult } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import './Crash.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -55,6 +56,7 @@ export default function Crash() {
     }
     tick();
     const id = setInterval(tick, 1000);
+    initJokerBonuses();
     return () => clearInterval(id);
   }, []);
 
@@ -100,6 +102,7 @@ export default function Crash() {
         const mult   = newMult;
         const payout = Math.floor(betRef.current * mult * boostRef.current);
         addBalance(payout);
+        applyJokerBonus(betRef.current, payout, true);
         setBalance(getBalance());
         if (payout - betRef.current >= 50_000) reportBigWin('crash', betRef.current, payout, mult, `Auto-cashout at ${mult.toFixed(2)}×`);
         recordBetResult({ game: 'crash', amount: betRef.current, won: true, multiplier: mult, profit: payout - betRef.current });
@@ -118,6 +121,7 @@ export default function Crash() {
         if (!cashedOutRef.current) {
           setHistory(h => [{ mult: crashRef.current, win: false }, ...h].slice(0, MAX_HISTORY));
           recordBetResult({ game: 'crash', amount: betRef.current, won: false, multiplier: crashRef.current, profit: -betRef.current });
+          applyJokerBonus(betRef.current, 0, false);
         }
         setBalance(getBalance());
       }
@@ -129,6 +133,7 @@ export default function Crash() {
     cashedOutRef.current = true;
     const payout = Math.floor(betRef.current * mult * (boost || 1));
     addBalance(payout);
+    applyJokerBonus(betRef.current, payout, true);
     syncBalance();
     if (payout - betRef.current >= 50_000) reportBigWin('crash', betRef.current, payout, mult, `Auto-cashout at ${mult.toFixed(2)}×`);
     setCashedOut(true);
@@ -146,6 +151,7 @@ export default function Crash() {
     const mult   = currentMult;
     const payout = Math.floor(betRef.current * mult * (boost || 1));
     addBalance(payout);
+    applyJokerBonus(betRef.current, payout, true);
     syncBalance();
     if (payout - betRef.current >= 50_000) reportBigWin('crash', betRef.current, payout, mult, `Manual cashout at ${mult.toFixed(2)}×`);
     setCashedOut(true);

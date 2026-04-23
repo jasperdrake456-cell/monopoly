@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode, recordBetResult } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import './Mines.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -69,6 +70,7 @@ export default function Mines() {
     }
     tick();
     const id = setInterval(tick, 1000);
+    initJokerBonuses();
     return () => clearInterval(id);
   }, []);
 
@@ -119,6 +121,7 @@ export default function Mines() {
       setResult({ win: false, payout: 0, msg: `💥 BOOM! Lost $${bet}` });
       setPhase('result');
       recordBetResult({ game: 'mines', amount: bet, won: false, multiplier: 1, profit: -bet });
+      applyJokerBonus(bet, 0, false);
     } else {
       // Update refs synchronously so rapid subsequent clicks see correct state
       revealedRef.current = new Set(revealedRef.current);
@@ -137,6 +140,7 @@ export default function Mines() {
         const mult = calcMultiplier(mineCount, newCount);
         const payout = Math.floor(bet * mult * boost);
         addBalance(payout);
+        applyJokerBonus(bet, payout, true);
         syncBalance();
         reportBigWin('mines', bet, payout, mult, `${mineCount} mines · all ${newCount} safe tiles revealed · ${mult}×`);
         setAllMines(activeMines);
@@ -153,6 +157,7 @@ export default function Mines() {
     const mult = calcMultiplier(mineCount, revCountRef.current);
     const payout = Math.floor(bet * mult * boost);
     addBalance(payout);
+    applyJokerBonus(bet, payout, true);
     syncBalance();
     reportBigWin('mines', bet, payout, mult, `${mineCount} mines · ${revCountRef.current} safe tiles revealed · ${mult}×`);
     setAllMines(minesRef.current);

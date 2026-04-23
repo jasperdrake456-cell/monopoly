@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import './Blackjack.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -144,6 +145,7 @@ export default function Blackjack() {
   const [countdown, setCountdown]   = useState('');
 
   useEffect(() => {
+    initJokerBonuses();
     function tick() {
       const ms = msUntilNextDaily();
       const h  = Math.floor(ms / 3600000);
@@ -155,6 +157,12 @@ export default function Blackjack() {
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, []);
+
+  // Apply joker bonus based on total net of a round
+  function applyRoundBonus(totalCost, net) {
+    if (net > 0) applyJokerBonus(totalCost, totalCost + net, true);
+    else if (net < 0) applyJokerBonus(totalCost, 0, false);
+  }
 
   function syncBalance() { setBalance(getBalance()); }
 
@@ -210,6 +218,7 @@ export default function Blackjack() {
         syncBalance();
         setResults([{ msg: '🃏 Blackjack! 3:2 Payout!', net: profit }]);
         setTotalNet(profit);
+        applyRoundBonus(bet, profit);
       }
       setPhase('result');
     } else {
@@ -252,10 +261,12 @@ export default function Blackjack() {
           addBalance(bet); syncBalance();
           setResults([{ msg: `🤝 Push — Both Blackjack!${insAmount > 0 ? ` Insurance +$${insNet}` : ''}`, net: insNet }]);
           setTotalNet(insNet);
+          applyRoundBonus(bet, insNet);
         } else {
           setResults([{ msg: insAmount > 0 ? `❌ Dealer Blackjack — Insurance +$${insNet}` : '❌ Dealer Blackjack', net: insNet - bet }]);
           setTotalNet(insNet - bet);
           syncBalance();
+          applyRoundBonus(bet, insNet - bet);
         }
         setPhase('result');
       } else {
@@ -277,6 +288,7 @@ export default function Blackjack() {
         syncBalance();
         setResults(handResults);
         setTotalNet(netTotal);
+        applyRoundBonus(bet * numHands, netTotal);
         setPhase('result');
       }
     } else {
@@ -288,6 +300,7 @@ export default function Blackjack() {
         addBalance(bet + profit); syncBalance();
         setResults([{ msg: `🃏 Blackjack! 3:2 Payout!`, net: profit - insAmount }]);
         setTotalNet(profit - insAmount);
+        applyRoundBonus(bet, profit - insAmount);
         setPhase('result');
       } else {
         // Find first non-BJ hand to start playing
@@ -478,6 +491,8 @@ export default function Blackjack() {
     }
     setResults(handResults);
     setTotalNet(netTotal);
+    const totalRisk = currentHands.reduce((s, h) => s + (h.doubled ? h.bet * 2 : h.bet), 0);
+    applyRoundBonus(totalRisk, netTotal);
     setPhase('result');
   }
 

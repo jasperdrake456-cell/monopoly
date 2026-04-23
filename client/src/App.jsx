@@ -90,6 +90,7 @@ import FactoryPage from './pages/FactoryPage';
 import DuelsPage from './pages/DuelsPage';
 import CasesPage from './pages/CasesPage';
 import JokersPage from './pages/JokersPage';
+import JokerLeaderboardPage from './pages/JokerLeaderboardPage';
 import AuctionHousePage from './pages/AuctionHousePage';
 import TradingPage from './pages/TradingPage';
 import './App.css';
@@ -225,6 +226,7 @@ export default function App() {
             <Route path="/duels"          element={<DuelsPage />} />
             <Route path="/cases"          element={<CasesPage />} />
             <Route path="/jokers"         element={<RequireAuth><JokersPage /></RequireAuth>} />
+            <Route path="/joker-leaderboard" element={<JokerLeaderboardPage />} />
             <Route path="/auction"        element={<AuctionHousePage />} />
             <Route path="/trading"        element={<RequireAuth><TradingPage /></RequireAuth>} />
             <Route path="*"              element={<Navigate to="/" replace />} />
