@@ -5,14 +5,18 @@ import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 import { useGameBoost } from '../hooks/useGameBoost';
 
-// Crash point: 0.975 / (1 - random) with 2.5% house edge
-// Minimum 1.00x (instant crash ~2.5% of time)
+// Crash point: 0.96 / (1 - random) with 4% house edge
+// Minimum 1.00x (instant crash ~4% of time)
 function generateCrashPoint() {
   if (isRiggedMode()) return 1.00; // rigged: always instant crash
   const r = Math.random();
-  if (r >= 0.975) return 1.00;
-  return Math.max(1.00, parseFloat((0.975 / (1 - r)).toFixed(2)));
+  if (r >= 0.96) return 1.00;
+  return Math.max(1.00, parseFloat((0.96 / (1 - r)).toFixed(2)));
 }
+
+// Minimum multiplier the player can cash out at — prevents insta-cashout
+// exploits at 1.00-1.04× where the risk was near-zero for near-guaranteed profit.
+const MIN_CASHOUT_MULT = 1.05;
 
 const MAX_HISTORY = 10;
 
@@ -86,8 +90,10 @@ export default function Crash() {
       setCurrentMult(newMult);
 
       // Auto cashout — read exclusively from refs, no closure dependency
-      const acRaw = parseFloat(autoCashoutRef.current);
-      if (!cashedOutRef.current && !isNaN(acRaw) && acRaw >= 1.01 && newMult >= acRaw) {
+      // Clamp auto-cashout target to MIN_CASHOUT_MULT so it can't fire earlier.
+      const acRawParsed = parseFloat(autoCashoutRef.current);
+      const acRaw = isNaN(acRawParsed) ? NaN : Math.max(MIN_CASHOUT_MULT, acRawParsed);
+      if (!cashedOutRef.current && !isNaN(acRaw) && acRaw >= MIN_CASHOUT_MULT && newMult >= acRaw) {
         clearInterval(intervalRef.current);
         // Inline payout so nothing relies on stale closures
         cashedOutRef.current = true;
@@ -133,6 +139,8 @@ export default function Crash() {
 
   function cashOut() {
     if (phase !== 'running' || cashedOut) return;
+    // Enforce minimum cashout multiplier so players can't bail at 1.00-1.04×.
+    if (currentMult < MIN_CASHOUT_MULT) return;
     cashedOutRef.current = true;
     clearInterval(intervalRef.current);
     const mult   = currentMult;
@@ -256,10 +264,10 @@ export default function Crash() {
                   />
                 </div>
                 <div className="crash-input-group">
-                  <label className="crash-label">Auto cashout at</label>
+                  <label className="crash-label">Auto cashout at (min {MIN_CASHOUT_MULT.toFixed(2)}×)</label>
                   <input
                     className="crash-input"
-                    type="number" min={1.01} step={0.1}
+                    type="number" min={MIN_CASHOUT_MULT} step={0.1}
                     placeholder="e.g. 2.00"
                     value={autoCashout}
                     onChange={e => setAutoCashout(e.target.value)}
@@ -281,8 +289,14 @@ export default function Crash() {
       )}
 
       {isRunning && !cashedOut && (
-        <button className="crash-btn crash-btn--cashout" onClick={cashOut}>
-          💰 Cash Out ${Math.floor(bet * currentMult)}
+        <button
+          className="crash-btn crash-btn--cashout"
+          onClick={cashOut}
+          disabled={currentMult < MIN_CASHOUT_MULT}
+        >
+          {currentMult < MIN_CASHOUT_MULT
+            ? `🔒 Cash Out unlocks at ${MIN_CASHOUT_MULT.toFixed(2)}×`
+            : `💰 Cash Out $${Math.floor(bet * currentMult)}`}
         </button>
       )}
 
@@ -296,7 +310,7 @@ export default function Crash() {
         </button>
       )}
 
-      <div className="crash-hint">Cash out before the rocket crashes! • 2.5% house edge</div>
+      <div className="crash-hint">Cash out before the rocket crashes! • min {MIN_CASHOUT_MULT.toFixed(2)}× • 4% house edge</div>
     </div>
   );
 }
