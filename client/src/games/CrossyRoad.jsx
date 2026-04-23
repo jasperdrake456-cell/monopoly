@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { addBalance, getBalance, subtractBalance } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import './CrossyRoad.css';
 
 // Multiplier: starts at 0.75×, +0.1× every 15 forward hops (score 0→0.75×, 15→0.85×, ~38→1.0×, 150→1.75×, 300→2.75×)
@@ -124,6 +125,8 @@ export default function CrossyRoad() {
   const lastTs   = useRef(null);
   const touchRef = useRef(null);
   const hopKey   = useRef(0);
+
+  useEffect(() => { initJokerBonuses(); }, []);
 
   // ── Init ─────────────────────────────────────────────────────────────────
   function startGame() {
@@ -280,6 +283,11 @@ export default function CrossyRoad() {
     const payout = Math.floor((g.wager || 0) * g.mult);
     g.coinReward = payout;
     if (payout > 0) addBalance(payout);
+    if (payout > g.wager) {
+      applyJokerBonus(g.wager, payout, true);
+    } else if (payout < g.wager) {
+      applyJokerBonus(g.wager, 0, false);
+    }
     phaseRef.current = 'gameover';
     setPhase('gameover');
     forceRender();

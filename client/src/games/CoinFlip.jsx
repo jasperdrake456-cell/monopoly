@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, reportBigWin } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 import { useGameBoost } from '../hooks/useGameBoost';
@@ -21,6 +22,7 @@ export default function CoinFlip() {
 
   // Sync balance from storage on focus
   useEffect(() => {
+    initJokerBonuses();
     const sync = () => setBalance(getBalance());
     window.addEventListener('focus', sync);
     window.addEventListener('balanceUpdate', sync);
@@ -52,7 +54,10 @@ export default function CoinFlip() {
       const payout = won ? Math.floor(amt * PAYOUT_MULT * (boost || 1)) : 0;
       if (payout > 0) {
         addBalance(payout);
+        applyJokerBonus(amt, payout, true);
         if (payout >= amt * 2) reportBigWin && reportBigWin(payout);
+      } else {
+        applyJokerBonus(amt, 0, false);
       }
       setBalance(getBalance());
       setResult({ side, won, payout, amt });

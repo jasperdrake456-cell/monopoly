@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import './Wheel.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -97,6 +98,7 @@ export default function Wheel() {
   const targetAngleRef = useRef(0);
 
   useEffect(() => {
+    initJokerBonuses();
     function tick() {
       const ms = msUntilNextDaily();
       const h = Math.floor(ms / 3600000);
@@ -149,7 +151,10 @@ export default function Wheel() {
       const payout = won ? Math.floor(bet * landedSeg.mult * boost) : 0;
       if (won) {
         addBalance(payout);
+        applyJokerBonus(bet, payout, true);
         reportBigWin('wheel', bet, payout, landedSeg.mult, `${risk} risk · bet ${selectedColor} · landed ${landedSeg.label} · ${landedSeg.mult}×`);
+      } else {
+        applyJokerBonus(bet, 0, false);
       }
       syncBalance();
       setResult({ seg: landedSeg, won, payout });

@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getBalance, subtractBalance } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import './SportsBetting.css';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
@@ -138,6 +139,10 @@ export default function SportsBetting() {
   const [placingParlay, setPlacingParlay] = useState(false);
   const [myParlays,    setMyParlays]    = useState([]);
 
+  // Track bets we've already processed for joker bonuses (by betId)
+  const jokerSeenBetsRef    = useRef(new Set());
+  const jokerSeenParlaysRef = useRef(new Set());
+
   const loadScores = useCallback(async () => {
     if (!token) return;
     try {
@@ -178,11 +183,49 @@ export default function SportsBetting() {
     if (data.ok) setMyParlays(data.parlays || []);
   }, [token]);
 
+  useEffect(() => {
+    initJokerBonuses();
+  }, []);
+
   useEffect(() => { loadGames(); loadMyBets(); loadScores(); loadMyParlays(); }, [loadGames, loadMyBets, loadScores, loadMyParlays]);
   useEffect(() => {
     const id = setInterval(() => { loadGames(); loadMyBets(); loadScores(); loadMyParlays(); }, 15_000);
     return () => clearInterval(id);
   }, [loadGames, loadMyBets, loadScores, loadMyParlays]);
+
+  // Fire joker bonuses for newly-settled bets (won/lost transitions from open)
+  useEffect(() => {
+    for (const bet of myBets) {
+      if (!bet.betId) continue;
+      if (jokerSeenBetsRef.current.has(bet.betId)) continue;
+      if (bet.status === 'won') {
+        applyJokerBonus(bet.amount, bet.payout ?? 0, true);
+        jokerSeenBetsRef.current.add(bet.betId);
+      } else if (bet.status === 'lost') {
+        applyJokerBonus(bet.amount, 0, false);
+        jokerSeenBetsRef.current.add(bet.betId);
+      } else if (bet.status === 'push' || bet.status === 'void' || bet.status === 'cancelled') {
+        // Skip push/void — bet returned, no joker bonus
+        jokerSeenBetsRef.current.add(bet.betId);
+      }
+    }
+  }, [myBets]);
+
+  useEffect(() => {
+    for (const bet of myParlays) {
+      if (!bet.betId) continue;
+      if (jokerSeenParlaysRef.current.has(bet.betId)) continue;
+      if (bet.status === 'won') {
+        applyJokerBonus(bet.amount, bet.payout ?? 0, true);
+        jokerSeenParlaysRef.current.add(bet.betId);
+      } else if (bet.status === 'lost') {
+        applyJokerBonus(bet.amount, 0, false);
+        jokerSeenParlaysRef.current.add(bet.betId);
+      } else if (bet.status === 'push' || bet.status === 'void' || bet.status === 'cancelled') {
+        jokerSeenParlaysRef.current.add(bet.betId);
+      }
+    }
+  }, [myParlays]);
 
   async function placeBet() {
     if (!slip) return;

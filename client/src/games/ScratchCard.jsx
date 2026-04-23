@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 import { useGameBoost } from '../hooks/useGameBoost';
@@ -84,6 +85,7 @@ export default function ScratchCard() {
   const [result, setResult] = useState(null);   // { mult, symIdx, payout }
 
   useEffect(() => {
+    initJokerBonuses();
     const sync = () => setBalance(getBalance());
     window.addEventListener('focus', sync);
     window.addEventListener('balanceUpdate', sync);
@@ -120,7 +122,10 @@ export default function ScratchCard() {
       const payout = Math.floor(bet * mult * (boost || 1));
       if (payout > 0) {
         addBalance(payout);
+        applyJokerBonus(bet, payout, true);
         if (payout >= bet * 10) reportBigWin && reportBigWin(payout);
+      } else {
+        applyJokerBonus(bet, 0, false);
       }
       setBalance(getBalance());
       setResult({ mult, symIdx, payout });
@@ -136,7 +141,10 @@ export default function ScratchCard() {
     const payout = Math.floor(bet * mult * (boost || 1));
     if (payout > 0) {
       addBalance(payout);
+      applyJokerBonus(bet, payout, true);
       if (payout >= bet * 10) reportBigWin && reportBigWin(payout);
+    } else {
+      applyJokerBonus(bet, 0, false);
     }
     setBalance(getBalance());
     setResult({ mult, symIdx, payout });

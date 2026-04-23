@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import './Keno.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -65,6 +66,7 @@ export default function Keno() {
   const [revealed, setRevealed] = useState(new Set()); // drawn numbers revealed so far
 
   useEffect(() => {
+    initJokerBonuses();
     function tick() {
       const ms = msUntilNextDaily();
       const h = Math.floor(ms / 3600000);
@@ -136,6 +138,12 @@ export default function Keno() {
     if (payout > 0) {
       addBalance(payout);
       syncBalance();
+    }
+
+    if (payout > bet) {
+      applyJokerBonus(bet, payout, true);
+    } else if (payout < bet) {
+      applyJokerBonus(bet, 0, false);
     }
 
     const net = payout - bet;

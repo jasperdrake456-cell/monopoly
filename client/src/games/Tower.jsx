@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import './Tower.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -67,6 +68,7 @@ export default function Tower() {
   const [countdown, setCountdown]   = useState('');
 
   useEffect(() => {
+    initJokerBonuses();
     function tick() {
       const ms = msUntilNextDaily();
       const h = Math.floor(ms / 3600000);
@@ -123,6 +125,7 @@ export default function Tower() {
       setCellStates(newStates);
       setPhase('lost');
       setHistory(h => [{ win: false, floors: floor, mult: currentMult }, ...h].slice(0, MAX_HISTORY));
+      applyJokerBonus(bet, 0, false);
       syncBalance();
     } else {
       // Safe tile
@@ -146,6 +149,7 @@ export default function Tower() {
   function doWin(mult, states) {
     const payout = Math.floor(bet * mult * boost);
     addBalance(payout);
+    applyJokerBonus(bet, payout, true);
     syncBalance();
     reportBigWin('tower', bet, payout, mult, `${difficulty} · all ${ROWS} floors cleared · ${mult.toFixed(2)}×`);
     setPhase('won');
@@ -156,6 +160,7 @@ export default function Tower() {
     if (phase !== 'playing' || currentFloor === 0) return;
     const payout = Math.floor(bet * currentMult * boost);
     addBalance(payout);
+    applyJokerBonus(bet, payout, true);
     syncBalance();
     reportBigWin('tower', bet, payout, currentMult, `${difficulty} · ${currentFloor} floor(s) cleared · ${currentMult.toFixed(2)}×`);
     // Reveal safe tiles on remaining floors

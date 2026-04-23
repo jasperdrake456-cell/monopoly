@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode, recordBetResult } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import './Dice.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -33,6 +34,7 @@ export default function Dice() {
   const [countdown, setCountdown] = useState('');
 
   useEffect(() => {
+    initJokerBonuses();
     function tick() {
       const ms = msUntilNextDaily();
       const h  = Math.floor(ms / 3600000);
@@ -70,8 +72,11 @@ export default function Dice() {
 
       if (win) {
         addBalance(payout);
+        applyJokerBonus(bet, payout, true);
         syncBalance();
         reportBigWin('dice', bet, payout, mult, `Rolled ${rolled} · ${direction} ${target} · ${winChance.toFixed(1)}% odds · ${mult.toFixed(2)}×`);
+      } else {
+        applyJokerBonus(bet, 0, false);
       }
 
       setRoll(rolled);

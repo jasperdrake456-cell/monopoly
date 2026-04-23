@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { getBalance, addBalance, subtractBalance, reportBigWin, isRiggedMode, recordBetResult } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 import { useGameBoost } from '../hooks/useGameBoost';
@@ -45,6 +46,7 @@ export default function Limbo() {
   const animRef = useRef(null);
 
   useEffect(() => {
+    initJokerBonuses();
     const sync = () => setBalance(getBalance());
     window.addEventListener('focus', sync);
     window.addEventListener('balanceUpdate', sync);
@@ -86,7 +88,10 @@ export default function Limbo() {
         setDisplay(fmtMult(rolled));
         if (payout > 0) {
           addBalance(payout);
+          applyJokerBonus(amt, payout, true);
           if (payout >= amt * 5) reportBigWin && reportBigWin(payout);
+        } else {
+          applyJokerBonus(amt, 0, false);
         }
         setBalance(getBalance());
         setResult({ won, rolled, payout, amt, target });

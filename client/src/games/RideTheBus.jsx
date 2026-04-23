@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import './RideTheBus.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -77,6 +78,7 @@ export default function RideTheBus() {
 
   // Live countdown to next daily reward
   useEffect(() => {
+    initJokerBonuses();
     function tick() {
       const ms = msUntilNextDaily();
       const h  = Math.floor(ms / 3600000);
@@ -142,6 +144,7 @@ export default function RideTheBus() {
       setPending(null);
 
       if (!correct) {
+        applyJokerBonus(bet, 0, false);
         setResult({
           correct: false,
           msg: `Wrong! The card was ${VAL_LBL[card.value]}${SYM[card.suit]}.`,
@@ -151,6 +154,7 @@ export default function RideTheBus() {
       } else if (round === 4) {
         const payout = Math.floor(bet * MULTIPLIERS[4] * boost);
         addBalance(payout);
+        applyJokerBonus(bet, payout, true);
         setBalance(getBalance());
         reportBigWin('ride-the-bus', bet, payout, MULTIPLIERS[4], `All 4 rounds correct · ${MULTIPLIERS[4]}× jackpot`);
         setResult({ correct: true, msg: `JACKPOT! ${MULTIPLIERS[4]}× your bet!`, payout });
@@ -167,6 +171,7 @@ export default function RideTheBus() {
   function cashOut() {
     const payout = Math.floor(bet * MULTIPLIERS[round] * boost);
     addBalance(payout);
+    applyJokerBonus(bet, payout, true);
     setBalance(getBalance());
     reportBigWin('ride-the-bus', bet, payout, MULTIPLIERS[round], `Cashed out after round ${round} · ${MULTIPLIERS[round]}×`);
     setResult({ correct: true, msg: `Cashed out $${payout} (${MULTIPLIERS[round]}×)`, payout });

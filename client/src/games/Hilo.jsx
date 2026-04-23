@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import './Hilo.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -86,6 +87,7 @@ export default function Hilo() {
   const [animating, setAnimating]   = useState(false);
 
   useEffect(() => {
+    initJokerBonuses();
     function tick() {
       const ms = msUntilNextDaily();
       const h = Math.floor(ms / 3600000);
@@ -172,6 +174,7 @@ export default function Hilo() {
         setStreak(0);
         setPhase('lost');
         setHistory(h => [{ win: false, mult: currentMult }, ...h].slice(0, MAX_HISTORY));
+        applyJokerBonus(bet, 0, false);
         syncBalance();
       }
       setAnimating(false);
@@ -182,6 +185,7 @@ export default function Hilo() {
     const mult = forceMult ?? currentMult;
     const payout = Math.floor(bet * mult * boost);
     addBalance(payout);
+    applyJokerBonus(bet, payout, true);
     syncBalance();
     reportBigWin('hilo', bet, payout, mult, `${streak}-streak · ${revealedCards.length - 1} correct guess(es) · ${mult}×`);
     setProfit(payout - bet);

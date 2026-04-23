@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 import { useGameBoost } from '../hooks/useGameBoost';
@@ -59,6 +60,7 @@ export default function CasinoWar() {
   const [history, setHistory]     = useState([]);
 
   useEffect(() => {
+    initJokerBonuses();
     const sync = () => setBalance(getBalance());
     window.addEventListener('focus', sync);
     window.addEventListener('balanceUpdate', sync);
@@ -84,12 +86,14 @@ export default function CasinoWar() {
       if (pc.value > dc.value) {
         const payout = Math.floor(amt * 2 * (boost || 1));
         addBalance(payout);
+        applyJokerBonus(amt, payout, true);
         setBalance(getBalance());
         setMessage(`🎉 You win! ${pc.rank}${pc.suit} beats ${dc.rank}${dc.suit} — +$${(payout - amt).toLocaleString()}`);
         setMsgType('win');
         setHistory(h => [{ result: 'win', pc, dc }, ...h].slice(0, 12));
         setPhase(PHASE.RESULT);
       } else if (dc.value > pc.value) {
+        applyJokerBonus(amt, 0, false);
         setMessage(`😔 Dealer wins. ${dc.rank}${dc.suit} beats ${pc.rank}${pc.suit}`);
         setMsgType('lose');
         setHistory(h => [{ result: 'lose', pc, dc }, ...h].slice(0, 12));
@@ -107,6 +111,7 @@ export default function CasinoWar() {
     // Lose half bet
     const surrender = Math.floor(amt / 2);
     addBalance(surrender);
+    applyJokerBonus(amt, 0, false);
     setBalance(getBalance());
     setMessage(`🏳️ Surrendered — got back $${surrender.toLocaleString()}`);
     setMsgType('lose');
@@ -132,12 +137,14 @@ export default function CasinoWar() {
         // Win: original bet + ante back + original bet as profit (3× original returned, net +1× original)
         const payout = Math.floor(amt * 3 * (boost || 1));
         addBalance(payout);
+        applyJokerBonus(amt * 2, payout, true);
         if (payout >= amt * 5) reportBigWin && reportBigWin(payout);
         setBalance(getBalance());
         setMessage(`⚔️ You win the war! ${warPlayer.rank}${warPlayer.suit} vs ${warDealer.rank}${warDealer.suit} — +$${(payout - amt * 2).toLocaleString()}`);
         setMsgType('win');
         setHistory(h => [{ result: 'war-win', pc: warPlayer, dc: warDealer }, ...h].slice(0, 12));
       } else {
+        applyJokerBonus(amt * 2, 0, false);
         setMessage(`⚔️ Dealer wins the war! ${warDealer.rank}${warDealer.suit} beats ${warPlayer.rank}${warPlayer.suit}`);
         setMsgType('lose');
         setHistory(h => [{ result: 'war-lose', pc: warPlayer, dc: warDealer }, ...h].slice(0, 12));

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import './ChickenCross.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -53,6 +54,7 @@ export default function ChickenCross() {
   const gridRef = useRef(null);
 
   useEffect(() => {
+    initJokerBonuses();
     function tick() {
       const ms = msUntilNextDaily();
       const h  = Math.floor(ms / 3600000);
@@ -104,6 +106,7 @@ export default function ChickenCross() {
         }
         return next;
       });
+      applyJokerBonus(betRef.current, 0, false);
       setPhase('lost');
       setHistory(h => [{ win: false, mult: null }, ...h].slice(0, 10));
     } else {
@@ -123,6 +126,7 @@ export default function ChickenCross() {
         // Crossed all rows — auto win
         const payout = Math.floor(betRef.current * newMult * boost);
         addBalance(payout);
+        applyJokerBonus(betRef.current, payout, true);
         syncBalance();
         reportBigWin('chicken-cross', betRef.current, payout, newMult, `${difficulty} · all ${ROWS} rows crossed · ${newMult.toFixed(2)}×`);
         setPhase('won');
@@ -137,6 +141,7 @@ export default function ChickenCross() {
     if (phase !== 'playing' || currentRow === 0) return;
     const payout = Math.floor(betRef.current * multRef.current * boost);
     addBalance(payout);
+    applyJokerBonus(betRef.current, payout, true);
     syncBalance();
     reportBigWin('chicken-cross', betRef.current, payout, multRef.current, `${difficulty} · ${currentRow} row(s) crossed · ${multRef.current.toFixed(2)}×`);
     setPhase('won');

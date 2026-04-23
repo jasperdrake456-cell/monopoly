@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import './DragonTiger.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -72,6 +73,7 @@ export default function DragonTiger() {
   const [countdown, setCountdown] = useState('');
 
   useEffect(() => {
+    initJokerBonuses();
     function tick() {
       const ms = msUntilNextDaily();
       const h = Math.floor(ms / 3600000);
@@ -130,19 +132,23 @@ export default function DragonTiger() {
         if (winner === 'tie' && betSide === 'tie') {
           payout = Math.floor(bet * 10 * boost); // 9:1 pays total 10× stake
           addBalance(payout);
+          applyJokerBonus(bet, payout, true);
           net = payout - bet;
           msg = `⚖️ Tie! Won $${net.toLocaleString()} (9:1)`;
           reportBigWin('dragon-tiger', bet, payout, 9, `Tie · Dragon ${d.rank}${d.suit} = Tiger ${t.rank}${t.suit}`);
         } else if (winner === betSide && betSide !== 'tie') {
           payout = Math.floor(bet * 2 * boost); // 1:1
           addBalance(payout);
+          applyJokerBonus(bet, payout, true);
           net = payout - bet;
           msg = `✅ ${winner === 'dragon' ? '🐉 Dragon' : '🐯 Tiger'} wins! +$${net.toLocaleString()}`;
         } else if (winner === 'tie' && betSide !== 'tie') {
           // Tie kills Dragon/Tiger bets (no push)
+          applyJokerBonus(bet, 0, false);
           net = -bet;
           msg = `⚖️ Tie — house wins your ${betSide} bet`;
         } else {
+          applyJokerBonus(bet, 0, false);
           net = -bet;
           msg = `❌ ${winner === 'dragon' ? '🐉 Dragon' : '🐯 Tiger'} wins — you lose`;
         }

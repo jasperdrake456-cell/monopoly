@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getBalance, addBalance, subtractBalance } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import './HorseRacing.css';
 
 // ── Horse definitions ─────────────────────────────────────────────────────────
@@ -160,7 +161,12 @@ export default function HorseRacing() {
     const selected = HORSES.find(h => h.id === selectedId);
     const won = selected && selected.id === winnerHorse.id;
     const p = won ? calcPayout(bet, selected.odds) : 0;
-    if (won) addBalance(p);
+    if (won) {
+      addBalance(p);
+      applyJokerBonus(bet, p, true);
+    } else {
+      applyJokerBonus(bet, 0, false);
+    }
     syncBalance();
     setWinner(winnerHorse);
     setPayout(p);
@@ -179,6 +185,7 @@ export default function HorseRacing() {
   }
 
   useEffect(() => {
+    initJokerBonuses();
     return () => {
       if (animFrames.current) cancelAnimationFrame(animFrames.current);
       clearInterval(raceTimer.current);

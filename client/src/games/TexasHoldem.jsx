@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSocket } from '../hooks/useSocket';
 import { getBalance, addBalance, subtractBalance, isRiggedMode } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import { isHighScore } from '../utils/leaderboard';
 import HighScoreModal from '../components/HighScoreModal';
 import './TexasHoldem.css';
@@ -430,6 +431,8 @@ export default function TexasHoldem() {
 
   function syncBalance() { setCasinoBalance(getBalance()); }
 
+  useEffect(() => { initJokerBonuses(); }, []);
+
   useEffect(() => {
     const off = [
       on('roomCreated', ({ roomCode, playerId, buyIn }) => {
@@ -456,6 +459,11 @@ export default function TexasHoldem() {
           // Rigged: cap payout to buy-in so players can never profit
           const payout = isRiggedMode() ? Math.min(chips, sessionBuyIn) : chips;
           addBalance(payout);
+          if (payout > sessionBuyIn) {
+            applyJokerBonus(sessionBuyIn, payout, true);
+          } else if (payout < sessionBuyIn) {
+            applyJokerBonus(sessionBuyIn, 0, false);
+          }
           syncBalance();
           // Check if session profit is a leaderboard high score
           const profit = payout - sessionBuyIn;
@@ -464,6 +472,8 @@ export default function TexasHoldem() {
               if (yes) setPokerHSScore(profit);
             });
           }
+        } else if (sessionBuyIn > 0) {
+          applyJokerBonus(sessionBuyIn, 0, false);
         }
         setRoomState(null);
         setMyId(null);
@@ -472,9 +482,13 @@ export default function TexasHoldem() {
       }),
       on('bustedOut', () => {
         // Lost all chips — 0 returned, go back to lobby
+        if (sessionBuyIn > 0) {
+          applyJokerBonus(sessionBuyIn, 0, false);
+        }
         setRoomState(null);
         setMyId(null);
         roomCodeRef.current = null;
+        setSessionBuyIn(0);
       }),
       on('chipsReloaded', ({ amount }) => {
         subtractBalance(amount);

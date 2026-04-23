@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode, recordBetResult } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import './Roulette.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -71,6 +72,7 @@ export default function Roulette() {
   const spinning                  = phase === 'spinning';
 
   useEffect(() => {
+    initJokerBonuses();
     function tick() {
       const ms = msUntilNextDaily();
       const h = Math.floor(ms / 3600000);
@@ -158,6 +160,8 @@ export default function Roulette() {
       setHistory(prev => [r, ...prev].slice(0, 20));
       setPhase('result');
       recordBetResult({ game: 'roulette', amount: bet, won: win, multiplier: win ? betType.payout : 1, profit: net });
+      if (win) applyJokerBonus(bet, totalReturn, true);
+      else applyJokerBonus(bet, 0, false);
     }, 4500);
   }
 

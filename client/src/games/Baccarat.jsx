@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
+import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
 import './Baccarat.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -77,6 +78,7 @@ export default function Baccarat() {
 
   // Live countdown to next daily reward
   useEffect(() => {
+    initJokerBonuses();
     function tick() {
       const ms = msUntilNextDaily();
       const h  = Math.floor(ms / 3600000);
@@ -161,6 +163,7 @@ export default function Baccarat() {
       if (winner === 'tie' && side === 'tie') {
         const payout = Math.floor(bet * 8 * boost);
         addBalance(payout + bet);
+        applyJokerBonus(bet, payout + bet, true);
         net = payout;
         msg = `🎉 Tie! You win $${payout} (8:1)!`;
         reportBigWin('baccarat', bet, payout + bet, 8, `Bet Tie · result Tie · player ${fp} banker ${fb} · 8:1`);
@@ -168,6 +171,7 @@ export default function Baccarat() {
         const mult = side === 'banker' ? 0.95 : 1.0;
         const payout = Math.floor(bet * mult * boost);
         addBalance(bet + payout);
+        applyJokerBonus(bet, bet + payout, true);
         net = payout;
         msg = `✅ ${winner === 'player' ? 'Player' : 'Banker'} wins! +$${payout}`;
         reportBigWin('baccarat', bet, bet + payout, mult, `Bet ${side} · ${winner} wins · player ${fp} banker ${fb}`);
@@ -177,6 +181,7 @@ export default function Baccarat() {
         net = 0;
         msg = `🤝 Tie — push`;
       } else {
+        applyJokerBonus(bet, 0, false);
         net = -bet;
         msg = `❌ ${winner === 'player' ? 'Player' : 'Banker'} wins. You lose $${bet}`;
       }
