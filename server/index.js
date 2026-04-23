@@ -69,6 +69,9 @@ const factories       = require('./factoryStore');
 const duels           = require('./duelStore');
 const lootDrops       = require('./lootDropStore');
 const cases           = require('./caseStore');
+const jokers          = require('./jokerStore');
+const auction         = require('./auctionStore');
+const trades          = require('./tradeStore');
 
 const app = express();
 const server = http.createServer(app);
@@ -2707,6 +2710,347 @@ app.post('/api/cases/open', requireAuth, (req, res) => {
 
   console.log(`[Cases] 📦 ${req.user.username} opened ${caseDef.name} → ${result.item.emoji} ${result.item.name} ($${result.item.value.toLocaleString()}, ${result.item.rarity})`);
   res.json({ ok: true, ...result, balance: credit.ok ? credit.balance : null });
+});
+
+// ── Jokers (collectibles w/ equipable abilities) ──────────────────────────────
+
+// Catalog + rarity palette (public)
+app.get('/api/jokers/catalog', (req, res) => {
+  const catalog = jokers.getCatalog().map(j => ({
+    ...j,
+    marketValue: auction.marketValue(j.id, j.baseValue),
+  }));
+  res.json({
+    ok: true,
+    jokers: catalog,
+    rarities: jokers.getRarities(),
+    cratePrice: jokers.getCratePrice(),
+    maxEquipped: jokers.getMaxEquipped(),
+  });
+});
+
+// Viewer's inventory
+app.get('/api/jokers/inventory', requireAuth, (req, res) => {
+  const inv = jokers.getInventory(req.user.username);
+  // Attach market values for each instance's joker type
+  const owned = inv.owned.map(o => ({
+    ...o,
+    marketValue: o.def ? auction.marketValue(o.def.id, o.def.baseValue) : 0,
+  }));
+  res.json({
+    ok: true,
+    owned,
+    equipped: inv.equipped,
+    abilities: jokers.getEquippedAbilities(req.user.username),
+  });
+});
+
+// Buy a Joker Crate ($1M) → random weighted pull
+app.post('/api/jokers/crate/open', requireAuth, (req, res) => {
+  const price = jokers.getCratePrice();
+  const spend = us.spendBalance(req.user.username, price);
+  if (!spend.ok) return res.status(400).json({ ok: false, error: spend.error || 'Insufficient balance' });
+  io.emit('balanceReset', { username: req.user.username, balance: spend.balance });
+
+  const pull = jokers.openCrate(req.user.username);
+  if (!pull.ok) {
+    us.addBonusByAdmin(req.user.username, price); // refund on failure
+    return res.status(500).json({ ok: false, error: 'Crate failed' });
+  }
+
+  try { bh.log(req.user.username, { type: 'joker-crate', amount: -price, balance: spend.balance, description: `Joker Crate → ${pull.joker.emoji} ${pull.joker.name} (${pull.joker.rarity})` }); } catch {}
+  try { dg.addWager(req.user.username, price); } catch {}
+
+  // Broadcast pull (anyone-sees-anyone feed + big-win if legendary+)
+  io.emit('jokerPulled', { username: req.user.username, joker: pull.joker, instanceId: pull.instanceId, at: Date.now() });
+  liveFeed.push('joker-pull', { user: req.user.username, joker: pull.joker });
+
+  if (pull.joker.rarity === 'legendary' || pull.joker.rarity === 'mythic') {
+    io.emit('bigWin', {
+      username: req.user.username, game: 'jokers',
+      profit: pull.joker.baseValue - price,
+      multiplier: +(pull.joker.baseValue / price).toFixed(2),
+      timestamp: Date.now(),
+    });
+  }
+
+  console.log(`[Jokers] 🃏 ${req.user.username} pulled ${pull.joker.emoji} ${pull.joker.name} (${pull.joker.rarity})`);
+  res.json({ ok: true, joker: pull.joker, instanceId: pull.instanceId, balance: spend.balance });
+});
+
+// Equip / unequip
+app.post('/api/jokers/equip', requireAuth, (req, res) => {
+  const { instanceId } = req.body || {};
+  if (!instanceId) return res.status(400).json({ ok: false, error: 'instanceId required' });
+  const r = jokers.equip(req.user.username, instanceId);
+  if (!r.ok) return res.status(400).json(r);
+  res.json({ ok: true, abilities: jokers.getEquippedAbilities(req.user.username) });
+});
+app.post('/api/jokers/unequip', requireAuth, (req, res) => {
+  const { instanceId } = req.body || {};
+  if (!instanceId) return res.status(400).json({ ok: false, error: 'instanceId required' });
+  const r = jokers.unequip(req.user.username, instanceId);
+  if (!r.ok) return res.status(400).json(r);
+  res.json({ ok: true, abilities: jokers.getEquippedAbilities(req.user.username) });
+});
+
+// ── Auction House ─────────────────────────────────────────────────────────
+
+app.get('/api/auction/listings', (req, res) => {
+  const listings = auction.listAll().map(l => {
+    const def = jokers.getJokerDef(l.jokerId);
+    return {
+      ...l,
+      joker: def ? {
+        id: def.id, name: def.name, emoji: def.emoji, rarity: def.rarity,
+        baseValue: def.baseValue, description: def.description, abilities: def.abilities,
+      } : null,
+      marketValue: def ? auction.marketValue(def.id, def.baseValue) : 0,
+    };
+  });
+  res.json({ ok: true, listings, houseFee: auction.getHouseFee() });
+});
+
+app.get('/api/auction/market/:jokerId', (req, res) => {
+  const def = jokers.getJokerDef(req.params.jokerId);
+  if (!def) return res.status(404).json({ ok: false, error: 'Unknown joker' });
+  res.json({ ok: true, market: auction.marketSnapshot(def.id, def.baseValue) });
+});
+
+app.post('/api/auction/list', requireAuth, (req, res) => {
+  const { instanceId, price } = req.body || {};
+  if (!instanceId || !price) return res.status(400).json({ ok: false, error: 'instanceId and price required' });
+  if (!jokers.ownsInstance(req.user.username, instanceId)) return res.status(400).json({ ok: false, error: 'You do not own that joker' });
+
+  // Escrow — remove from inventory
+  const removed = jokers.removeInstance(req.user.username, instanceId);
+  if (!removed.ok) return res.status(400).json(removed);
+
+  const created = auction.createListing({ seller: req.user.username, instance: removed.instance, price: Math.floor(price) });
+  if (!created.ok) {
+    jokers.addInstance(req.user.username, removed.instance); // return on failure
+    return res.status(400).json(created);
+  }
+  io.emit('auctionListed', { listingId: created.listing.id, jokerId: removed.instance.jokerId, seller: req.user.username, price: created.listing.price });
+  res.json({ ok: true, listing: created.listing });
+});
+
+app.post('/api/auction/cancel', requireAuth, (req, res) => {
+  const { listingId } = req.body || {};
+  if (!listingId) return res.status(400).json({ ok: false, error: 'listingId required' });
+  const l = auction.getListing(listingId);
+  if (!l) return res.status(404).json({ ok: false, error: 'Listing not found' });
+  if (l.seller !== req.user.username) return res.status(403).json({ ok: false, error: 'Not your listing' });
+
+  const cancelled = auction.cancelListing(listingId, req.user.username);
+  if (!cancelled.ok) return res.status(400).json(cancelled);
+  jokers.addInstance(req.user.username, cancelled.instance); // return to seller
+  io.emit('auctionCancelled', { listingId });
+  res.json({ ok: true });
+});
+
+app.post('/api/auction/buy', requireAuth, (req, res) => {
+  const { listingId } = req.body || {};
+  if (!listingId) return res.status(400).json({ ok: false, error: 'listingId required' });
+  const l = auction.getListing(listingId);
+  if (!l) return res.status(404).json({ ok: false, error: 'Listing not found' });
+  if (l.seller === req.user.username) return res.status(400).json({ ok: false, error: 'Cannot buy your own listing' });
+
+  // Charge buyer
+  const spend = us.spendBalance(req.user.username, l.price);
+  if (!spend.ok) return res.status(400).json({ ok: false, error: spend.error || 'Insufficient balance' });
+  io.emit('balanceReset', { username: req.user.username, balance: spend.balance });
+
+  // Consume listing, move instance to buyer
+  const consumed = auction.consumeListing(listingId);
+  if (!consumed.ok) {
+    us.addBonusByAdmin(req.user.username, l.price); // refund if race
+    return res.status(400).json(consumed);
+  }
+  jokers.addInstance(req.user.username, consumed.listing.instance);
+
+  // Pay seller (minus house fee)
+  const fee    = Math.floor(l.price * auction.getHouseFee());
+  const payout = l.price - fee;
+  const credit = us.addBonusByAdmin(l.seller, payout);
+  if (credit.ok) io.emit('balanceReset', { username: l.seller, balance: credit.balance });
+
+  // Record sale for market tracker
+  auction.recordSale(l.jokerId, l.price);
+
+  try { bh.log(req.user.username, { type: 'auction-buy', amount: -l.price, balance: spend.balance, description: `Bought ${consumed.listing.instance.jokerId} from ${l.seller}` }); } catch {}
+  try { bh.log(l.seller, { type: 'auction-sold', amount: payout, balance: credit.ok ? credit.balance : null, description: `Sold ${consumed.listing.instance.jokerId} to ${req.user.username} (${auction.getHouseFee() * 100}% fee)` }); } catch {}
+
+  io.emit('auctionSold', { listingId, jokerId: l.jokerId, price: l.price, seller: l.seller, buyer: req.user.username });
+  liveFeed.push('auction-sold', { buyer: req.user.username, seller: l.seller, jokerId: l.jokerId, price: l.price });
+  res.json({ ok: true, balance: spend.balance });
+});
+
+// ── Trading (P2P offers) ───────────────────────────────────────────────────
+
+app.get('/api/trades/mine', requireAuth, (req, res) => {
+  const offers = trades.listByUser(req.user.username).map(o => {
+    return {
+      ...o,
+      offererJokers: o.offererInstances.map(inst => ({
+        instanceId: inst.instanceId,
+        def: jokers.getJokerDef(inst.jokerId),
+      })).filter(x => x.def),
+      requestedJokers: o.requestedJokerIds.map(id => jokers.getJokerDef(id)).filter(Boolean),
+    };
+  });
+  res.json({ ok: true, offers });
+});
+
+app.post('/api/trades/create', requireAuth, (req, res) => {
+  const { receiver, offererInstanceIds, offererCoins, requestedJokerIds, requestedCoins, message } = req.body || {};
+  if (!receiver)                 return res.status(400).json({ ok: false, error: 'receiver required' });
+  if (receiver === req.user.username) return res.status(400).json({ ok: false, error: 'Cannot trade with yourself' });
+
+  // Verify receiver exists
+  if (!us.userExists(receiver)) return res.status(404).json({ ok: false, error: 'Receiver not found' });
+
+  // Verify offerer has the coins (check only; deducted at accept)
+  if (offererCoins && offererCoins > 0) {
+    if ((us.getBalance(req.user.username) || 0) < offererCoins) return res.status(400).json({ ok: false, error: 'Not enough coins' });
+  }
+
+  // Pull instances from offerer inventory (escrow)
+  const instances = [];
+  const inst_ids = Array.isArray(offererInstanceIds) ? offererInstanceIds : [];
+  for (const iid of inst_ids) {
+    const rem = jokers.removeInstance(req.user.username, iid);
+    if (!rem.ok) {
+      // Roll back any already-removed
+      for (const prev of instances) jokers.addInstance(req.user.username, prev);
+      return res.status(400).json({ ok: false, error: `You do not own instance ${iid}` });
+    }
+    instances.push(rem.instance);
+  }
+
+  const created = trades.createOffer({
+    offerer: req.user.username,
+    receiver,
+    offererInstances: instances,
+    offererCoins: offererCoins || 0,
+    requestedJokerIds: requestedJokerIds || [],
+    requestedCoins: requestedCoins || 0,
+    message,
+  });
+
+  if (!created.ok) {
+    // Return escrow on failure
+    for (const inst of instances) jokers.addInstance(req.user.username, inst);
+    return res.status(400).json(created);
+  }
+
+  io.emit('tradeCreated', { offerId: created.offer.id, offerer: req.user.username, receiver });
+  res.json({ ok: true, offer: created.offer });
+});
+
+app.post('/api/trades/cancel', requireAuth, (req, res) => {
+  const { offerId } = req.body || {};
+  if (!offerId) return res.status(400).json({ ok: false, error: 'offerId required' });
+  const o = trades.getOffer(offerId);
+  if (!o || o.status !== 'open') return res.status(404).json({ ok: false, error: 'Offer not active' });
+  if (o.offerer !== req.user.username) return res.status(403).json({ ok: false, error: 'Not your offer' });
+
+  // Return escrow
+  for (const inst of o.offererInstances) jokers.addInstance(req.user.username, inst);
+  trades.setStatus(offerId, 'cancelled');
+  io.emit('tradeResolved', { offerId, status: 'cancelled' });
+  res.json({ ok: true });
+});
+
+app.post('/api/trades/reject', requireAuth, (req, res) => {
+  const { offerId } = req.body || {};
+  if (!offerId) return res.status(400).json({ ok: false, error: 'offerId required' });
+  const o = trades.getOffer(offerId);
+  if (!o || o.status !== 'open') return res.status(404).json({ ok: false, error: 'Offer not active' });
+  if (o.receiver !== req.user.username) return res.status(403).json({ ok: false, error: 'Not addressed to you' });
+
+  // Return escrow to offerer
+  for (const inst of o.offererInstances) jokers.addInstance(o.offerer, inst);
+  trades.setStatus(offerId, 'rejected');
+  io.emit('tradeResolved', { offerId, status: 'rejected' });
+  res.json({ ok: true });
+});
+
+app.post('/api/trades/accept', requireAuth, (req, res) => {
+  const { offerId, suppliedInstanceIds } = req.body || {};
+  if (!offerId) return res.status(400).json({ ok: false, error: 'offerId required' });
+  const o = trades.getOffer(offerId);
+  if (!o || o.status !== 'open') return res.status(404).json({ ok: false, error: 'Offer not active' });
+  if (o.receiver !== req.user.username) return res.status(403).json({ ok: false, error: 'Not addressed to you' });
+
+  // Validate receiver has coins (if any requested)
+  if (o.requestedCoins > 0) {
+    if ((us.getBalance(req.user.username) || 0) < o.requestedCoins) {
+      return res.status(400).json({ ok: false, error: 'Not enough coins to fulfill offer' });
+    }
+  }
+
+  // Validate supplied instances: one per requestedJokerId
+  const supplied = Array.isArray(suppliedInstanceIds) ? suppliedInstanceIds : [];
+  if (supplied.length !== o.requestedJokerIds.length) {
+    return res.status(400).json({ ok: false, error: 'Must supply one instance per requested joker' });
+  }
+  const inv = jokers.getInventory(req.user.username);
+  // Track which requested jokerIds have been matched so same slot isn't reused
+  const usedInst = new Set();
+  const matchedInstances = [];
+  for (let i = 0; i < o.requestedJokerIds.length; i++) {
+    const wantedId = o.requestedJokerIds[i];
+    const iid      = supplied[i];
+    if (usedInst.has(iid)) return res.status(400).json({ ok: false, error: 'Duplicate instance supplied' });
+    const owned = inv.owned.find(x => x.instanceId === iid && x.jokerId === wantedId);
+    if (!owned) return res.status(400).json({ ok: false, error: `Missing required joker ${wantedId}` });
+    usedInst.add(iid);
+    matchedInstances.push({ instanceId: iid, jokerId: wantedId, acquiredAt: owned.acquiredAt });
+  }
+
+  // Validate offerer still has coins too
+  if (o.offererCoins > 0) {
+    if ((us.getBalance(o.offerer) || 0) < o.offererCoins) {
+      // Return escrow, cancel
+      for (const inst of o.offererInstances) jokers.addInstance(o.offerer, inst);
+      trades.setStatus(offerId, 'failed');
+      return res.status(400).json({ ok: false, error: 'Offerer no longer has the required coins' });
+    }
+  }
+
+  // Perform the swap atomically-ish:
+  // 1. move escrowed instances from offer → receiver
+  for (const inst of o.offererInstances) jokers.addInstance(req.user.username, inst);
+
+  // 2. remove receiver's requested instances + give to offerer
+  for (const m of matchedInstances) {
+    const rem = jokers.removeInstance(req.user.username, m.instanceId);
+    if (rem.ok) jokers.addInstance(o.offerer, rem.instance);
+  }
+
+  // 3. swap coins
+  if (o.offererCoins > 0) {
+    const s = us.spendBalance(o.offerer, o.offererCoins);
+    if (s.ok) {
+      io.emit('balanceReset', { username: o.offerer, balance: s.balance });
+      const r = us.addBonusByAdmin(req.user.username, o.offererCoins);
+      if (r.ok) io.emit('balanceReset', { username: req.user.username, balance: r.balance });
+    }
+  }
+  if (o.requestedCoins > 0) {
+    const s = us.spendBalance(req.user.username, o.requestedCoins);
+    if (s.ok) {
+      io.emit('balanceReset', { username: req.user.username, balance: s.balance });
+      const r = us.addBonusByAdmin(o.offerer, o.requestedCoins);
+      if (r.ok) io.emit('balanceReset', { username: o.offerer, balance: r.balance });
+    }
+  }
+
+  trades.setStatus(offerId, 'accepted');
+  io.emit('tradeResolved', { offerId, status: 'accepted' });
+  liveFeed.push('trade-accepted', { offerer: o.offerer, receiver: req.user.username });
+  res.json({ ok: true });
 });
 
 // ── Live Events Feed (public ticker) ─────────────────────────────────────────

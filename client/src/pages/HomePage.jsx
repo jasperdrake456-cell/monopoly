@@ -173,6 +173,9 @@ export default function HomePage() {
         <div className="home-logo" style={{ display:'flex', alignItems:'center', gap:10 }}>🎮 Game Vault <OnlineCount /></div>
         <div className="home-header-right">
           <Link to="/cases" className="home-trivia-btn" style={{ background: 'linear-gradient(135deg, rgba(251,191,36,0.22), rgba(244,114,182,0.18), rgba(192,132,252,0.18))', borderColor: 'rgba(251,191,36,0.6)', color: '#fde047', fontWeight: 900, letterSpacing: '0.5px', boxShadow: '0 0 14px rgba(251,191,36,0.35)' }}>📦 CASES</Link>
+          <Link to="/jokers" className="home-trivia-btn" style={{ background: 'linear-gradient(135deg, rgba(244,114,182,0.22), rgba(192,132,252,0.18))', borderColor: 'rgba(244,114,182,0.6)', color: '#f9a8d4', fontWeight: 900, letterSpacing: '0.5px', boxShadow: '0 0 14px rgba(244,114,182,0.35)' }}>🃏 JOKERS</Link>
+          <Link to="/auction" className="home-trivia-btn" style={{ background: 'rgba(251,191,36,0.12)', borderColor: 'rgba(251,191,36,0.45)', color: '#fcd34d', fontWeight: 800 }}>🏛️ Auction</Link>
+          {isLoggedIn && <Link to="/trading" className="home-trivia-btn" style={{ background: 'rgba(96,165,250,0.12)', borderColor: 'rgba(96,165,250,0.45)', color: '#93c5fd', fontWeight: 800 }}>🤝 Trade</Link>}
           <Link to="/daily-spin" className="home-trivia-btn" style={{ background: 'rgba(124,58,237,0.18)', borderColor: 'rgba(192,132,252,0.4)', color: '#c084fc' }}>🎡 Daily Spin</Link>
           <Link to="/lottery"    className="home-trivia-btn" style={{ background: 'rgba(168,85,247,0.14)', borderColor: 'rgba(168,85,247,0.4)', color: '#d8b4fe' }}>🎟️ Lottery</Link>
           <Link to="/wager-race" className="home-trivia-btn" style={{ background: 'rgba(245,158,11,0.12)', borderColor: 'rgba(245,158,11,0.4)', color: '#fcd34d' }}>🏁 Wager Race</Link>

@@ -89,6 +89,9 @@ import PetsPage from './pages/PetsPage';
 import FactoryPage from './pages/FactoryPage';
 import DuelsPage from './pages/DuelsPage';
 import CasesPage from './pages/CasesPage';
+import JokersPage from './pages/JokersPage';
+import AuctionHousePage from './pages/AuctionHousePage';
+import TradingPage from './pages/TradingPage';
 import './App.css';
 
 // Convenience wrapper: RequireAuth + GameGuard for a given slug
@@ -221,6 +224,9 @@ export default function App() {
             <Route path="/factory"        element={<FactoryPage />} />
             <Route path="/duels"          element={<DuelsPage />} />
             <Route path="/cases"          element={<CasesPage />} />
+            <Route path="/jokers"         element={<RequireAuth><JokersPage /></RequireAuth>} />
+            <Route path="/auction"        element={<AuctionHousePage />} />
+            <Route path="/trading"        element={<RequireAuth><TradingPage /></RequireAuth>} />
             <Route path="*"              element={<Navigate to="/" replace />} />
           </Routes>
         </PasswordGate>
