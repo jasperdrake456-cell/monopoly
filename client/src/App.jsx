@@ -88,6 +88,7 @@ import SeasonPassPage from './pages/SeasonPassPage';
 import PetsPage from './pages/PetsPage';
 import FactoryPage from './pages/FactoryPage';
 import DuelsPage from './pages/DuelsPage';
+import CasesPage from './pages/CasesPage';
 import './App.css';
 
 // Convenience wrapper: RequireAuth + GameGuard for a given slug
@@ -219,6 +220,7 @@ export default function App() {
             <Route path="/pets"           element={<PetsPage />} />
             <Route path="/factory"        element={<FactoryPage />} />
             <Route path="/duels"          element={<DuelsPage />} />
+            <Route path="/cases"          element={<CasesPage />} />
             <Route path="*"              element={<Navigate to="/" replace />} />
           </Routes>
         </PasswordGate>

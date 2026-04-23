@@ -68,6 +68,7 @@ const pets            = require('./petStore');
 const factories       = require('./factoryStore');
 const duels           = require('./duelStore');
 const lootDrops       = require('./lootDropStore');
+const cases           = require('./caseStore');
 
 const app = express();
 const server = http.createServer(app);
@@ -2621,6 +2622,92 @@ setInterval(() => {
     console.log(`[LootDrop] ⏰ ${swept.emoji} drop expired unclaimed`);
   }
 }, 15_000);
+
+// ── Case Opening (CSGO-style unboxing) ─────────────────────────────────────
+
+app.get('/api/cases', (req, res) => {
+  const me = us.getMe(getToken(req));
+  const freeMs = me.ok ? cases.msUntilFree(me.username) : 0;
+  res.json({
+    ok: true,
+    cases: cases.getAllCases(),
+    rarities: cases.getRarities(),
+    recent: cases.getRecentOpens(),
+    freeCooldownMs: freeMs,
+  });
+});
+
+app.post('/api/cases/open', requireAuth, (req, res) => {
+  const { caseId, free } = req.body || {};
+  if (!caseId) return res.status(400).json({ ok: false, error: 'caseId required' });
+
+  const caseDef = cases.CASES.find(c => c.id === caseId);
+  if (!caseDef) return res.status(404).json({ ok: false, error: 'Unknown case' });
+
+  // Handle the free "Welcome Case" path
+  if (free || caseDef.freeOnly) {
+    if (!caseDef.freeOnly) return res.status(400).json({ ok: false, error: 'This case is not free' });
+    const wait = cases.msUntilFree(req.user.username);
+    if (wait > 0) return res.status(429).json({ ok: false, error: 'Free case on cooldown', cooldownMs: wait });
+
+    const result = cases.openCase(req.user.username, caseId, { free: true });
+    if (!result.ok) return res.status(400).json(result);
+    cases.recordFreeClaim(req.user.username);
+
+    const credit = us.addBonusByAdmin(req.user.username, result.item.value);
+    if (credit.ok) {
+      bh.log(req.user.username, { type: 'case-open', amount: result.item.value, balance: credit.balance, description: `Opened ${caseDef.emoji} ${caseDef.name} → ${result.item.emoji} ${result.item.name}` });
+      io.emit('balanceReset', { username: req.user.username, balance: credit.balance });
+    }
+    io.emit('caseOpen', result.entry);
+    liveFeed.push('case-open', { user: req.user.username, caseName: caseDef.name, item: result.item });
+    return res.json({ ok: true, ...result, balance: credit.ok ? credit.balance : null, cooldownMs: 60 * 60 * 1000 });
+  }
+
+  // Paid case path — deduct first, then RNG, then credit item value.
+  if (caseDef.price > 0) {
+    const spend = us.spendBalance(req.user.username, caseDef.price);
+    if (!spend.ok) return res.status(400).json({ ok: false, error: spend.error || 'Insufficient balance' });
+    io.emit('balanceReset', { username: req.user.username, balance: spend.balance });
+  }
+
+  const result = cases.openCase(req.user.username, caseId);
+  if (!result.ok) {
+    // RNG failed after we already charged — refund.
+    if (caseDef.price > 0) us.addBonusByAdmin(req.user.username, caseDef.price);
+    return res.status(400).json(result);
+  }
+
+  const credit = us.addBonusByAdmin(req.user.username, result.item.value);
+  if (credit.ok) {
+    bh.log(req.user.username, { type: 'case-open', amount: result.item.value - caseDef.price, balance: credit.balance, description: `Opened ${caseDef.emoji} ${caseDef.name} → ${result.item.emoji} ${result.item.name}` });
+    io.emit('balanceReset', { username: req.user.username, balance: credit.balance });
+  }
+
+  // XP + mission bookkeeping — count the case open as a wager
+  try { xp.recordBet({ username: req.user.username, game: 'cases', amount: caseDef.price, won: result.item.value >= caseDef.price, multiplier: caseDef.price > 0 ? (result.item.value / caseDef.price) : 1, profit: result.item.value - caseDef.price }); } catch {}
+  try { dg.addWager(req.user.username, caseDef.price); } catch {}
+
+  // Broadcast + big-win check
+  io.emit('caseOpen', result.entry);
+  liveFeed.push('case-open', { user: req.user.username, caseName: caseDef.name, item: result.item });
+  if (result.item.value - caseDef.price >= 50_000) {
+    wl.logWin({
+      username:   req.user.username,
+      game:       'cases',
+      bet:        caseDef.price,
+      payout:     result.item.value,
+      profit:     result.item.value - caseDef.price,
+      multiplier: caseDef.price > 0 ? +(result.item.value / caseDef.price).toFixed(2) : null,
+      details:    `${caseDef.name} → ${result.item.emoji} ${result.item.name} (${result.item.rarity})`,
+      timestamp:  Date.now(),
+    });
+    io.emit('bigWin', { username: req.user.username, game: 'cases', profit: result.item.value - caseDef.price, multiplier: caseDef.price > 0 ? +(result.item.value / caseDef.price).toFixed(2) : null, timestamp: Date.now() });
+  }
+
+  console.log(`[Cases] 📦 ${req.user.username} opened ${caseDef.name} → ${result.item.emoji} ${result.item.name} ($${result.item.value.toLocaleString()}, ${result.item.rarity})`);
+  res.json({ ok: true, ...result, balance: credit.ok ? credit.balance : null });
+});
 
 // ── Live Events Feed (public ticker) ─────────────────────────────────────────
 
