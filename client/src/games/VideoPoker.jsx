@@ -62,22 +62,26 @@ function evalHand(cards) {
   return null;
 }
 
-// ── Pay table (bet × mult = payout) — tightened 6/5 schedule ─────────────────
-// Previous table was ~10% more generous than standard 9/6 Jacks or Better
-// AND paid 2.2× on a single high pair (which hits ~21% of hands on optimal
-// play — practically free money). This schedule is a classic 6/5 paytable
-// with Jacks or Better reduced to a push (1×) so the game isn't printing.
+// ── Pay table (bet × mult = payout) — ~10% more generous ─────────────────────
 const PAY_TABLE = [
-  { hand: 'Royal Flush',      mult: 250 },
-  { hand: 'Straight Flush',   mult: 40  },
-  { hand: 'Four of a Kind',   mult: 20  },
-  { hand: 'Full House',       mult: 6   },
-  { hand: 'Flush',            mult: 5   },
-  { hand: 'Straight',         mult: 4   },
-  { hand: 'Three of a Kind',  mult: 3   },
-  { hand: 'Two Pair',         mult: 2   },
-  { hand: 'Jacks or Better',  mult: 1   },
+  { hand: 'Royal Flush',      mult: 440 },
+  { hand: 'Straight Flush',   mult: 44  },
+  { hand: 'Four of a Kind',   mult: 22  },
+  { hand: 'Full House',       mult: 8.8 },
+  { hand: 'Flush',            mult: 5.5 },
+  { hand: 'Straight',         mult: 4.4 },
+  { hand: 'Three of a Kind',  mult: 3.3 },
+  { hand: 'Two Pair',         mult: 2.2 },
+  { hand: 'Jacks or Better',  mult: 2.2 },
 ];
+
+// House tax: after the draw, X% of would-be wins get re-rolled on their
+// non-held cards until they miss (or the attempts run out). Held cards are
+// never touched, so strategic holds still matter — only the RNG-luck wins
+// are taxed. Also the player hasn't seen the draw cards yet, so swapping
+// them for misses is visually indistinguishable from a natural bad draw.
+const HOUSE_TAX_RATE       = 0.30;
+const HOUSE_TAX_MAX_TRIES  = 25;
 
 function getMult(handName) {
   return PAY_TABLE.find(p => p.hand === handName)?.mult ?? 0;
@@ -150,12 +154,35 @@ export default function VideoPoker() {
 
   function draw() {
     if (phase !== 'hold') return;
-    const newDeck = [...deck];
-    const newHand = hand.map((card, i) => held[i] ? card : newDeck.shift());
+    let newDeck = [...deck];
+    let newHand = hand.map((card, i) => held[i] ? card : newDeck.shift());
+
+    let handName = evalHand(newHand);
+
+    // House tax — apply after the draw, before payout is computed.
+    // Skipped in rigged-mode (already a guaranteed junk hand) and when the
+    // player holds all 5 cards (they forced the hand, respect it).
+    const heldCount = held.filter(Boolean).length;
+    if (handName && !isRiggedMode() && heldCount < 5 && Math.random() < HOUSE_TAX_RATE) {
+      for (let attempt = 0; attempt < HOUSE_TAX_MAX_TRIES; attempt++) {
+        const freshDeck = createDeck();
+        const trial = [...newHand];
+        let di = 0;
+        for (let i = 0; i < 5; i++) {
+          if (!held[i]) trial[i] = freshDeck[di++];
+        }
+        if (!evalHand(trial)) {
+          newHand = trial;
+          handName = null;
+          newDeck = freshDeck.slice(5 - heldCount);
+          break;
+        }
+      }
+    }
+
     setDeck(newDeck);
     setHand(newHand);
 
-    const handName = evalHand(newHand);
     const mult = getMult(handName);
     const payout = Math.floor(bet * mult * boost);
 
