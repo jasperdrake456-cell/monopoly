@@ -1362,7 +1362,7 @@ export default function AdminPage() {
               &nbsp;·&nbsp;Biggest: <strong>${Math.max(...bigWins.map(w => w.profit || 0)).toLocaleString()}</strong>
             </div>
           )}
-          <div className="admin-wins-subtext">Logs wins where profit exceeds $50,000 in a single round.</div>
+          <div className="admin-wins-subtext">Logs wins where profit exceeds $5,000,000 in a single round. Log auto-clears every hour.</div>
           {bigWins.length === 0 && <div className="admin-empty">No big wins recorded yet.</div>}
           {bigWins.map((w, i) => (
             <div key={w.id || i} className="admin-win-row">
