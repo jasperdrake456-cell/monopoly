@@ -537,6 +537,18 @@ app.delete('/api/admin/wins/:id', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+// Auto-clear the big-win log every hour so the feed stays fresh and the
+// file doesn't accumulate stale entries indefinitely.
+const WIN_LOG_CLEAR_INTERVAL_MS = 60 * 60 * 1000;
+setInterval(() => {
+  try {
+    wl.clearWins();
+    console.log('[winLog] hourly clear done');
+  } catch (e) {
+    console.error('[winLog] hourly clear failed:', e.message);
+  }
+}, WIN_LOG_CLEAR_INTERVAL_MS);
+
 // ── Ban admin API ──────────────────────────────────────────────────────────────
 
 // List all IP bans

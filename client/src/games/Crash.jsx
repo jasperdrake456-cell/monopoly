@@ -21,7 +21,7 @@ function generateCrashPoint() {
 
 // Minimum multiplier the player can cash out at — prevents insta-cashout
 // exploits at the low end where the risk was near-zero for guaranteed profit.
-const MIN_CASHOUT_MULT = 1.25;
+const MIN_CASHOUT_MULT = 1.20;
 
 const MAX_HISTORY = 10;
 

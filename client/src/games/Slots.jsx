@@ -20,23 +20,23 @@ function authFetch(path, token, options = {}) {
   }).then(r => r.json()).catch(() => ({ ok: false }));
 }
 
-// Balanced pool — paying symbols weighted so wins happen reasonably often.
-// 💎×1, 7️⃣×1, ⭐×2, 🔔×3, 🍇×3, 🍊×4, 🍋×5, 🍒×8 (27 paying)
-// Filler: 🍑×4, 🫐×4, 🥝×4, 🍈×4, 🫒×4 (20 filler) — total 47
+// Generous pool — paying symbols weighted so wins happen often.
+// 💎×2, 7️⃣×2, ⭐×4, 🔔×5, 🍇×5, 🍊×6, 🍋×7, 🍒×12 (43 paying)
+// Filler: 🍑×2, 🫐×2, 🥝×2, 🍈×2, 🫒×2 (10 filler) — total 53
 const REEL_POOL = [
-  '💎',
-  '7️⃣',
-  '⭐','⭐',
-  '🔔','🔔','🔔',
-  '🍇','🍇','🍇',
-  '🍊','🍊','🍊','🍊',
-  '🍋','🍋','🍋','🍋','🍋',
-  '🍒','🍒','🍒','🍒','🍒','🍒','🍒','🍒',
-  '🍑','🍑','🍑','🍑',
-  '🫐','🫐','🫐','🫐',
-  '🥝','🥝','🥝','🥝',
-  '🍈','🍈','🍈','🍈',
-  '🫒','🫒','🫒','🫒',
+  '💎','💎',
+  '7️⃣','7️⃣',
+  '⭐','⭐','⭐','⭐',
+  '🔔','🔔','🔔','🔔','🔔',
+  '🍇','🍇','🍇','🍇','🍇',
+  '🍊','🍊','🍊','🍊','🍊','🍊',
+  '🍋','🍋','🍋','🍋','🍋','🍋','🍋',
+  '🍒','🍒','🍒','🍒','🍒','🍒','🍒','🍒','🍒','🍒','🍒','🍒',
+  '🍑','🍑',
+  '🫐','🫐',
+  '🥝','🥝',
+  '🍈','🍈',
+  '🫒','🫒',
 ];
 
 const PAYTABLE = [
@@ -48,8 +48,15 @@ const PAYTABLE = [
   { symbols: ['🍊','🍊','🍊'], label: '🍊 🍊 🍊', mult: 10 },
   { symbols: ['🍋','🍋','🍋'], label: '🍋 🍋 🍋', mult: 5 },
   { symbols: ['🍒','🍒','🍒'], label: '🍒 🍒 🍒', mult: 3 },
+  { symbols: ['💎','💎','*'], label: '💎 💎 any (pair)', mult: 25 },
+  { symbols: ['7️⃣','7️⃣','*'], label: '7️⃣ 7️⃣ any (pair)', mult: 15 },
+  { symbols: ['⭐','⭐','*'], label: '⭐ ⭐ any (pair)', mult: 5 },
+  { symbols: ['🔔','🔔','*'], label: '🔔 🔔 any (pair)', mult: 3 },
+  { symbols: ['🍇','🍇','*'], label: '🍇 🍇 any (pair)', mult: 2 },
+  { symbols: ['🍊','🍊','*'], label: '🍊 🍊 any (pair)', mult: 1.5 },
+  { symbols: ['🍋','🍋','*'], label: '🍋 🍋 any (pair)', mult: 1.2 },
   { symbols: ['🍒','🍒','*'], label: '🍒 🍒 any', mult: 1.5 },
-  { symbols: ['🍒','*','*'], label: '🍒 any any', mult: 0.8 },
+  { symbols: ['🍒','*','*'], label: '🍒 any any',  mult: 1.0 },
 ];
 
 function rand() {
@@ -77,10 +84,22 @@ function evaluate(mids) {
   if (r0 === '🍊' && r1 === '🍊' && r2 === '🍊') return { mult: 10, label: '🍊 🍊 🍊 ORANGES!' };
   if (r0 === '🍋' && r1 === '🍋' && r2 === '🍋') return { mult: 5,  label: '🍋 🍋 🍋 LEMONS!' };
 
-  // Cherry combos — count by total, any position (fixes 🍒❌🍒 and ❌🍒🍒 cases)
+  // Cherry combos — count by total, any position
   const cherries = mids.filter(s => s === '🍒').length;
   if (cherries === 3) return { mult: 3,   label: '🍒 🍒 🍒 CHERRIES!' };
   if (cherries === 2) return { mult: 1.5, label: '🍒 🍒 — Double Cherry!' };
+
+  // Two-of-a-kind (non-cherry) — any two matching paying symbols in any
+  // position. Ordered high to low so the best pair always wins.
+  const has2 = (sym) => mids.filter(s => s === sym).length >= 2;
+  if (has2('💎'))  return { mult: 25,  label: '💎 💎 — Double Diamond!' };
+  if (has2('7️⃣')) return { mult: 15,  label: '7️⃣ 7️⃣ — Double Seven!' };
+  if (has2('⭐'))  return { mult: 5,   label: '⭐ ⭐ — Double Star!' };
+  if (has2('🔔'))  return { mult: 3,   label: '🔔 🔔 — Double Bell!' };
+  if (has2('🍇'))  return { mult: 2,   label: '🍇 🍇 — Double Grape!' };
+  if (has2('🍊'))  return { mult: 1.5, label: '🍊 🍊 — Double Orange!' };
+  if (has2('🍋'))  return { mult: 1.2, label: '🍋 🍋 — Double Lemon!' };
+
   if (cherries === 1) return { mult: 1.0, label: '🍒 — Single Cherry!' };
 
   return { mult: 0, label: 'No match. Better luck next time!' };
