@@ -1220,6 +1220,27 @@ app.post('/api/xp/record-bet', requireAuth, (req, res) => {
     }
   }
 
+  // Joker XP multiplier — apply bonus XP from equipped jokers with xpMultiplier
+  // (e.g. XP Crystal +25%, Crown Joker +100%, Multiverse +200%).
+  try {
+    const jokerAbilities = jokers.getEquippedAbilities(req.user.username);
+    const jokerXpMult = jokerAbilities?.xpMultiplier || 0;
+    if (jokerXpMult > 0 && result.xpGained > 0) {
+      const bonus = Math.floor(result.xpGained * jokerXpMult);
+      if (bonus > 0) {
+        const r3 = xp.awardXP(req.user.username, bonus);
+        result.xpGained  += bonus;
+        result.newXp      = r3.newXp;
+        result.jokerXpBonus = bonus;
+        if (r3.leveledUp && !result.leveledUp) {
+          result.leveledUp = true;
+          result.newLevel  = r3.newLevel;
+          result.levelInfo = r3.levelInfo;
+        }
+      }
+    }
+  } catch {}
+
   // Daily goals — track wagered amount
   dg.addWager(req.user.username, Math.floor(amount));
 
@@ -2669,8 +2690,19 @@ app.post('/api/cases/open', requireAuth, (req, res) => {
   }
 
   // Paid case path — deduct first, then RNG, then credit item value.
+  // Apply Joker crateDiscountPct if the user has any (e.g. Crate Key: 15% off).
+  let effectivePrice = caseDef.price;
+  let crateDiscount = 0;
   if (caseDef.price > 0) {
-    const spend = us.spendBalance(req.user.username, caseDef.price);
+    try {
+      const ab = jokers.getEquippedAbilities(req.user.username);
+      const disc = Math.min(0.5, Math.max(0, ab?.crateDiscountPct || 0));
+      if (disc > 0) {
+        crateDiscount  = Math.floor(caseDef.price * disc);
+        effectivePrice = caseDef.price - crateDiscount;
+      }
+    } catch {}
+    const spend = us.spendBalance(req.user.username, effectivePrice);
     if (!spend.ok) return res.status(400).json({ ok: false, error: spend.error || 'Insufficient balance' });
     io.emit('balanceReset', { username: req.user.username, balance: spend.balance });
   }
@@ -2678,13 +2710,14 @@ app.post('/api/cases/open', requireAuth, (req, res) => {
   const result = cases.openCase(req.user.username, caseId);
   if (!result.ok) {
     // RNG failed after we already charged — refund.
-    if (caseDef.price > 0) us.addBonusByAdmin(req.user.username, caseDef.price);
+    if (caseDef.price > 0) us.addBonusByAdmin(req.user.username, effectivePrice);
     return res.status(400).json(result);
   }
 
   const credit = us.addBonusByAdmin(req.user.username, result.item.value);
   if (credit.ok) {
-    bh.log(req.user.username, { type: 'case-open', amount: result.item.value - caseDef.price, balance: credit.balance, description: `Opened ${caseDef.emoji} ${caseDef.name} → ${result.item.emoji} ${result.item.name}` });
+    const discNote = crateDiscount > 0 ? ` (joker discount -$${crateDiscount.toLocaleString()})` : '';
+    bh.log(req.user.username, { type: 'case-open', amount: result.item.value - effectivePrice, balance: credit.balance, description: `Opened ${caseDef.emoji} ${caseDef.name} → ${result.item.emoji} ${result.item.name}${discNote}` });
     io.emit('balanceReset', { username: req.user.username, balance: credit.balance });
   }
 
@@ -2748,7 +2781,18 @@ app.get('/api/jokers/inventory', requireAuth, (req, res) => {
 
 // Buy a Joker Crate ($1M) → random weighted pull
 app.post('/api/jokers/crate/open', requireAuth, (req, res) => {
-  const price = jokers.getCratePrice();
+  const basePrice = jokers.getCratePrice();
+  // Apply the user's Joker crateDiscountPct if any (Crate Key = 15% off, etc.)
+  let crateDiscount = 0;
+  let price = basePrice;
+  try {
+    const ab = jokers.getEquippedAbilities(req.user.username);
+    const disc = Math.min(0.5, Math.max(0, ab?.crateDiscountPct || 0));
+    if (disc > 0) {
+      crateDiscount = Math.floor(basePrice * disc);
+      price = basePrice - crateDiscount;
+    }
+  } catch {}
   const spend = us.spendBalance(req.user.username, price);
   if (!spend.ok) return res.status(400).json({ ok: false, error: spend.error || 'Insufficient balance' });
   io.emit('balanceReset', { username: req.user.username, balance: spend.balance });
@@ -2759,7 +2803,8 @@ app.post('/api/jokers/crate/open', requireAuth, (req, res) => {
     return res.status(500).json({ ok: false, error: 'Crate failed' });
   }
 
-  try { bh.log(req.user.username, { type: 'joker-crate', amount: -price, balance: spend.balance, description: `Joker Crate → ${pull.joker.emoji} ${pull.joker.name} (${pull.joker.rarity})` }); } catch {}
+  const discNote = crateDiscount > 0 ? ` (joker discount -$${crateDiscount.toLocaleString()})` : '';
+  try { bh.log(req.user.username, { type: 'joker-crate', amount: -price, balance: spend.balance, description: `Joker Crate → ${pull.joker.emoji} ${pull.joker.name} (${pull.joker.rarity})${discNote}` }); } catch {}
   try { dg.addWager(req.user.username, price); } catch {}
 
   // Broadcast pull (anyone-sees-anyone feed + big-win if legendary+)

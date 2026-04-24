@@ -7,19 +7,18 @@
  * - Jokers are pulled from the Joker Crate ($1M per open) with weighted rarity.
  * - Each Joker has a baseValue (floor) + marketValue (dynamic, updated by auctions).
  *
- * Abilities (applied via applyJokerBonuses in index.js payout paths):
- *   - payoutMultiplier:  adds to win payouts (e.g., 0.05 = +5%)
- *   - luckBoost:         adds to RNG favourable outcomes
- *   - cashbackPct:       refunds a % of losing bets
- *   - freeSpinsPerHour:  grants free daily-spin-style pulls
- *   - crateDiscountPct:  discount on paid cases
- *   - xpMultiplier:      multiplies XP earned from bets
- *   - jackpotChance:     flat chance per bet to double payout
- *   - freeBetChance:     flat chance any bet is refunded (free roll)
- *   - flatWinBonus:      flat $ added to every win
- *   - lossRefundChance:  chance to fully refund a losing bet
- *   - winStreakBonus:    +% bonus per consecutive win (resets on loss)
- *   - lossStreakShield:  every 5th consecutive loss is refunded (enable if > 0)
+ * Abilities — all fully functional and wired:
+ *   - payoutMultiplier:  adds X% to win profits                (client: jokerBonus.applyJokerBonus)
+ *   - cashbackPct:       refunds X% of losing bets             (client)
+ *   - jackpotChance:     X% chance per win to double profit    (client)
+ *   - luckBoost:         X% chance on loss to refund the bet   (client, "lucky escape")
+ *   - freeBetChance:     X% chance any bet is refunded         (client, "free roll")
+ *   - flatWinBonus:      flat $ added to every win             (client)
+ *   - lossRefundChance:  X% chance to refund a full loss       (client)
+ *   - winStreakBonus:    +X% per consecutive win               (client, resets on loss)
+ *   - lossStreakShield:  every 5th loss in a row is refunded   (client)
+ *   - xpMultiplier:      +X% XP from every bet                 (server: /api/xp/record-bet)
+ *   - crateDiscountPct:  X% off paid case AND Joker Crate opens (server)
  */
 
 const fs   = require('fs');

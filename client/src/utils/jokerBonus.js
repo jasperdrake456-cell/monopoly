@@ -107,6 +107,13 @@ export function applyJokerBonus(bet, basePayout, won) {
       bonus += bet;
       reasons.push('LOSS REFUND');
     }
+    // "Lucky escape": luckBoost% chance to refund the bet on a loss.
+    // This makes every joker with luckBoost actually functional — previously
+    // luckBoost was declared on 16+ jokers but never fired.
+    if (a.luckBoost > 0 && Math.random() < a.luckBoost) {
+      bonus += bet;
+      reasons.push('LUCKY ESCAPE');
+    }
     // Every 5th loss in a row, refund the bet
     if (a.lossStreakShield > 0 && _lossStreak > 0 && _lossStreak % 5 === 0) {
       bonus += bet;
