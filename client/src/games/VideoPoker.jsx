@@ -86,18 +86,20 @@ const PAY_TABLE = [
 //    keep the weakest starting hand, lowering average hand quality before
 //    the player even decides what to hold.
 const HOUSE_TAX_BY_HAND = {
-  'Royal Flush':     0.95,  // almost never actually pays
-  'Straight Flush':  0.90,
-  'Four of a Kind':  0.85,
-  'Full House':      0.75,
-  'Flush':           0.65,
-  'Straight':        0.60,
-  'Three of a Kind': 0.55,
-  'Two Pair':        0.50,
-  'Jacks or Better': 0.45,
+  'Royal Flush':     0.99,  // essentially never pays
+  'Straight Flush':  0.97,
+  'Four of a Kind':  0.94,
+  'Full House':      0.88,
+  'Flush':           0.82,
+  'Straight':        0.78,
+  'Three of a Kind': 0.72,
+  'Two Pair':        0.68,
+  'Jacks or Better': 0.60,
 };
-const HOUSE_TAX_MAX_TRIES = 30;
-const DEAL_BIAS_N         = 3;   // shuffle 3 times, keep the worst start
+const HOUSE_TAX_MAX_TRIES = 40;
+const DEAL_BIAS_N         = 6;   // shuffle 6 times, keep the worst start
+const DRAW_POISON_RATE    = 0.65; // 65% of draws: bias deck against holds
+const DRAW_POISON_DEPTH   = 15;   // reorder top-N window of the draw deck
 const HAND_STRENGTH_ORDER = [
   'Royal Flush','Straight Flush','Four of a Kind','Full House',
   'Flush','Straight','Three of a Kind','Two Pair','Jacks or Better',
@@ -106,6 +108,21 @@ function handStrength(handName) {
   // Lower index = stronger. Null (no win) is weakest.
   const i = HAND_STRENGTH_ORDER.indexOf(handName);
   return i === -1 ? 999 : i;
+}
+
+// Poison the top of the draw deck so cards matching any held rank/suit get
+// shoved to the back. Makes held-pair-extensions and held-suit flush-draws
+// much less likely to hit. Leaves remaining deck intact past the window.
+function poisonDrawDeck(deck, heldCards, depth = DRAW_POISON_DEPTH) {
+  if (!heldCards.length) return deck;
+  const taboo = new Set();
+  for (const c of heldCards) { taboo.add('r:' + c.rank); taboo.add('s:' + c.suit); }
+  const bad = (c) => taboo.has('r:' + c.rank) || taboo.has('s:' + c.suit);
+  const front = deck.slice(0, depth);
+  const rest  = deck.slice(depth);
+  const good  = front.filter(c => !bad(c));
+  const badly = front.filter(c =>  bad(c));
+  return [...good, ...rest, ...badly];
 }
 
 function getMult(handName) {
@@ -191,6 +208,16 @@ export default function VideoPoker() {
   function draw() {
     if (phase !== 'hold') return;
     let newDeck = [...deck];
+
+    // Silent draw poisoning — bias the top of the deck so replacement cards
+    // avoid any rank or suit the player is holding. Gated by probability so
+    // it doesn't fire every hand.
+    const heldCards = hand.filter((_, i) => held[i]);
+    const heldCount = heldCards.length;
+    if (heldCount > 0 && heldCount < 5 && !isRiggedMode() && Math.random() < DRAW_POISON_RATE) {
+      newDeck = poisonDrawDeck(newDeck, heldCards);
+    }
+
     let newHand = hand.map((card, i) => held[i] ? card : newDeck.shift());
 
     let handName = evalHand(newHand);
@@ -198,7 +225,6 @@ export default function VideoPoker() {
     // Tier-weighted silent house tax — apply after the draw, before payout.
     // Skipped in rigged-mode (already a guaranteed junk hand) and when the
     // player holds all 5 cards (they forced the hand, respect it).
-    const heldCount = held.filter(Boolean).length;
     const taxRate = HOUSE_TAX_BY_HAND[handName] || 0;
     if (handName && !isRiggedMode() && heldCount < 5 && Math.random() < taxRate) {
       for (let attempt = 0; attempt < HOUSE_TAX_MAX_TRIES; attempt++) {
