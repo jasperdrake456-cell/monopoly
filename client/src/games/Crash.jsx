@@ -6,18 +6,18 @@ import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 import { useGameBoost } from '../hooks/useGameBoost';
 
-// Crash point: 0.96 / (1 - random) with 4% house edge
-// Minimum 1.00x (instant crash ~4% of time)
+// Crash point: 0.92 / (1 - random) with 8% house edge
+// Minimum 1.00x (instant crash ~8% of time)
 function generateCrashPoint() {
   if (isRiggedMode()) return 1.00; // rigged: always instant crash
   const r = Math.random();
-  if (r >= 0.96) return 1.00;
-  return Math.max(1.00, parseFloat((0.96 / (1 - r)).toFixed(2)));
+  if (r >= 0.92) return 1.00;
+  return Math.max(1.00, parseFloat((0.92 / (1 - r)).toFixed(2)));
 }
 
 // Minimum multiplier the player can cash out at — prevents insta-cashout
-// exploits at 1.00-1.04× where the risk was near-zero for near-guaranteed profit.
-const MIN_CASHOUT_MULT = 1.05;
+// exploits at 1.00-1.09× where the risk was near-zero for near-guaranteed profit.
+const MIN_CASHOUT_MULT = 1.10;
 
 const MAX_HISTORY = 10;
 
@@ -316,7 +316,7 @@ export default function Crash() {
         </button>
       )}
 
-      <div className="crash-hint">Cash out before the rocket crashes! • min {MIN_CASHOUT_MULT.toFixed(2)}× • 4% house edge</div>
+      <div className="crash-hint">Cash out before the rocket crashes! • min {MIN_CASHOUT_MULT.toFixed(2)}× • 8% house edge</div>
     </div>
   );
 }
