@@ -15,6 +15,11 @@
  *   - crateDiscountPct:  discount on paid cases
  *   - xpMultiplier:      multiplies XP earned from bets
  *   - jackpotChance:     flat chance per bet to double payout
+ *   - freeBetChance:     flat chance any bet is refunded (free roll)
+ *   - flatWinBonus:      flat $ added to every win
+ *   - lossRefundChance:  chance to fully refund a losing bet
+ *   - winStreakBonus:    +% bonus per consecutive win (resets on loss)
+ *   - lossStreakShield:  every 5th consecutive loss is refunded (enable if > 0)
  */
 
 const fs   = require('fs');
@@ -153,6 +158,177 @@ const JOKERS = [
   J('black_diamond',  'Black Diamond',   '◆',  'mythic', 0.05, 300_000_000,
     { payoutMultiplier: 0.50, cashbackPct: 0.15 },
     '+50% payouts, 15% cashback — limited edition'),
+
+  // ═══════════════════════════════════════════════════════════════════════
+  //  ABILITY-EXPANSION PACK
+  //  Jokers that use the new ability types (freeBetChance, flatWinBonus,
+  //  lossRefundChance, winStreakBonus, lossStreakShield). These do things
+  //  the original catalog couldn't — free rolls, flat cash per win, loss
+  //  insurance, streak snowballing.
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // COMMON — small, fun, frequent
+  J('tip_jar',        'Tip Jar',         '🫙', 'common', 26, 450_000,
+    { flatWinBonus: 100 },
+    '+$100 flat on every win'),
+  J('copper_charm',   'Copper Charm',    '🪬', 'common', 22, 500_000,
+    { freeBetChance: 0.008 },
+    '0.8% chance any bet is a free roll'),
+  J('loss_leaf',      'Loss Leaf',       '🍂', 'common', 20, 550_000,
+    { lossRefundChance: 0.01 },
+    '1% chance a loss is fully refunded'),
+
+  // UNCOMMON
+  J('streak_stone',   'Streak Stone',    '🧿', 'uncommon', 12, 1_800_000,
+    { winStreakBonus: 0.05 },
+    '+5% bonus per win in a row (resets on loss)'),
+  J('bankroll_ring',  'Bankroll Ring',   '💳', 'uncommon', 10, 2_000_000,
+    { lossRefundChance: 0.025, cashbackPct: 0.02 },
+    '2.5% loss-refund chance + 2% cashback'),
+  J('pocket_ace',     'Pocket Ace',      '🂡', 'uncommon', 11, 1_700_000,
+    { flatWinBonus: 400, payoutMultiplier: 0.02 },
+    '+$400 per win, +2% payouts'),
+
+  // RARE
+  J('chaos_token',    'Chaos Token',     '☯️', 'rare', 5, 5_500_000,
+    { freeBetChance: 0.02, payoutMultiplier: 0.03 },
+    '2% free-bet chance, +3% payouts'),
+  J('lucky_ticket',   'Lucky Ticket',    '🎟️', 'rare', 5, 5_000_000,
+    { flatWinBonus: 1_500, luckBoost: 0.04 },
+    '+$1.5k per win, +4% luck'),
+  J('insurance_coin', 'Insurance Coin',  '🪙', 'rare', 4, 5_800_000,
+    { lossStreakShield: 1, cashbackPct: 0.03 },
+    'Every 5th loss in a row is refunded, +3% cashback'),
+
+  // EPIC
+  J('snowball_joker', 'Snowball Joker',  '❄️',  'epic', 2.5, 14_000_000,
+    { winStreakBonus: 0.12, payoutMultiplier: 0.04 },
+    '+12% per win streak, +4% payouts'),
+  J('loss_shield',    'Loss Shield',     '🛡️', 'epic', 2,   16_000_000,
+    { lossStreakShield: 1, lossRefundChance: 0.05, cashbackPct: 0.05 },
+    'Every 5th loss refunded, 5% loss-refund chance, +5% cashback'),
+  J('cash_magnet',    'Cash Magnet',     '🧲', 'epic', 2.5, 15_000_000,
+    { flatWinBonus: 5_000, payoutMultiplier: 0.03 },
+    '+$5k flat per win, +3% payouts'),
+
+  // LEGENDARY
+  J('phoenix_feather','Phoenix Feather', '🪶', 'legendary', 0.5, 75_000_000,
+    { winStreakBonus: 0.20, lossRefundChance: 0.08, flatWinBonus: 2_500 },
+    '+20%/streak, 8% loss-refund, +$2.5k per win'),
+  J('free_roll_orb',  'Free Roll Orb',   '🔮', 'legendary', 0.45, 80_000_000,
+    { freeBetChance: 0.04, payoutMultiplier: 0.10 },
+    '4% free-bet chance, +10% payouts'),
+
+  // MYTHIC — the new god-tier
+  J('time_stone',     'Time Stone',      '⏳', 'mythic', 0.04, 500_000_000,
+    { freeBetChance: 0.05, winStreakBonus: 0.25, flatWinBonus: 10_000, lossRefundChance: 0.10 },
+    '5% free bets · +25%/streak · +$10k/win · 10% loss-refund'),
+  J('eternity_chip',  'Eternity Chip',   '♾️', 'mythic', 0.02, 750_000_000,
+    { freeBetChance: 0.08, flatWinBonus: 25_000, lossStreakShield: 1, winStreakBonus: 0.30, payoutMultiplier: 0.30 },
+    'Stacks everything — 8% free, +30%/streak, +$25k/win, shield, +30% payouts'),
+
+  // ═══════════════════════════════════════════════════════════════════════
+  //  MEGA EXPANSION PACK v2 — more flavors, more variety
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // COMMON — flavor tier
+  J('pocket_lint',    'Pocket Lint',     '🧶', 'common', 28, 350_000,
+    { flatWinBonus: 50, cashbackPct: 0.01 },
+    '+$50 per win, 1% cashback'),
+  J('dust_speck',     'Dust Speck',      '💨', 'common', 25, 400_000,
+    { luckBoost: 0.01, payoutMultiplier: 0.01 },
+    '+1% luck, +1% payouts'),
+  J('soda_cap',       'Soda Cap',        '🥤', 'common', 24, 380_000,
+    { freeBetChance: 0.005 },
+    '0.5% free-bet chance'),
+  J('sticker_book',   'Sticker Book',    '📔', 'common', 22, 420_000,
+    { xpMultiplier: 0.15 },
+    '+15% XP from every bet'),
+  J('paper_plane',    'Paper Plane',     '🛩️', 'common', 23, 400_000,
+    { winStreakBonus: 0.02 },
+    '+2% per consecutive win'),
+
+  // UNCOMMON
+  J('snake_eyes',     'Snake Eyes',      '🐍', 'uncommon', 13, 1_600_000,
+    { jackpotChance: 0.008, payoutMultiplier: 0.02 },
+    '0.8% jackpot, +2% payouts'),
+  J('lava_pebble',    'Lava Pebble',     '🔥', 'uncommon', 11, 1_900_000,
+    { flatWinBonus: 600, luckBoost: 0.02 },
+    '+$600/win, +2% luck'),
+  J('spinner_ring',   'Spinner Ring',    '💫', 'uncommon', 12, 1_500_000,
+    { freeBetChance: 0.012, cashbackPct: 0.02 },
+    '1.2% free-bet, 2% cashback'),
+  J('pool_chip',      'Pool Chip',       '🎱', 'uncommon', 10, 2_100_000,
+    { winStreakBonus: 0.04, payoutMultiplier: 0.02 },
+    '+4% per streak, +2% payouts'),
+  J('storm_marble',   'Storm Marble',    '🌩️', 'uncommon', 11, 1_800_000,
+    { lossRefundChance: 0.02, luckBoost: 0.03 },
+    '2% loss-refund, +3% luck'),
+
+  // RARE
+  J('bloodstone',     'Bloodstone',      '🩸', 'rare', 5, 5_200_000,
+    { lossStreakShield: 1, payoutMultiplier: 0.05 },
+    'Every 5th loss refunded, +5% payouts'),
+  J('void_shard',     'Void Shard',      '🕳️', 'rare', 4, 6_500_000,
+    { jackpotChance: 0.015, flatWinBonus: 800 },
+    '1.5% jackpot, +$800/win'),
+  J('mirror_coin',    'Mirror Coin',     '🪞', 'rare', 5, 5_000_000,
+    { freeBetChance: 0.025, luckBoost: 0.05 },
+    '2.5% free-bet, +5% luck'),
+  J('compass_rose',   'Compass Rose',    '🧭', 'rare', 4, 6_000_000,
+    { winStreakBonus: 0.08, cashbackPct: 0.03 },
+    '+8% per streak, 3% cashback'),
+  J('neon_sign',      'Neon Sign',       '💡', 'rare', 4, 5_800_000,
+    { flatWinBonus: 2_000, xpMultiplier: 0.3 },
+    '+$2k/win, +30% XP'),
+  J('echo_shell',     'Echo Shell',      '🐚', 'rare', 5, 5_400_000,
+    { lossRefundChance: 0.04, payoutMultiplier: 0.04 },
+    '4% loss-refund, +4% payouts'),
+
+  // EPIC
+  J('galaxy_dice',    'Galaxy Dice',     '🎲', 'epic', 2.5, 13_000_000,
+    { jackpotChance: 0.025, winStreakBonus: 0.06, luckBoost: 0.08 },
+    '2.5% jackpot, +6% per streak, +8% luck'),
+  J('alchemist_vial', 'Alchemist Vial',  '⚗️', 'epic', 2,   17_000_000,
+    { freeBetChance: 0.03, flatWinBonus: 3_500 },
+    '3% free-bet, +$3.5k/win'),
+  J('sigil_ward',     'Sigil Ward',      '🔰', 'epic', 2,   16_500_000,
+    { lossStreakShield: 1, lossRefundChance: 0.06 },
+    'Every 5th loss refunded + 6% loss-refund chance'),
+  J('omega_card',     'Omega Card',      '🂠', 'epic', 1.5, 22_000_000,
+    { winStreakBonus: 0.15, payoutMultiplier: 0.06, flatWinBonus: 2_000 },
+    '+15% per streak, +6% payouts, +$2k/win'),
+  J('crystal_skull',  'Crystal Skull',   '💀', 'epic', 2,   18_000_000,
+    { jackpotChance: 0.02, payoutMultiplier: 0.08 },
+    '2% jackpot, +8% payouts'),
+
+  // LEGENDARY
+  J('sun_pendant',    'Sun Pendant',     '☀️', 'legendary', 0.5, 72_000_000,
+    { flatWinBonus: 7_500, luckBoost: 0.15, payoutMultiplier: 0.10 },
+    '+$7.5k/win, +15% luck, +10% payouts'),
+  J('moon_pendant',   'Moon Pendant',    '🌙', 'legendary', 0.5, 72_000_000,
+    { lossRefundChance: 0.12, cashbackPct: 0.10, lossStreakShield: 1 },
+    '12% loss-refund, 10% cashback, 5-loss shield'),
+  J('starforge',      'Starforge',       '✨', 'legendary', 0.4, 90_000_000,
+    { winStreakBonus: 0.25, jackpotChance: 0.02, flatWinBonus: 5_000 },
+    '+25% per streak, 2% jackpot, +$5k/win'),
+  J('abyssal_crown',  'Abyssal Crown',   '👑', 'legendary', 0.3, 110_000_000,
+    { payoutMultiplier: 0.35, freeBetChance: 0.03, xpMultiplier: 0.8 },
+    '+35% payouts, 3% free-bet, +80% XP'),
+
+  // MYTHIC — chase tier
+  J('zero_point',     'Zero Point',      '⚛️', 'mythic', 0.03, 550_000_000,
+    { freeBetChance: 0.06, jackpotChance: 0.04, winStreakBonus: 0.20 },
+    '6% free-bet, 4% jackpot, +20% per streak'),
+  J('oracle_eye',     'Oracle Eye',      '👁️‍🗨️', 'mythic', 0.025, 620_000_000,
+    { payoutMultiplier: 0.40, lossRefundChance: 0.15, flatWinBonus: 15_000 },
+    '+40% payouts, 15% loss-refund, +$15k/win'),
+  J('genesis_joker',  'Genesis Joker',   '🌠', 'mythic', 0.02, 820_000_000,
+    { payoutMultiplier: 0.50, winStreakBonus: 0.35, flatWinBonus: 20_000, freeBetChance: 0.07, jackpotChance: 0.03 },
+    'Ultimate stack — +50% payouts, +35%/streak, +$20k, 7% free, 3% jackpot'),
+  J('void_emperor',   'Void Emperor',    '🖤', 'mythic', 0.015, 1_000_000_000,
+    { payoutMultiplier: 0.60, lossStreakShield: 1, lossRefundChance: 0.20, cashbackPct: 0.20, flatWinBonus: 30_000 },
+    '+60% payouts, shield, 20% loss-refund, 20% cashback, +$30k/win'),
 ];
 
 const JOKER_MAP = Object.fromEntries(JOKERS.map(j => [j.id, j]));
@@ -308,6 +484,12 @@ function getEquippedAbilities(username) {
     xpMultiplier: 0,
     crateDiscountPct: 0,
     jackpotChance: 0,
+    // New abilities
+    freeBetChance: 0,
+    flatWinBonus: 0,
+    lossRefundChance: 0,
+    winStreakBonus: 0,
+    lossStreakShield: 0,
   };
   for (const instId of inv.equipped) {
     const owned = inv.owned.find(o => o.instanceId === instId);

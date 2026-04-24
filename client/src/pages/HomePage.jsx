@@ -239,6 +239,37 @@ export default function HomePage() {
         <LiveJackpots />
         <LiveWinsTicker />
 
+        {/* ── BIG JOKER BANNER (impossible to miss) ── */}
+        <section className="home-section" style={{ paddingTop: 10, paddingBottom: 10 }}>
+          <div className="joker-mega-banner">
+            <div className="joker-mega-banner-glow" />
+            <div className="joker-mega-banner-inner">
+              <div className="joker-mega-banner-left">
+                <div className="joker-mega-emoji">🃏</div>
+                <div>
+                  <div className="joker-mega-title">JOKERS</div>
+                  <div className="joker-mega-sub">
+                    70+ collectible Jokers · passive bonuses in every game · trade them on the Auction House
+                  </div>
+                  <div className="joker-mega-chips">
+                    <span className="joker-mega-chip">💰 +% payouts</span>
+                    <span className="joker-mega-chip">🎁 free bets</span>
+                    <span className="joker-mega-chip">🔥 streak bonuses</span>
+                    <span className="joker-mega-chip">🛡️ loss shields</span>
+                    <span className="joker-mega-chip">💥 jackpots</span>
+                  </div>
+                </div>
+              </div>
+              <div className="joker-mega-banner-right">
+                <Link to="/jokers" className="joker-mega-btn joker-mega-btn--primary">🎁 Open Crate ($1M)</Link>
+                <Link to="/joker-leaderboard" className="joker-mega-btn joker-mega-btn--ghost">🏆 Leaderboard</Link>
+                <Link to="/auction" className="joker-mega-btn joker-mega-btn--ghost">🏛️ Auction House</Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
         {/* ── Big Wins Board with emoji reactions ── */}
         <section className="home-section" style={{ paddingTop:8, paddingBottom:8 }}>
           <BigWinsBoard />
