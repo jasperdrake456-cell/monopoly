@@ -75,13 +75,38 @@ const PAY_TABLE = [
   { hand: 'Jacks or Better',  mult: 2.2 },
 ];
 
-// House tax: after the draw, X% of would-be wins get re-rolled on their
-// non-held cards until they miss (or the attempts run out). Held cards are
-// never touched, so strategic holds still matter — only the RNG-luck wins
-// are taxed. Also the player hasn't seen the draw cards yet, so swapping
-// them for misses is visually indistinguishable from a natural bad draw.
-const HOUSE_TAX_RATE       = 0.30;
-const HOUSE_TAX_MAX_TRIES  = 25;
+// ── Silent house tuning (not surfaced in UI) ─────────────────────────────────
+// These settings make the real odds significantly worse than the paytable
+// suggests. Nothing about these is visible to players.
+//
+// 1. Tier-weighted post-draw tax. Higher-paying wins get voided more often;
+//    swaps are only on non-held cards so the player can't tell a bad RNG draw
+//    from a suppressed win.
+// 2. Deal-bias "worst-of-N". At deal time we secretly shuffle N times and
+//    keep the weakest starting hand, lowering average hand quality before
+//    the player even decides what to hold.
+const HOUSE_TAX_BY_HAND = {
+  'Royal Flush':     0.95,  // almost never actually pays
+  'Straight Flush':  0.90,
+  'Four of a Kind':  0.85,
+  'Full House':      0.75,
+  'Flush':           0.65,
+  'Straight':        0.60,
+  'Three of a Kind': 0.55,
+  'Two Pair':        0.50,
+  'Jacks or Better': 0.45,
+};
+const HOUSE_TAX_MAX_TRIES = 30;
+const DEAL_BIAS_N         = 3;   // shuffle 3 times, keep the worst start
+const HAND_STRENGTH_ORDER = [
+  'Royal Flush','Straight Flush','Four of a Kind','Full House',
+  'Flush','Straight','Three of a Kind','Two Pair','Jacks or Better',
+];
+function handStrength(handName) {
+  // Lower index = stronger. Null (no win) is weakest.
+  const i = HAND_STRENGTH_ORDER.indexOf(handName);
+  return i === -1 ? 999 : i;
+}
 
 function getMult(handName) {
   return PAY_TABLE.find(p => p.hand === handName)?.mult ?? 0;
@@ -125,15 +150,26 @@ export default function VideoPoker() {
     subtractBalance(bet);
     syncBalance();
 
-    const d = createDeck();
-    // Rigged: deal a guaranteed losing hand — 2,4,7,9,J in mixed suits (no pair, no straight, no flush)
-    const h = isRiggedMode()
-      ? [
-          { suit: '♠', rank: '2' }, { suit: '♥', rank: '4' },
-          { suit: '♦', rank: '7' }, { suit: '♣', rank: '9' },
-          { suit: '♠', rank: 'J' },
-        ]
-      : d.splice(0, 5);
+    // Silent deal bias: shuffle DEAL_BIAS_N times, keep the weakest starting
+    // hand. Players never see the rejected candidates.
+    let d, h;
+    if (isRiggedMode()) {
+      // Rigged: guaranteed junk — 2,4,7,9,J mixed suits (no pair/straight/flush).
+      d = createDeck();
+      h = [
+        { suit: '♠', rank: '2' }, { suit: '♥', rank: '4' },
+        { suit: '♦', rank: '7' }, { suit: '♣', rank: '9' },
+        { suit: '♠', rank: 'J' },
+      ];
+    } else {
+      let worst = -1;
+      for (let i = 0; i < DEAL_BIAS_N; i++) {
+        const cand = createDeck();
+        const candH = cand.splice(0, 5);
+        const s = handStrength(evalHand(candH));
+        if (s > worst) { worst = s; d = cand; h = candH; }
+      }
+    }
     // Also replace the draw deck with all 2s so held replacements are worthless too
     if (isRiggedMode()) {
       d.splice(0, d.length, ...Array(47).fill(null).map((_, i) =>
@@ -159,11 +195,12 @@ export default function VideoPoker() {
 
     let handName = evalHand(newHand);
 
-    // House tax — apply after the draw, before payout is computed.
+    // Tier-weighted silent house tax — apply after the draw, before payout.
     // Skipped in rigged-mode (already a guaranteed junk hand) and when the
     // player holds all 5 cards (they forced the hand, respect it).
     const heldCount = held.filter(Boolean).length;
-    if (handName && !isRiggedMode() && heldCount < 5 && Math.random() < HOUSE_TAX_RATE) {
+    const taxRate = HOUSE_TAX_BY_HAND[handName] || 0;
+    if (handName && !isRiggedMode() && heldCount < 5 && Math.random() < taxRate) {
       for (let attempt = 0; attempt < HOUSE_TAX_MAX_TRIES; attempt++) {
         const freshDeck = createDeck();
         const trial = [...newHand];
