@@ -62,17 +62,21 @@ function evalHand(cards) {
   return null;
 }
 
-// ── Pay table (bet × mult = payout) — ~10% more generous ─────────────────────
+// ── Pay table (bet × mult = payout) — tightened 6/5 schedule ─────────────────
+// Previous table was ~10% more generous than standard 9/6 Jacks or Better
+// AND paid 2.2× on a single high pair (which hits ~21% of hands on optimal
+// play — practically free money). This schedule is a classic 6/5 paytable
+// with Jacks or Better reduced to a push (1×) so the game isn't printing.
 const PAY_TABLE = [
-  { hand: 'Royal Flush',      mult: 440 },
-  { hand: 'Straight Flush',   mult: 44  },
-  { hand: 'Four of a Kind',   mult: 22  },
-  { hand: 'Full House',       mult: 8.8 },
-  { hand: 'Flush',            mult: 5.5 },
-  { hand: 'Straight',         mult: 4.4 },
-  { hand: 'Three of a Kind',  mult: 3.3 },
-  { hand: 'Two Pair',         mult: 2.2 },
-  { hand: 'Jacks or Better',  mult: 2.2 },
+  { hand: 'Royal Flush',      mult: 250 },
+  { hand: 'Straight Flush',   mult: 40  },
+  { hand: 'Four of a Kind',   mult: 20  },
+  { hand: 'Full House',       mult: 6   },
+  { hand: 'Flush',            mult: 5   },
+  { hand: 'Straight',         mult: 4   },
+  { hand: 'Three of a Kind',  mult: 3   },
+  { hand: 'Two Pair',         mult: 2   },
+  { hand: 'Jacks or Better',  mult: 1   },
 ];
 
 function getMult(handName) {
