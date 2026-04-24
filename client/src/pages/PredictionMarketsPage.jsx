@@ -8,8 +8,7 @@ const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
 const fmt = (n) => '$' + Math.floor(n || 0).toLocaleString();
 
 export default function PredictionMarketsPage() {
-  const { token, user, isLoggedIn } = useAuth();
-  const isAdmin = user?.username === 'jasper';
+  const { token, user, isLoggedIn, isAdmin } = useAuth();
   const [markets, setMarkets] = useState([]);
   const [sharePrice, setSharePrice] = useState(500);
   const [payout, setPayout] = useState(1000);

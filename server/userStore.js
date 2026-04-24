@@ -295,9 +295,10 @@ function login(username, password) {
   if (hash !== user.passwordHash) return { ok: false, error: 'Wrong password' };
 
   const token = createSession(clean);
-  const isAdmin = clean === ADMIN_USERNAME;
-  const balance = isAdmin ? ADMIN_BALANCE : user.casinoBalance;
-  return { ok: true, token, username: clean, displayName: user.displayName || clean, balance, isAdmin };
+  const isOwner = clean === ADMIN_USERNAME;
+  const isAdmin = isOwner || isSecondaryAdmin(clean);
+  const balance = isOwner ? ADMIN_BALANCE : user.casinoBalance;
+  return { ok: true, token, username: clean, displayName: user.displayName || clean, balance, isAdmin, isOwner };
 }
 
 /**
@@ -310,9 +311,10 @@ function getMe(token) {
   const users = readUsers();
   const user  = users[username];
   if (!user) return { ok: false, error: 'User not found' };
-  const isAdmin = username === ADMIN_USERNAME;
-  const balance = isAdmin ? ADMIN_BALANCE : user.casinoBalance;
-  return { ok: true, username, displayName: user.displayName || username, balance, isAdmin };
+  const isOwner = username === ADMIN_USERNAME;
+  const isAdmin = isOwner || isSecondaryAdmin(username);
+  const balance = isOwner ? ADMIN_BALANCE : user.casinoBalance;
+  return { ok: true, username, displayName: user.displayName || username, balance, isAdmin, isOwner };
 }
 
 /**

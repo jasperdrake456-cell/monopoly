@@ -127,8 +127,7 @@ const SLUG_NAMES = {
 };
 
 export default function HomePage() {
-  const { user, token, isLoggedIn } = useAuth();
-  const isAdmin = user?.username === 'jasper';
+  const { user, token, isLoggedIn, isAdmin } = useAuth();
   const [champData, setChampData] = useState({ champion: null, happyHourActive: false });
   const { champion, happyHourActive } = champData;
   const isChampion = user && champion?.username === user.username?.toLowerCase();

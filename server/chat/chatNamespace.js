@@ -42,7 +42,8 @@ function register(namespace) {
 
     const username    = authUser.username.toLowerCase();
     const displayName = authUser.displayName || authUser.username;
-    const isAdmin     = username === 'jasper';
+    // Owner OR secondary admins granted via admin dashboard
+    const isAdmin     = username === 'jasper' || us.isSecondaryAdmin(username);
 
     // Send public history on connect (filtered messages hidden from normal users)
     const history = cs.getMessages().filter(m => !m.filtered && !m.shadowMuted);

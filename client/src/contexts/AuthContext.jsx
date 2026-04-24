@@ -95,7 +95,7 @@ export function AuthProvider({ children }) {
     authFetch('/api/accounts/me', savedToken).then(data => {
       if (data.ok) {
         setToken(savedToken);
-        setUser({ username: data.username, displayName: data.displayName });
+        setUser({ username: data.username, displayName: data.displayName, isAdmin: !!data.isAdmin, isOwner: !!data.isOwner });
         setAuthToken(savedToken);
         // Server balance is always authoritative — overwrites local cache
         setBalanceFromServer(data.balance);
@@ -198,9 +198,9 @@ export function AuthProvider({ children }) {
     });
     if (data.ok) {
       localStorage.setItem(TOKEN_KEY, data.token);
-      localStorage.setItem(USER_KEY, JSON.stringify({ username: data.username, displayName: data.displayName }));
+      localStorage.setItem(USER_KEY, JSON.stringify({ username: data.username, displayName: data.displayName, isAdmin: !!data.isAdmin, isOwner: !!data.isOwner }));
       setToken(data.token);
-      setUser({ username: data.username, displayName: data.displayName });
+      setUser({ username: data.username, displayName: data.displayName, isAdmin: !!data.isAdmin, isOwner: !!data.isOwner });
       setAuthToken(data.token);
       setBalanceFromServer(data.balance);
       setBalanceState(getBalance());
@@ -216,9 +216,9 @@ export function AuthProvider({ children }) {
     });
     if (data.ok) {
       localStorage.setItem(TOKEN_KEY, data.token);
-      localStorage.setItem(USER_KEY, JSON.stringify({ username: data.username, displayName: data.displayName }));
+      localStorage.setItem(USER_KEY, JSON.stringify({ username: data.username, displayName: data.displayName, isAdmin: !!data.isAdmin, isOwner: !!data.isOwner }));
       setToken(data.token);
-      setUser({ username: data.username, displayName: data.displayName });
+      setUser({ username: data.username, displayName: data.displayName, isAdmin: !!data.isAdmin, isOwner: !!data.isOwner });
       setAuthToken(data.token);
       // Server balance is always authoritative — overwrites local cache
       setBalanceFromServer(data.balance);
@@ -270,7 +270,10 @@ export function AuthProvider({ children }) {
   const value = {
     user, token, balance, loading,
     isLoggedIn: !!user,
-    isAdmin: user?.username === 'jasper',
+    // Server-authoritative admin status — covers both the owner and
+    // secondary admins granted via /api/admin/secondary-admins.
+    isAdmin: !!user?.isAdmin,
+    isOwner: !!user?.isOwner,
     register, login, logout, transfer, syncNow, claimDailyServer,
     refreshBalance: () => pullBalance(token),
     moneyAlert, clearMoneyAlert: () => setMoneyAlert(null),

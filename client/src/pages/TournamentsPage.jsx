@@ -31,8 +31,7 @@ function StatusBadge({ status }) {
 }
 
 export default function TournamentsPage() {
-  const { token, user, isLoggedIn } = useAuth();
-  const isAdmin = user?.username === 'jasper';
+  const { token, user, isLoggedIn, isAdmin } = useAuth();
   const [data, setData] = useState({ active: [], upcoming: [], all: [] });
   const [selected, setSelected] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);

@@ -515,7 +515,7 @@ function GiftCodeAdminCard({ token, authFetch }) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function AdminPage() {
-  const { user, token, isLoggedIn } = useAuth();
+  const { user, token, isLoggedIn, isAdmin, isOwner, loading } = useAuth();
   const navigate = useNavigate();
 
   // 5 top-level tabs: overview | users | games | moderation | settings
@@ -621,12 +621,11 @@ export default function AdminPage() {
     'hilo','tower','wheel','video-poker','keno','dragon-tiger',
   ];
 
-  const isAdmin = !!user;  // requireAdmin on server handles actual auth
-  const isOwner = user?.username?.toLowerCase() === 'jasper';
-
+  // isAdmin / isOwner come from AuthContext (server-authoritative via /api/accounts/me).
+  // Secondary admins granted via the admin dashboard are now properly covered.
   useEffect(() => {
-    if (!isLoggedIn || !isAdmin) navigate('/');
-  }, [isLoggedIn, isAdmin, navigate]);
+    if (!loading && (!isLoggedIn || !isAdmin)) navigate('/');
+  }, [loading, isLoggedIn, isAdmin, navigate]);
 
   // ── Loaders ────────────────────────────────────────────────────────────────
   const loadReports = useCallback(() => {
