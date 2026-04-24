@@ -6,18 +6,22 @@ import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 import { useGameBoost } from '../hooks/useGameBoost';
 
-// Crash point: 0.92 / (1 - random) with 8% house edge
-// Minimum 1.00x (instant crash ~8% of time)
+// Crash point: 0.85 / (1 - random) with 15% house edge
+// Instant crash ~15% of the time at the top end + ~15% at the low end
+// (r in [0, 0.15] clamps to 1.00), giving ~30% total insta-crash rate.
+// Hard-capped at 50× so tail-whale wins can't blow up the economy.
+const MAX_CRASH_MULT = 50;
 function generateCrashPoint() {
   if (isRiggedMode()) return 1.00; // rigged: always instant crash
   const r = Math.random();
-  if (r >= 0.92) return 1.00;
-  return Math.max(1.00, parseFloat((0.92 / (1 - r)).toFixed(2)));
+  if (r >= 0.85) return 1.00;
+  const raw = 0.85 / (1 - r);
+  return Math.max(1.00, Math.min(MAX_CRASH_MULT, parseFloat(raw.toFixed(2))));
 }
 
 // Minimum multiplier the player can cash out at — prevents insta-cashout
-// exploits at 1.00-1.09× where the risk was near-zero for near-guaranteed profit.
-const MIN_CASHOUT_MULT = 1.10;
+// exploits at the low end where the risk was near-zero for guaranteed profit.
+const MIN_CASHOUT_MULT = 1.25;
 
 const MAX_HISTORY = 10;
 
@@ -316,7 +320,7 @@ export default function Crash() {
         </button>
       )}
 
-      <div className="crash-hint">Cash out before the rocket crashes! • min {MIN_CASHOUT_MULT.toFixed(2)}× • 8% house edge</div>
+      <div className="crash-hint">Cash out before the rocket crashes! • min {MIN_CASHOUT_MULT.toFixed(2)}× • 15% house edge • cap {MAX_CRASH_MULT}×</div>
     </div>
   );
 }
