@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
+import { loadEventOdds, shouldForceLoss } from '../utils/eventOdds';
 import './DragonTiger.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -74,6 +75,7 @@ export default function DragonTiger() {
 
   useEffect(() => {
     initJokerBonuses();
+    loadEventOdds('dragon-tiger');
     function tick() {
       const ms = msUntilNextDaily();
       const h = Math.floor(ms / 3600000);
@@ -119,7 +121,7 @@ export default function DragonTiger() {
         else if (t.v > d.v) winner = 'tiger';
         else                 winner = 'tie';
         // Rigged: force the opponent side to win
-        if (isRiggedMode()) {
+        if (shouldForceLoss('dragon-tiger')) {
           if (betSide === 'dragon') winner = 'tiger';
           else if (betSide === 'tiger') winner = 'dragon';
           else winner = 'dragon'; // bet on tie → dragon wins, tie loses

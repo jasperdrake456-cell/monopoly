@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode, recordBetResult } from '../utils/casinoBalance';
 import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
+import { loadEventOdds, shouldForceLoss } from '../utils/eventOdds';
 import './Roulette.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -73,6 +74,7 @@ export default function Roulette() {
 
   useEffect(() => {
     initJokerBonuses();
+    loadEventOdds('roulette');
     function tick() {
       const ms = msUntilNextDaily();
       const h = Math.floor(ms / 3600000);
@@ -92,9 +94,9 @@ export default function Roulette() {
     setPhase('spinning');
     setResult(null);
 
-    // Rigged: pick a number that definitely loses for the current bet
+    // Rigged user OR admin force-loss → pick a number that definitely loses
     let num;
-    if (isRiggedMode()) {
+    if (shouldForceLoss('roulette')) {
       // Find a number that makes the bet lose
       const allNums = Array.from({ length: 37 }, (_, i) => i);
       const losers = allNums.filter(n => {

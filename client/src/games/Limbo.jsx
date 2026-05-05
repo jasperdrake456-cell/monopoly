@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { getBalance, addBalance, subtractBalance, reportBigWin, isRiggedMode, recordBetResult } from '../utils/casinoBalance';
 import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
+import { loadEventOdds, shouldForceLoss } from '../utils/eventOdds';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 import { useGameBoost } from '../hooks/useGameBoost';
@@ -16,7 +17,7 @@ function winChance(target) {
 // Generate a random result multiplier using the inverse CDF of the distribution
 // Result is always ≥ 1.00
 function rollResult() {
-  if (isRiggedMode()) return 1.00;
+  if (shouldForceLoss('limbo')) return 1.00;
   const r = Math.random();
   // Produces distribution where P(result ≥ x) = (1-HOUSE_EDGE)/x, min 1.00
   const raw = (1 - HOUSE_EDGE) / Math.max(r, 0.0001);
@@ -47,6 +48,7 @@ export default function Limbo() {
 
   useEffect(() => {
     initJokerBonuses();
+    loadEventOdds('limbo');
     const sync = () => setBalance(getBalance());
     window.addEventListener('focus', sync);
     window.addEventListener('balanceUpdate', sync);

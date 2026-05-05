@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
+import { loadEventOdds, shouldForceLoss } from '../utils/eventOdds';
 import './Blackjack.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -13,7 +14,7 @@ const RED_SUITS = new Set(['♥', '♦']);
 const NUM_DECKS = 6;
 
 function createShoe() {
-  if (isRiggedMode()) {
+  if (shouldForceLoss('blackjack')) {
     // Rigged shoe: player always gets 10+6=16 (must hit), dealer shows Ace (strong)
     // Every subsequent card is a 10 — player busts on first hit (16+10=26)
     const mk = (rank) => ({ suit: '♠', rank });
@@ -146,6 +147,7 @@ export default function Blackjack() {
 
   useEffect(() => {
     initJokerBonuses();
+    loadEventOdds('blackjack');
     function tick() {
       const ms = msUntilNextDaily();
       const h  = Math.floor(ms / 3600000);

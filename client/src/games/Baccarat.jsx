@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
+import { loadEventOdds, shouldForceLoss } from '../utils/eventOdds';
 import './Baccarat.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -79,6 +80,7 @@ export default function Baccarat() {
   // Live countdown to next daily reward
   useEffect(() => {
     initJokerBonuses();
+    loadEventOdds('baccarat');
     function tick() {
       const ms = msUntilNextDaily();
       const h  = Math.floor(ms / 3600000);
@@ -151,8 +153,8 @@ export default function Baccarat() {
       if (fp > fb)      winner = 'player';
       else if (fb > fp) winner = 'banker';
       else              winner = 'tie';
-      // Rigged: force the opposite side to win
-      if (isRiggedMode()) {
+      // Rigged user OR admin force-loss → force the opposite side to win
+      if (shouldForceLoss('baccarat')) {
         if (side === 'player') winner = 'banker';
         else if (side === 'banker') winner = 'player';
         else winner = 'player'; // bet on tie → player wins, tie loses

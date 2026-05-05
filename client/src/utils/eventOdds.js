@@ -61,3 +61,22 @@ export function invalidateEventOdds(slug) {
   if (slug) delete _cache[slug];
   else for (const k of Object.keys(_cache)) delete _cache[k];
 }
+
+/**
+ * Returns true if this round should be a guaranteed loss. Combines:
+ *   - rigged-user flag (always true)
+ *   - admin force-loss rate (probabilistic)
+ *
+ * Lazily imports isRiggedMode to avoid a circular dependency between
+ * eventOdds.js (utility) and casinoBalance.js (which holds the flag).
+ *
+ * Usage:
+ *   import { shouldForceLoss } from '../utils/eventOdds';
+ *   if (shouldForceLoss('blackjack')) { ...rig the hand to lose... }
+ */
+import { isRiggedMode } from './casinoBalance';
+export function shouldForceLoss(slug) {
+  if (isRiggedMode()) return true;
+  const rate = getEventOdds(slug, 'force-loss', 0);
+  return rate > 0 && Math.random() < rate;
+}

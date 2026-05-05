@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
+import { loadEventOdds, shouldForceLoss } from '../utils/eventOdds';
 import './Keno.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -67,6 +68,7 @@ export default function Keno() {
 
   useEffect(() => {
     initJokerBonuses();
+    loadEventOdds('keno');
     function tick() {
       const ms = msUntilNextDaily();
       const h = Math.floor(ms / 3600000);
@@ -121,7 +123,7 @@ export default function Keno() {
 
     // Rigged: draw only numbers the player did NOT pick — guaranteed 0 matches
     let d;
-    if (isRiggedMode()) {
+    if (shouldForceLoss('keno')) {
       const nonPicked = Array.from({ length: TOTAL_NUMBERS }, (_, i) => i + 1).filter(n => !picks.has(n));
       for (let i = nonPicked.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));

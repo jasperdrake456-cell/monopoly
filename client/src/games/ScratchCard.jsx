@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
+import { loadEventOdds, shouldForceLoss } from '../utils/eventOdds';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 import { useGameBoost } from '../hooks/useGameBoost';
@@ -86,6 +87,7 @@ export default function ScratchCard() {
 
   useEffect(() => {
     initJokerBonuses();
+    loadEventOdds('scratch-card');
     const sync = () => setBalance(getBalance());
     window.addEventListener('focus', sync);
     window.addEventListener('balanceUpdate', sync);
@@ -101,8 +103,8 @@ export default function ScratchCard() {
     subtractBalance(bet);
     setBalance(getBalance());
 
-    // Rigged mode always loses
-    const forced = !isRiggedMode() && Math.random() < 0.07; // 7% chance of guaranteed win
+    // Rigged user OR admin force-loss → always lose. Otherwise 7% lucky win.
+    const forced = !shouldForceLoss('scratch-card') && Math.random() < 0.07;
     const newGrid = generateGrid(forced);
     setGrid(newGrid);
     setRevealed([]);

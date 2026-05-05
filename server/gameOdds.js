@@ -26,35 +26,74 @@ const CASINO_SLUGS = [
  */
 const EVENT_CATALOG = {
   slots: [
-    { key: 'jackpot',         label: 'Jackpot (7️⃣7️⃣7️⃣) chance',  hint: 'multiplier on natural rate (~0.07%)', default: 0.0007 },
-    { key: 'diamond-jackpot', label: 'Diamond (💎💎💎) chance',     hint: 'multiplier on natural rate (~0.015%)', default: 0.00015 },
-    { key: 'force-loss',      label: 'Force loss (any spin)',         hint: '0.0 = off; 0.5 = half of all spins forced losers', default: 0 },
+    { key: 'jackpot',         label: 'Jackpot (7️⃣7️⃣7️⃣) chance',  hint: 'absolute probability per spin to force triple-7s. e.g. 0.05 = 5%.', default: 0.0007 },
+    { key: 'diamond-jackpot', label: 'Diamond (💎💎💎) chance',     hint: 'absolute probability per spin to force triple-diamonds.', default: 0.00015 },
+    { key: 'force-loss',      label: 'Force loss',                  hint: '0.0–1.0 — fraction of spins forced to a no-win combo.', default: 0 },
   ],
   mines: [
-    { key: 'mine-rate',  label: 'Mine count multiplier',  hint: '×N applied to declared mine count for placement (player still sees declared count). 2.0 = double mines secretly.', default: 1.0 },
-    { key: 'force-loss', label: 'Force loss (per round)', hint: '0.0 = off; 0.5 = half of rounds force first click to be a mine', default: 0 },
+    { key: 'mine-rate',  label: 'Mine count multiplier',  hint: '×N applied to declared mine count for placement (player still sees declared count + payout uses declared count → silent rig).', default: 1.0 },
+    { key: 'force-loss', label: 'Force loss',             hint: '0.0–1.0 — fraction of rounds where every tile is a mine.', default: 0 },
   ],
   crash: [
-    { key: 'instant-crash', label: 'Instant-crash chance',      hint: 'multiplier on the natural 15% rate', default: 0.15 },
-    { key: 'house-edge',    label: 'House-edge multiplier',     hint: 'multiplier on the 15% house edge (changes the formula constant)', default: 0.15 },
+    { key: 'instant-crash', label: 'Instant-crash rate',  hint: 'absolute prob 0–1 that the round insta-crashes at 1.00×. Default ~0.15.', default: 0.15 },
+    { key: 'house-edge',    label: 'House-edge',          hint: 'absolute fraction 0–1. Default 0.15 = 15%. Higher = uglier curve.', default: 0.15 },
+    { key: 'force-loss',    label: 'Force loss',          hint: '0.0–1.0 — fraction of rounds forced to insta-crash.', default: 0 },
   ],
   plinko: [
-    { key: 'edge-bias',  label: 'Edge-bias',     hint: '0.0 = neutral; 0.5 = 50% bias toward center (low payout)', default: 0 },
+    { key: 'edge-bias',  label: 'Center-bias',  hint: '0.0–1.0 — fraction of drops biased to the lowest-payout center bucket.', default: 0 },
+    { key: 'force-loss', label: 'Force loss',   hint: '0.0–1.0 — alias for center-bias.', default: 0 },
   ],
   dice: [
-    { key: 'force-loss', label: 'Force loss (per roll)', hint: '0.0 = off; 0.5 = half of rolls forced losers', default: 0 },
+    { key: 'force-loss', label: 'Force loss', hint: '0.0–1.0 — fraction of rolls forced to land on the losing side.', default: 0 },
+  ],
+  roulette: [
+    { key: 'force-loss', label: 'Force loss', hint: '0.0–1.0 — fraction of spins forced to land on a number the player did NOT bet on.', default: 0 },
+    { key: 'house-zero', label: 'Force-zero rate', hint: 'absolute prob the wheel lands on 0 (house wins).', default: 0 },
+  ],
+  blackjack: [
+    { key: 'force-loss', label: 'Force loss',  hint: '0.0–1.0 — fraction of hands where dealer is rigged to win.', default: 0 },
+  ],
+  baccarat: [
+    { key: 'force-loss', label: 'Force loss',  hint: '0.0–1.0 — fraction of hands where the player\'s bet side loses.', default: 0 },
+  ],
+  'ride-the-bus': [
+    { key: 'force-loss', label: 'Force loss', hint: '0.0–1.0 — fraction of guesses forced wrong.', default: 0 },
   ],
   'chicken-cross': [
-    { key: 'force-loss', label: 'Force loss (per click)', hint: '0.0 = off; X = X% chance any clicked tile is a car', default: 0 },
+    { key: 'force-loss', label: 'Force loss', hint: '0.0–1.0 — fraction of clicks forced into a car tile.', default: 0 },
   ],
   tower: [
-    { key: 'force-loss', label: 'Force loss (per click)', hint: '0.0 = off; X = X% chance any climb step is a bomb', default: 0 },
+    { key: 'force-loss', label: 'Force loss', hint: '0.0–1.0 — fraction of clicks forced into a bomb tile.', default: 0 },
   ],
   wheel: [
-    { key: 'force-loss', label: 'Force loss', hint: '0.0 = off; X = X% chance the wheel lands on the lowest segment', default: 0 },
+    { key: 'force-loss', label: 'Force loss', hint: '0.0–1.0 — fraction of spins forced to a non-winning color.', default: 0 },
   ],
   hilo: [
-    { key: 'force-loss', label: 'Force loss', hint: '0.0 = off; X = X% chance the next card forces a loss', default: 0 },
+    { key: 'force-loss', label: 'Force loss', hint: '0.0–1.0 — fraction of guesses forced wrong.', default: 0 },
+  ],
+  'video-poker': [
+    { key: 'force-loss', label: 'Force loss', hint: '0.0–1.0 — extra force-loss layer on top of the existing tiered tax.', default: 0 },
+  ],
+  keno: [
+    { key: 'force-loss', label: 'Force loss', hint: '0.0–1.0 — fraction of draws where none of the player\'s picks hit.', default: 0 },
+  ],
+  'dragon-tiger': [
+    { key: 'force-loss', label: 'Force loss', hint: '0.0–1.0 — fraction of hands where the player\'s side loses.', default: 0 },
+  ],
+  limbo: [
+    { key: 'force-loss', label: 'Force loss', hint: '0.0–1.0 — fraction of rolls below the player\'s target.', default: 0 },
+  ],
+  'casino-war': [
+    { key: 'force-loss', label: 'Force loss', hint: '0.0–1.0 — fraction of hands where the dealer\'s card is higher.', default: 0 },
+  ],
+  'scratch-card': [
+    { key: 'force-loss', label: 'Force loss', hint: '0.0–1.0 — fraction of cards forced to be losers.', default: 0 },
+  ],
+  'coin-flip': [
+    { key: 'force-loss', label: 'Force loss', hint: '0.0–1.0 — fraction of flips forced to the opposite side from the bet.', default: 0 },
+  ],
+  'texas-holdem': [
+    { key: 'force-loss', label: 'Force loss', hint: '0.0–1.0 — fraction of hands where the dealer/villain wins.', default: 0 },
   ],
 };
 

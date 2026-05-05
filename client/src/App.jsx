@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { SiteConfigProvider } from './contexts/SiteConfigContext';
 import GameGuard from './components/GameGuard';
 import ChatPanel from './components/ChatPanel';
+import VisualConfigProvider from './components/VisualConfigProvider';
 import PasswordGate from './components/PasswordGate';
 import AnnouncementOverlay from './components/AnnouncementOverlay';
 import MoneyRainOverlay from './components/MoneyRainOverlay';
@@ -129,6 +130,7 @@ export default function App() {
   return (
     <AuthProvider>
       <SiteConfigProvider>
+        <VisualConfigProvider />
         <GlobalEventListeners />
         <AchievementToast />
         <CoinRain />

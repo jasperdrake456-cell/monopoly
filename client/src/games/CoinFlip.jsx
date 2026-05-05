@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, reportBigWin } from '../utils/casinoBalance';
 import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
+import { loadEventOdds, shouldForceLoss } from '../utils/eventOdds';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 import { useGameBoost } from '../hooks/useGameBoost';
@@ -23,6 +24,7 @@ export default function CoinFlip() {
   // Sync balance from storage on focus
   useEffect(() => {
     initJokerBonuses();
+    loadEventOdds('coin-flip');
     const sync = () => setBalance(getBalance());
     window.addEventListener('focus', sync);
     window.addEventListener('balanceUpdate', sync);
@@ -44,7 +46,8 @@ export default function CoinFlip() {
     setBalance(getBalance());
 
     // Outcome
-    const won  = Math.random() < 0.5;
+    // Rigged user OR admin force-loss → guaranteed loss
+    const won  = shouldForceLoss('coin-flip') ? false : (Math.random() < 0.5);
     const side = won ? pick : (pick === 'heads' ? 'tails' : 'heads');
 
     setFace('spinning');

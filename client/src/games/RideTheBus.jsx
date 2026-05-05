@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
+import { loadEventOdds, shouldForceLoss } from '../utils/eventOdds';
 import './RideTheBus.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -79,6 +80,7 @@ export default function RideTheBus() {
   // Live countdown to next daily reward
   useEffect(() => {
     initJokerBonuses();
+    loadEventOdds('ride-the-bus');
     function tick() {
       const ms = msUntilNextDaily();
       const h  = Math.floor(ms / 3600000);
@@ -132,8 +134,8 @@ export default function RideTheBus() {
         break;
       default: break;
     }
-    // Rigged: always wrong
-    if (isRiggedMode()) correct = false;
+    // Rigged user OR admin force-loss → always wrong
+    if (shouldForceLoss('ride-the-bus')) correct = false;
 
     // Flip animation then reveal
     setFlipping(true);

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
+import { loadEventOdds, shouldForceLoss } from '../utils/eventOdds';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 import { useGameBoost } from '../hooks/useGameBoost';
@@ -61,6 +62,7 @@ export default function CasinoWar() {
 
   useEffect(() => {
     initJokerBonuses();
+    loadEventOdds('casino-war');
     const sync = () => setBalance(getBalance());
     window.addEventListener('focus', sync);
     window.addEventListener('balanceUpdate', sync);
@@ -78,7 +80,7 @@ export default function CasinoWar() {
     setPhase(PHASE.DEALING);
 
     setTimeout(() => {
-      const pc = isRiggedMode() ? { rank: '2', suit: '♠', value: 2 } : dealCard();
+      const pc = shouldForceLoss('casino-war') ? { rank: '2', suit: '♠', value: 2 } : dealCard();
       const dc = dealCard();
       setPlayerCard(pc);
       setDealerCard(dc);

@@ -384,6 +384,137 @@ function EventOddsCard({ token, authFetch, setStatus }) {
   );
 }
 
+// ── Visual Settings Admin Card ────────────────────────────────────────────────
+// Lets the owner tune sitewide brightness, flash intensity, animation speed,
+// and toggle each visual effect (disco, stars, strobe, nav pulse).
+// Changes broadcast live via socket to every connected client.
+function VisualSettingsCard({ token, authFetch, setStatus }) {
+  const [cfg, setCfg] = React.useState(null);
+  const [edits, setEdits] = React.useState({});
+
+  const load = React.useCallback(() => {
+    fetch((import.meta.env.VITE_SERVER_URL || '') + '/api/visual-config')
+      .then(r => r.json())
+      .then(d => { if (d.ok) setCfg(d); });
+  }, []);
+  React.useEffect(() => { load(); }, [load]);
+
+  if (!cfg) return null;
+
+  const get = (k) => (edits[k] !== undefined ? edits[k] : cfg[k]);
+  const setEdit = (k, v) => setEdits(prev => ({ ...prev, [k]: v }));
+  const dirtyKeys = Object.keys(edits).filter(k => edits[k] !== cfg[k]);
+  const isDirty = dirtyKeys.length > 0;
+
+  async function save() {
+    const body = {};
+    for (const k of dirtyKeys) body[k] = edits[k];
+    const d = await authFetch('/api/admin/visual-config', token, { method: 'POST', body: JSON.stringify(body) });
+    if (d.ok) {
+      setCfg(d);
+      setEdits({});
+      setStatus('Visual settings saved (live).');
+    }
+  }
+  async function reset() {
+    const d = await authFetch('/api/admin/visual-config/reset', token, { method: 'POST' });
+    if (d.ok) {
+      setCfg(d);
+      setEdits({});
+      setStatus('Visual settings reset to defaults.');
+    }
+  }
+
+  // Slider helper
+  function Slider({ k, label, min, max, step, hint }) {
+    const v = Number(get(k));
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 0' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#e2e8f0' }}>{label}</div>
+          {hint && <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{hint}</div>}
+        </div>
+        <input
+          type="range" min={min} max={max} step={step}
+          value={v}
+          onChange={e => setEdit(k, parseFloat(e.target.value))}
+          style={{ width: 200 }}
+        />
+        <span style={{
+          minWidth: 56, textAlign: 'center',
+          fontFamily: 'ui-monospace, monospace', fontSize: '0.82rem',
+          color: '#fbbf24', fontWeight: 700,
+        }}>{v.toFixed(2)}×</span>
+      </div>
+    );
+  }
+
+  // Toggle helper
+  function Toggle({ k, label, hint }) {
+    const v = !!get(k);
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 0' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#e2e8f0' }}>{label}</div>
+          {hint && <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{hint}</div>}
+        </div>
+        <button
+          className="admin-btn admin-btn--sm"
+          onClick={() => setEdit(k, !v)}
+          style={{
+            background: v ? 'linear-gradient(135deg, #f472b6, #c084fc)' : 'rgba(255,255,255,0.08)',
+            color: v ? '#0a0a0f' : '#94a3b8',
+            fontWeight: 800, minWidth: 64,
+          }}
+        >{v ? 'ON' : 'OFF'}</button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="admin-section-title" style={{ marginTop: 36 }}>
+        💡 Visual Settings (sitewide brightness + flash)
+      </div>
+      <div className="admin-wins-subtext" style={{ marginBottom: 12 }}>
+        These apply to every visitor, live (no reload). Pulls back to defaults
+        if a viewer has the OS "reduce motion" setting on.
+      </div>
+      <div style={{ padding: '12px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(192,132,252,0.18)' }}>
+        <Slider k="brightness"     label="Brightness"      min={0.4} max={2.0} step={0.05} hint="Filter brightness on body. 1.00 = normal." />
+        <Slider k="saturation"     label="Saturation"      min={0.4} max={2.0} step={0.05} hint="Filter saturation. 1.00 = normal." />
+        <Slider k="flashIntensity" label="Flash Intensity" min={0}   max={1.5} step={0.05} hint="Multiplier on glow / shadow / strobe opacity. 0 = flat." />
+        <Slider k="animationSpeed" label="Animation Speed" min={0.25} max={4.0} step={0.05} hint="Duration multiplier — higher = slower. 1.00 = default." />
+
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '10px 0' }} />
+
+        <Toggle k="discoEnabled"   label="Disco overlay"        hint="Rotating conic gradient behind the page." />
+        <Toggle k="starsEnabled"   label="Twinkling stars"      hint="Multi-color pinpoints across the viewport." />
+        <Toggle k="strobeEnabled"  label="Periodic strobe"      hint="Brief whitish flash every few seconds." />
+        <Toggle k="pulseEnabled"   label="Nav pill pulse"       hint="Pulse-glow on highlight pills + page titles." />
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+          <button
+            className="admin-btn admin-btn--primary admin-btn--sm"
+            disabled={!isDirty}
+            onClick={save}
+          >Save & broadcast</button>
+          <button
+            className="admin-btn admin-btn--ghost admin-btn--sm"
+            onClick={reset}
+          >Reset to defaults</button>
+          {isDirty && (
+            <button
+              className="admin-btn admin-btn--ghost admin-btn--sm"
+              onClick={() => setEdits({})}
+            >Discard</button>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
 function CoinRainAdminCard({ token, authFetch }) {
   const [amount,  setAmount]  = React.useState('1000');
   const [message, setMessage] = React.useState('🌧️ Coin Rain!');
@@ -2053,6 +2184,9 @@ export default function AdminPage() {
         <div className="admin-section">
           <div className="admin-section-title">⚙️ Site Settings</div>
           {siteStatus && <div className="admin-status-msg">{siteStatus}</div>}
+
+          {/* ── Visual Settings (live brightness + flash) ────────────────── */}
+          {isOwner && <VisualSettingsCard token={token} authFetch={authFetch} setStatus={setSiteStatus} />}
 
           {/* ── Approved Testers ──────────────────────────────────────────── */}
           <div className="admin-site-card">

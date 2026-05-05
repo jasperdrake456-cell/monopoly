@@ -21,6 +21,7 @@ const rp = require('./reportStore');
 const bn = require('./banStore');
 const wl = require('./winLog');
 const pw = require('./publicWinsStore');
+const vc = require('./visualConfigStore');
 const sc  = require('./siteConfig');
 const chatStore = require('./chat/chatStore');
 const chatNs    = require('./chat/chatNamespace');
@@ -963,6 +964,25 @@ app.post('/api/admin/game-odds/:slug', requireAdmin, (req, res) => {
 app.delete('/api/admin/game-odds/:slug', requireAdmin, (req, res) => {
   al.log('reset_game_odds', { slug: req.params.slug });
   res.json(go.resetGameBoost(req.params.slug));
+});
+
+// ── Visual Config (admin-controlled site brightness / flash / disco) ────────
+// Public read so every client picks up the latest look; admin write only.
+app.get('/api/visual-config', (req, res) => {
+  res.json({ ok: true, ...vc.getConfig() });
+});
+app.post('/api/admin/visual-config', requireAdmin, (req, res) => {
+  const next = vc.update(req.body || {});
+  al.log('visual_config_update', { by: req.user.username, ...req.body });
+  // Tell every connected client to re-fetch the config and re-apply.
+  io.emit('visualConfigChanged', next);
+  res.json({ ok: true, ...next });
+});
+app.post('/api/admin/visual-config/reset', requireAdmin, (req, res) => {
+  const next = vc.reset();
+  al.log('visual_config_reset', { by: req.user.username });
+  io.emit('visualConfigChanged', next);
+  res.json({ ok: true, ...next });
 });
 
 // Admin: list ALL event-odds (catalog + overrides)
