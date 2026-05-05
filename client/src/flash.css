@@ -1,38 +1,44 @@
 /* ============================================================================
- * flash.css — sitewide casino-bright visual sizzle.
- * Animated nebula + disco overlay, marquee chasing lights, neon glows,
- * strobing CTAs, twinkling stars. Utility classes:
- *   .flash-text       gradient shimmer text
- *   .flash-glow       hover lift+glow
- *   .flash-card       conic-gradient border card
- *   .flash-pulse      slow pulse glow
- *   .flash-strobe     rapid color strobe
- *   .flash-marquee    chasing-bulb border (use on buttons/cards)
- *   .flash-rainbow    rainbow rotating background
+ * flash.css — bright sitewide visuals, optimized.
+ *
+ * Optimization notes (after laggy first pass):
+ *  - DROPPED the `filter: brightness/saturate/hue-rotate` animation on body.
+ *    That forced a full-page repaint every frame; it was the worst offender.
+ *  - DROPPED the second html::before disco overlay with mix-blend-mode.
+ *    `mix-blend-mode` on a fullscreen element is one of the most expensive
+ *    things you can ask a browser to do.
+ *  - Twinkling starfield trimmed from 27 stars to 12, slower cycle.
+ *  - Disco overlay now uses `will-change: transform` so the GPU can promote
+ *    it to its own compositor layer.
+ *  - The "every button glows" rule is gone — it added a box-shadow to
+ *    hundreds of elements per page and tanked paint times. Only nav pills,
+ *    primary CTAs, and game cards still glow.
+ *  - Inset neon edge on #root removed.
+ *  - Strobe pulse kept but lighter (only one whitish flash per 5s cycle).
+ *
+ * Utility classes still available:
+ *   .flash-text     — gradient shimmer text
+ *   .flash-glow     — hover lift+glow
+ *   .flash-card     — conic-gradient border card
+ *   .flash-pulse    — slow pulse glow
+ *   .flash-strobe   — color strobe
+ *   .flash-marquee  — chasing-bulb border
+ *   .flash-neon     — breathing neon text-shadow
  * ========================================================================== */
 
-/* ── EVEN BRIGHTER animated background ─────────────────────────────────── */
+/* ── Background: still bright, no per-frame filter ─────────────────────── */
 body {
   background:
-    radial-gradient(ellipse at 18% 0%,   rgba(244, 114, 182, 0.85) 0%, transparent 45%),
-    radial-gradient(ellipse at 82% 18%,  rgba(139, 92, 246, 0.85)  0%, transparent 52%),
-    radial-gradient(ellipse at 50% 105%, rgba(56, 189, 248, 0.80)  0%, transparent 58%),
-    radial-gradient(ellipse at 95% 92%,  rgba(251, 191, 36, 0.80)  0%, transparent 50%),
-    radial-gradient(ellipse at 5% 65%,   rgba(34, 197, 94, 0.75)   0%, transparent 52%),
-    radial-gradient(ellipse at 50% 50%,  rgba(255, 255, 255, 0.18) 0%, transparent 65%),
-    radial-gradient(ellipse at 30% 80%,  rgba(239, 68, 68, 0.55)   0%, transparent 50%),
-    radial-gradient(ellipse at 70% 40%,  rgba(94, 234, 212, 0.55)  0%, transparent 50%),
-    #2d0f3a !important;
+    radial-gradient(ellipse at 18% 0%,   rgba(244, 114, 182, 0.65) 0%, transparent 45%),
+    radial-gradient(ellipse at 82% 18%,  rgba(139, 92, 246,  0.65) 0%, transparent 52%),
+    radial-gradient(ellipse at 50% 105%, rgba(56, 189, 248,  0.55) 0%, transparent 58%),
+    radial-gradient(ellipse at 95% 92%,  rgba(251, 191, 36,  0.55) 0%, transparent 50%),
+    radial-gradient(ellipse at 5% 65%,   rgba(34, 197, 94,   0.50) 0%, transparent 52%),
+    #1f0a2a !important;
   background-attachment: fixed !important;
-  animation: flash-bg-shift 4s ease-in-out infinite alternate;
-}
-@keyframes flash-bg-shift {
-  0%   { filter: brightness(1.10) saturate(1.30) hue-rotate(0deg);   }
-  50%  { filter: brightness(1.45) saturate(1.65) hue-rotate(30deg);  }
-  100% { filter: brightness(1.10) saturate(1.30) hue-rotate(-30deg); }
 }
 
-/* Rotating conic disco overlay — pumped up: spinning faster, brighter */
+/* Single rotating disco overlay — promoted to its own GPU layer. */
 body::before {
   content: '';
   position: fixed;
@@ -40,69 +46,20 @@ body::before {
   z-index: -1;
   background: conic-gradient(
     from 0deg,
-    rgba(244, 114, 182, 0.85),
-    rgba(192, 132, 252, 0.85),
-    rgba(56, 189, 248, 0.80),
-    rgba(34, 197, 94, 0.80),
-    rgba(251, 191, 36, 0.90),
-    rgba(239, 68, 68, 0.80),
-    rgba(244, 114, 182, 0.85)
+    rgba(244, 114, 182, 0.45),
+    rgba(192, 132, 252, 0.45),
+    rgba(56, 189, 248, 0.42),
+    rgba(34, 197, 94, 0.42),
+    rgba(251, 191, 36, 0.45),
+    rgba(244, 114, 182, 0.45)
   );
-  animation: flash-disco-rotate 8s linear infinite;
+  animation: flash-disco-rotate 22s linear infinite;
   pointer-events: none;
   filter: blur(70px);
-  mix-blend-mode: screen;
+  will-change: transform;
 }
 
-/* Second disco layer — counter-rotating, different colors, on top of the
-   page content with low opacity. Adds the "moving spotlights" feel. */
-html::before {
-  content: '';
-  position: fixed;
-  inset: -50%;
-  z-index: 9998;
-  background: conic-gradient(
-    from 180deg,
-    rgba(255, 255, 255, 0.16),
-    rgba(251, 191,  36, 0.30),
-    transparent 25%,
-    rgba(244, 114, 182, 0.30),
-    transparent 50%,
-    rgba(56,  189, 248, 0.30),
-    transparent 75%,
-    rgba(255, 255, 255, 0.16)
-  );
-  animation: flash-disco-rotate-rev 6s linear infinite;
-  pointer-events: none;
-  filter: blur(40px);
-  mix-blend-mode: overlay;
-}
-@keyframes flash-disco-rotate-rev {
-  0%   { transform: rotate(360deg); }
-  100% { transform: rotate(0deg);   }
-}
-
-/* Full-screen strobe flash — brief whitish pulse every 3.5s */
-html::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  pointer-events: none;
-  background: rgba(255, 255, 255, 0);
-  animation: flash-strobe-screen 3.5s ease-in-out infinite;
-  mix-blend-mode: screen;
-}
-@keyframes flash-strobe-screen {
-  0%, 92%, 100% { background: rgba(255, 255, 255, 0); }
-  93%           { background: rgba(255, 255, 255, 0.18); }
-  94%           { background: rgba(244, 114, 182, 0.20); }
-  95%           { background: rgba(255, 255, 255, 0.18); }
-  96%           { background: rgba(192, 132, 252, 0.20); }
-  97%           { background: rgba(255, 255, 255, 0); }
-}
-
-/* Twinkling starfield — denser, brighter, faster */
+/* Twinkling starfield — 12 pinpoints, simple opacity blink */
 body::after {
   content: '';
   position: fixed;
@@ -110,35 +67,37 @@ body::after {
   z-index: -1;
   pointer-events: none;
   background-image:
-    radial-gradient(3px 3px at 6% 4%,    #fff, transparent 60%),
-    radial-gradient(2px 2px at 12% 8%,   #fde047, transparent 60%),
-    radial-gradient(3px 3px at 18% 14%,  #f472b6, transparent 60%),
-    radial-gradient(2px 2px at 28% 22%,  #fff, transparent 60%),
-    radial-gradient(3px 3px at 33% 8%,   #c084fc, transparent 60%),
-    radial-gradient(2px 2px at 38% 18%,  #38bdf8, transparent 60%),
-    radial-gradient(3px 3px at 47% 12%,  #fff, transparent 60%),
-    radial-gradient(2px 2px at 54% 26%,  #fde047, transparent 60%),
-    radial-gradient(3px 3px at 60% 4%,   #f472b6, transparent 60%),
-    radial-gradient(2px 2px at 68% 28%,  #fff, transparent 60%),
-    radial-gradient(3px 3px at 76% 18%,  #c084fc, transparent 60%),
-    radial-gradient(2px 2px at 84% 6%,   #fff, transparent 60%),
-    radial-gradient(3px 3px at 90% 24%,  #38bdf8, transparent 60%),
-    radial-gradient(2px 2px at 96% 12%,  #fde047, transparent 60%),
-    radial-gradient(3px 3px at 8% 48%,   #fff, transparent 60%),
-    radial-gradient(2px 2px at 22% 56%,  #f472b6, transparent 60%),
-    radial-gradient(3px 3px at 38% 58%,  #fff, transparent 60%),
-    radial-gradient(2px 2px at 50% 50%,  #c084fc, transparent 60%),
-    radial-gradient(3px 3px at 60% 70%,  #38bdf8, transparent 60%),
-    radial-gradient(2px 2px at 74% 64%,  #fde047, transparent 60%),
-    radial-gradient(3px 3px at 86% 76%,  #fff, transparent 60%),
-    radial-gradient(2px 2px at 14% 78%,  #f472b6, transparent 60%),
-    radial-gradient(3px 3px at 28% 88%,  #fff, transparent 60%),
-    radial-gradient(2px 2px at 42% 92%,  #c084fc, transparent 60%),
-    radial-gradient(3px 3px at 58% 86%,  #fde047, transparent 60%),
-    radial-gradient(2px 2px at 78% 96%,  #38bdf8, transparent 60%),
-    radial-gradient(3px 3px at 94% 88%,  #fff, transparent 60%);
-  animation: flash-twinkle 1.8s ease-in-out infinite alternate;
-  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95));
+    radial-gradient(2px 2px at 12% 8%,  #fff,    transparent 60%),
+    radial-gradient(2px 2px at 28% 22%, #fde047, transparent 60%),
+    radial-gradient(2px 2px at 47% 12%, #f472b6, transparent 60%),
+    radial-gradient(2px 2px at 68% 28%, #fff,    transparent 60%),
+    radial-gradient(2px 2px at 84% 6%,  #c084fc, transparent 60%),
+    radial-gradient(2px 2px at 92% 35%, #38bdf8, transparent 60%),
+    radial-gradient(2px 2px at 8% 48%,  #fff,    transparent 60%),
+    radial-gradient(2px 2px at 38% 58%, #fde047, transparent 60%),
+    radial-gradient(2px 2px at 60% 70%, #f472b6, transparent 60%),
+    radial-gradient(2px 2px at 78% 82%, #fff,    transparent 60%),
+    radial-gradient(2px 2px at 22% 88%, #c084fc, transparent 60%),
+    radial-gradient(2px 2px at 50% 95%, #fff,    transparent 60%);
+  animation: flash-twinkle 3.5s ease-in-out infinite alternate;
+  will-change: opacity;
+}
+
+/* Light strobe pulse — single subtle whitish flash per 5s cycle */
+html::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+  background: rgba(255, 255, 255, 0.18);
+  animation: flash-strobe-screen 5s ease-in-out infinite;
+  will-change: opacity;
+}
+@keyframes flash-strobe-screen {
+  0%, 94%, 100% { opacity: 0; }
+  96%           { opacity: 1; }
 }
 
 /* ── Keyframes ─────────────────────────────────────────────────────────── */
@@ -147,16 +106,16 @@ body::after {
   100% { transform: rotate(360deg); }
 }
 @keyframes flash-twinkle {
-  0%, 100% { opacity: 0.65; transform: scale(0.95); }
-  50%      { opacity: 1.0;  transform: scale(1.05); }
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1.0;  }
 }
 @keyframes flash-shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
 }
 @keyframes flash-pulse-glow {
-  0%, 100% { box-shadow: 0 0 18px rgba(244,114,182,0.55), 0 0 36px rgba(192,132,252,0.35), 0 0 64px rgba(244,114,182,0.20); }
-  50%      { box-shadow: 0 0 30px rgba(244,114,182,0.95), 0 0 60px rgba(192,132,252,0.65), 0 0 96px rgba(244,114,182,0.45); }
+  0%, 100% { box-shadow: 0 0 18px rgba(244,114,182,0.55), 0 0 36px rgba(192,132,252,0.30); }
+  50%      { box-shadow: 0 0 28px rgba(244,114,182,0.85), 0 0 52px rgba(192,132,252,0.55); }
 }
 @keyframes flash-rainbow-rotate {
   0%   { filter: hue-rotate(0deg);   }
@@ -174,7 +133,6 @@ body::after {
   80%  { box-shadow: 0 0 30px rgba( 34, 197,  94, 0.95); }
   100% { box-shadow: 0 0 30px rgba(251, 191,  36, 0.95); }
 }
-/* Marquee chasing bulbs — uses two background-images that move. */
 @keyframes flash-marquee-spin {
   0%   { background-position: 0 0, 0 0, 0 0, 0 0; }
   100% { background-position: 32px 0, -32px 0, 0 32px, 0 -32px; }
@@ -184,15 +142,13 @@ body::after {
     text-shadow:
       0 0 4px  rgba(255, 255, 255, 0.9),
       0 0 10px rgba(244, 114, 182, 0.85),
-      0 0 22px rgba(244, 114, 182, 0.7),
-      0 0 40px rgba(192, 132, 252, 0.55);
+      0 0 22px rgba(244, 114, 182, 0.7);
   }
   50% {
     text-shadow:
       0 0 6px  rgba(255, 255, 255, 1.0),
       0 0 18px rgba(251, 191,  36, 0.95),
-      0 0 34px rgba(244, 114, 182, 0.85),
-      0 0 60px rgba(192, 132, 252, 0.75);
+      0 0 34px rgba(244, 114, 182, 0.85);
   }
 }
 
@@ -205,7 +161,7 @@ body::after {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  animation: flash-shimmer 3.2s linear infinite;
+  animation: flash-shimmer 3.6s linear infinite;
   font-weight: 900;
   letter-spacing: 0.5px;
 }
@@ -240,7 +196,8 @@ body::after {
   border-radius: 16px;
   filter: blur(2px);
   opacity: 0.85;
-  animation: flash-rainbow-rotate 8s linear infinite;
+  animation: flash-rainbow-rotate 12s linear infinite;
+  will-change: filter;
 }
 
 .flash-pulse  { animation: flash-pulse-glow 1.8s ease-in-out infinite; }
@@ -258,143 +215,76 @@ body::after {
   inset: -2px;
   border-radius: inherit;
   pointer-events: none;
-  /* Four moving dotted "bulb" lines — top, bottom, left, right */
   background-image:
     radial-gradient(circle at 8px 4px, #fde047 2.5px, transparent 3px),
     radial-gradient(circle at 8px 4px, #f472b6 2.5px, transparent 3px),
     radial-gradient(circle at 4px 8px, #c084fc 2.5px, transparent 3px),
     radial-gradient(circle at 4px 8px, #38bdf8 2.5px, transparent 3px);
-  background-position:
-    0 0,            /* top */
-    0 100%,         /* bottom */
-    0 0,            /* left */
-    100% 0;         /* right */
-  background-size:
-    16px 4px,
-    16px 4px,
-    4px 16px,
-    4px 16px;
-  background-repeat:
-    repeat-x,
-    repeat-x,
-    repeat-y,
-    repeat-y;
-  animation: flash-marquee-spin 1.2s linear infinite;
+  background-position: 0 0, 0 100%, 0 0, 100% 0;
+  background-size: 16px 4px, 16px 4px, 4px 16px, 4px 16px;
+  background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+  animation: flash-marquee-spin 1.6s linear infinite;
   filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6));
   opacity: 0.95;
+  will-change: background-position;
 }
 
-/* ── Neon text class ───────────────────────────────────────────────────── */
 .flash-neon {
   color: #fff;
-  animation: flash-neon-text 2.2s ease-in-out infinite;
+  animation: flash-neon-text 2.5s ease-in-out infinite;
 }
 
-/* ── Sitewide quiet upgrades, brighter ─────────────────────────────────── */
+/* ── Sitewide quiet upgrades ──────────────────────────────────────────── */
+
+/* Page-headline gradient sweep (cheap — single text-shadow, no filter) */
 .gv-page-title,
 .home-section-title,
 .home-hero-title,
 .vp-title,
 .crash-title,
 .slots-title {
-  background: linear-gradient(90deg, #fde047 0%, #f472b6 30%, #c084fc 55%, #38bdf8 80%, #fde047 100%);
-  background-size: 250% auto;
+  background: linear-gradient(90deg, #fde047 0%, #f472b6 35%, #c084fc 65%, #38bdf8 100%);
+  background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: flash-shimmer 2.2s linear infinite;
+  animation: flash-shimmer 4s linear infinite;
   letter-spacing: 0.4px;
-  filter:
-    drop-shadow(0 0 8px  rgba(255, 255, 255, 0.85))
-    drop-shadow(0 0 18px rgba(244, 114, 182, 0.85))
-    drop-shadow(0 0 32px rgba(192, 132, 252, 0.65));
+  text-shadow: 0 0 22px rgba(244, 114, 182, 0.55);
 }
 
-/* All buttons: always-on glow + brighter still on hover */
-button:not(:disabled) {
-  filter: brightness(1.10) saturate(1.15);
-  box-shadow:
-    0 0 8px  rgba(244, 114, 182, 0.30),
-    0 0 18px rgba(192, 132, 252, 0.18) !important;
-}
+/* Buttons: cheap brightness on hover, no per-button shadow */
 button:not(:disabled):hover {
-  filter: brightness(1.30) saturate(1.30);
-  box-shadow:
-    0 0 16px rgba(251, 191,  36, 0.85),
-    0 0 32px rgba(244, 114, 182, 0.65),
-    0 0 48px rgba(192, 132, 252, 0.45) !important;
+  filter: brightness(1.15) saturate(1.18);
 }
 
-/* Game cards: always have a soft glow now (pre-hover) */
-.game-card,
-.home-game-card,
-.dashboard-game-card {
-  box-shadow:
-    0 0 12px rgba(244, 114, 182, 0.30),
-    0 0 24px rgba(192, 132, 252, 0.18) !important;
-}
-
-/* Pretty bright scrollbar */
+/* Pretty bright animated scrollbar */
 *::-webkit-scrollbar {
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
 }
 *::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.04);
 }
 *::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #fde047, #f472b6, #c084fc, #38bdf8);
-  background-size: 100% 300%;
-  animation: flash-scrollbar-shift 6s linear infinite;
   border-radius: 10px;
   border: 2px solid rgba(0, 0, 0, 0.3);
-  box-shadow: 0 0 12px rgba(244, 114, 182, 0.6);
+  box-shadow: 0 0 10px rgba(244, 114, 182, 0.5);
 }
-@keyframes flash-scrollbar-shift {
-  0%   { background-position: 0 0; }
-  100% { background-position: 0 300%; }
-}
-*::-webkit-scrollbar-thumb:hover {
-  filter: brightness(1.25) saturate(1.3);
-}
+*::-webkit-scrollbar-thumb:hover { filter: brightness(1.2); }
 
-/* Selection */
+/* Selection highlight */
 ::selection {
-  background: rgba(244, 114, 182, 0.85);
+  background: rgba(244, 114, 182, 0.55);
   color: #fff;
-  text-shadow: 0 0 12px #fff, 0 0 24px #f472b6;
-}
-
-/* Inputs glow too */
-input, textarea, select {
-  box-shadow: 0 0 8px rgba(192, 132, 252, 0.25) !important;
-}
-input:focus, textarea:focus, select:focus {
-  box-shadow:
-    0 0 14px rgba(244, 114, 182, 0.65),
-    0 0 28px rgba(192, 132, 252, 0.45) !important;
-  outline: none !important;
-}
-
-/* Body content gets a subtle inner neon edge */
-#root {
-  position: relative;
-}
-#root::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  box-shadow:
-    inset 0 0 60px  rgba(244, 114, 182, 0.35),
-    inset 0 0 140px rgba(192, 132, 252, 0.20);
+  text-shadow: 0 0 8px #fff;
 }
 
 /* Sparkle dots */
 @keyframes flash-sparkle {
-  0%, 100% { opacity: 0.0; transform: scale(0.7); }
-  50%      { opacity: 1.0; transform: scale(1.3); }
+  0%, 100% { opacity: 0; transform: scale(0.7); }
+  50%      { opacity: 1; transform: scale(1.3); }
 }
 .flash-sparkle {
   position: absolute;
@@ -402,87 +292,65 @@ input:focus, textarea:focus, select:focus {
   height: 8px;
   border-radius: 50%;
   background: radial-gradient(circle, #fff 0%, rgba(255,255,255,0) 70%);
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.85);
   pointer-events: none;
   animation: flash-sparkle 2.4s ease-in-out infinite;
 }
 
-/* ── Brighten existing site classes ────────────────────────────────────── */
+/* ── Brighten existing site classes — selectively ─────────────────────── */
 
-/* Game cards: brighter hover lift + strobe-like glow */
+/* Game cards: hover lift + soft default glow (only on cards, not every elem) */
 .game-card,
 .home-game-card,
 .dashboard-game-card {
+  box-shadow:
+    0 0 12px rgba(244, 114, 182, 0.30),
+    0 0 24px rgba(192, 132, 252, 0.18);
   transition: transform 0.22s ease, box-shadow 0.25s ease, filter 0.22s ease !important;
 }
 .game-card:hover,
 .home-game-card:hover,
 .dashboard-game-card:hover {
-  transform: translateY(-4px) scale(1.02) !important;
+  transform: translateY(-3px) scale(1.02) !important;
   box-shadow:
-    0 18px 50px rgba(244, 114, 182, 0.55),
-    0 0 24px rgba(192, 132, 252, 0.45),
-    0 4px 14px rgba(0, 0, 0, 0.5) !important;
-  filter: brightness(1.18) saturate(1.25) !important;
+    0 14px 40px rgba(244, 114, 182, 0.45),
+    0 0 24px rgba(192, 132, 252, 0.40),
+    0 4px 14px rgba(0, 0, 0, 0.45) !important;
+  filter: brightness(1.12) saturate(1.18) !important;
 }
 
-/* Nav highlight pills: HARD strobing pulse */
-.navmenu-pill,
+/* Nav highlight pills + More trigger: pulse glow */
+.navmenu-pill--cases,
+.navmenu-pill--jokers,
+.navmenu-pill--tournaments,
+.navmenu-pill--champion,
 .navmenu-trigger {
-  animation: flash-pulse-soft 1.6s ease-in-out infinite;
+  animation: flash-pulse-soft 2.4s ease-in-out infinite;
 }
 @keyframes flash-pulse-soft {
   0%, 100% {
     box-shadow:
-      0 0 18px rgba(244, 114, 182, 0.85),
-      0 0 36px rgba(192, 132, 252, 0.55),
-      0 0 64px rgba(56, 189, 248, 0.35);
+      0 0 14px rgba(244, 114, 182, 0.55),
+      0 0 28px rgba(192, 132, 252, 0.30);
   }
   50% {
     box-shadow:
-      0 0 32px rgba(251, 191, 36, 1.0),
-      0 0 64px rgba(244, 114, 182, 0.85),
-      0 0 96px rgba(192, 132, 252, 0.65);
+      0 0 22px rgba(251, 191,  36, 0.85),
+      0 0 44px rgba(244, 114, 182, 0.55);
   }
 }
 
-/* Stat tiles / value chips look more lit */
-.home-stat-card,
-.home-hero-stat,
-.gv-stat-tile {
-  box-shadow:
-    inset 0 0 30px rgba(244, 114, 182, 0.10),
-    0 0 14px rgba(192, 132, 252, 0.18) !important;
-}
-.home-stat-card:hover,
-.home-hero-stat:hover,
-.gv-stat-tile:hover {
-  box-shadow:
-    inset 0 0 40px rgba(244, 114, 182, 0.20),
-    0 0 24px rgba(244, 114, 182, 0.5) !important;
-  filter: brightness(1.15);
-}
-
-/* Joker mega banner (existing) — pump up the glow */
+/* Joker mega banner gets a pumped drop shadow */
 .joker-mega-banner {
   box-shadow:
-    0 0 40px rgba(244, 114, 182, 0.55),
-    0 0 80px rgba(192, 132, 252, 0.35),
-    0 0 120px rgba(56, 189, 248, 0.20) !important;
+    0 0 30px rgba(244, 114, 182, 0.45),
+    0 0 60px rgba(192, 132, 252, 0.25) !important;
 }
 
-/* Live ticker / feeds get more punch */
-.live-wins-ticker,
-.bwb-card {
-  box-shadow:
-    0 0 14px rgba(192, 132, 252, 0.30),
-    0 4px 14px rgba(0, 0, 0, 0.4) !important;
-}
-
-/* Reduce motion respect — kill the heavy disco for users who opt out */
+/* ── prefers-reduced-motion: kill the heavy stuff ─────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  body::before { animation: none !important; }
-  body::after { animation: none !important; }
+  body::before,
+  body::after,
+  html::after,
   .flash-pulse,
   .flash-strobe,
   .flash-marquee::after,

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from '../contexts/AuthContext';
 import { useChampion } from '../hooks/useChampion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './ChatPanel.css';
 
 const SERVER_URL  = import.meta.env.VITE_SERVER_URL || '';
@@ -26,6 +26,10 @@ export default function ChatPanel() {
   const { user, isLoggedIn } = useAuth();
   const { champion } = useChampion();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Hide the floating chat + suggest buttons on the admin panel — admins
+  // need that screen real estate for the dashboard.
+  const hideOnRoute = location.pathname.startsWith('/admin');
   const [open,       setOpen]       = useState(false);
   const [messages,   setMessages]   = useState([]);
   const [input,      setInput]      = useState('');
@@ -137,6 +141,7 @@ export default function ChatPanel() {
   };
 
   if (!isLoggedIn) return null;
+  if (hideOnRoute) return null;
 
   return (
     <>
