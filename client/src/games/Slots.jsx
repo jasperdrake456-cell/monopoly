@@ -20,18 +20,23 @@ function authFetch(path, token, options = {}) {
   }).then(r => r.json()).catch(() => ({ ok: false }));
 }
 
-// Generous pool — paying symbols weighted so wins happen often.
-// 💎×2, 7️⃣×2, ⭐×4, 🔔×5, 🍇×5, 🍊×6, 🍋×7, 🍒×12 (43 paying)
-// Filler: 🍑×2, 🫐×2, 🥝×2, 🍈×2, 🫒×2 (10 filler) — total 53
+// Generous pool — paying symbols weighted so wins happen often AND the
+// jackpot symbols (7️⃣ and 💎) appear more frequently.
+// 💎×3, 7️⃣×5, ⭐×4, 🔔×5, 🍇×5, 🍊×6, 🍋×7, 🍒×11 (46 paying)
+// Filler: 🍑×2, 🫐×2, 🥝×2, 🍈×2, 🫒×2 (10 filler) — total 56
+//
+// Per-reel jackpot rates:
+//   7️⃣7️⃣7️⃣: (5/56)^3 ≈ 1 in 1,400 spins  (was 1 in 18,500)
+//   💎💎💎:   (3/56)^3 ≈ 1 in 6,500 spins  (was 1 in 18,500)
 const REEL_POOL = [
-  '💎','💎',
-  '7️⃣','7️⃣',
+  '💎','💎','💎',
+  '7️⃣','7️⃣','7️⃣','7️⃣','7️⃣',
   '⭐','⭐','⭐','⭐',
   '🔔','🔔','🔔','🔔','🔔',
   '🍇','🍇','🍇','🍇','🍇',
   '🍊','🍊','🍊','🍊','🍊','🍊',
   '🍋','🍋','🍋','🍋','🍋','🍋','🍋',
-  '🍒','🍒','🍒','🍒','🍒','🍒','🍒','🍒','🍒','🍒','🍒','🍒',
+  '🍒','🍒','🍒','🍒','🍒','🍒','🍒','🍒','🍒','🍒','🍒',
   '🍑','🍑',
   '🫐','🫐',
   '🥝','🥝',

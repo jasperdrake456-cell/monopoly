@@ -152,13 +152,10 @@ export function msUntilNextDaily() {
 }
 
 // ── Big win reporting ─────────────────────────────────────────────────────────
-// Silently fires to the server when profit >= $5,000,000 in a single round.
-// game     — slug e.g. 'crash', 'mines', 'slots'
-// bet      — amount wagered
-// payout   — total returned (bet + profit)
-// multiplier — final multiplier (can be null for games without one)
-// details  — human-readable string e.g. "24 mines · 1 safe tile · 97×"
-const BIG_WIN_THRESHOLD = 5_000_000;
+// Silently fires to the server on profit >= $10,000. Server then routes:
+//   - public Big Wins Board: any entry >= $10k
+//   - admin big-win log:    only whales >= $5M (filtered server-side)
+const BIG_WIN_THRESHOLD = 10_000;
 export function reportBigWin(game, bet, payout, multiplier, details) {
   const profit = payout - bet;
   if (profit < BIG_WIN_THRESHOLD || !_authToken) return;

@@ -652,8 +652,13 @@ export default function AdminPage() {
     if (!token) return;
     authFetch('/api/admin/activity', token).then(d => {
       if (d.ok) {
+        // map[username] = gameSlug ('online' if just-online, slug if in-game)
         const map = {};
         for (const a of d.activity) map[a.username] = a.gameSlug;
+        // Layer in just-online users (overwrite preserves in-game label first)
+        for (const o of (d.online || [])) {
+          if (!map[o.username]) map[o.username] = o.inGame ? o.gameSlug : 'online';
+        }
         setActivity(map);
       }
     }).catch(() => {});
@@ -1144,7 +1149,9 @@ export default function AdminPage() {
                   )}
                   {!u.lastIP && <span className="admin-user-ip admin-user-ip--unknown">🌐 No IP</span>}
                   {activity[u.username]
-                    ? <span className="admin-user-online" title="Currently online">🟢 {activity[u.username]}</span>
+                    ? activity[u.username] === 'online'
+                      ? <span className="admin-user-online" style={{ color: '#fbbf24', borderColor: 'rgba(251,191,36,0.4)' }} title="Online — not in a game">🟡 online</span>
+                      : <span className="admin-user-online" title={`In ${activity[u.username]}`}>🟢 {activity[u.username]}</span>
                     : <span className="admin-user-offline">⚫ offline</span>}
                 </div>
                 {u.username !== 'jasper' && (
@@ -1361,11 +1368,12 @@ export default function AdminPage() {
               &nbsp;·&nbsp;Biggest: <strong>${Math.max(...bigWins.map(w => w.profit || 0)).toLocaleString()}</strong>
             </div>
           )}
-          <div className="admin-wins-subtext">Logs wins where profit exceeds $5,000,000 in a single round. Log auto-clears every hour.</div>
+          <div className="admin-wins-subtext">All wins ≥ $10k (most recent 50 + persisted whale log). Whales (≥ $5M) are highlighted and persist through the hourly admin auto-clear.</div>
           {bigWins.length === 0 && <div className="admin-empty">No big wins recorded yet.</div>}
           {bigWins.map((w, i) => (
-            <div key={w.id || i} className="admin-win-row">
+            <div key={w.id || i} className={`admin-win-row${w.isWhale ? ' admin-win-row--whale' : ''}`}>
               <div className="admin-win-top">
+                {w.isWhale && <span className="admin-win-whale-badge" title="≥ $5M">🐋</span>}
                 <span className="admin-win-game">{w.game}</span>
                 <span className="admin-win-user">@{w.username}</span>
                 <span className="admin-win-profit">+${(w.profit || 0).toLocaleString()}</span>

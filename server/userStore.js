@@ -598,6 +598,22 @@ function kickUser(adminToken, targetUsername) {
 }
 
 /**
+ * Kill all active sessions except the owner's. Used by the scheduled weekly
+ * reset cron, where there's no admin token available.
+ */
+function killAllSessionsExceptOwner() {
+  let killed = 0;
+  for (const [token, data] of sessions) {
+    if (data.username !== ADMIN_USERNAME) {
+      sessions.delete(token);
+      killed++;
+    }
+  }
+  if (killed > 0) writeSessionsToDisk();
+  return killed;
+}
+
+/**
  * Delete all accounts with a zero balance (runs every 5 minutes).
  * Requires brokeAt to be set (only happens via real syncBalance call)
  * so brand-new $0 accounts and mid-bet edge cases aren't swept up.
@@ -792,7 +808,7 @@ function touchLastSeen(username) {
 module.exports = {
   register, login, getMe, syncBalance, claimDaily, transfer, logout, userExists,
   deleteUser, adminGiveMoney, adminSetBalance, listUsers, isAdminToken, isOwnerToken, getTopBalances,
-  recordIP, kickUser, addBonus, pruneZeroBalanceAccounts, adminGetStats, addBonusByAdmin,
+  recordIP, kickUser, killAllSessionsExceptOwner, addBonus, pruneZeroBalanceAccounts, adminGetStats, addBonusByAdmin,
   validateToken, bulkResetBalances, getDailySpinStatus, claimDailySpin,
   grantAdmin, revokeAdmin, listSecondaryAdmins, isSecondaryAdmin,
   getBalance, spendBalance, getOnlineUsers, touchLastSeen,

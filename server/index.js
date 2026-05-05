@@ -20,6 +20,7 @@ const us = require('./userStore');
 const rp = require('./reportStore');
 const bn = require('./banStore');
 const wl = require('./winLog');
+const pw = require('./publicWinsStore');
 const sc  = require('./siteConfig');
 const chatStore = require('./chat/chatStore');
 const chatNs    = require('./chat/chatNamespace');
@@ -307,15 +308,33 @@ app.post('/api/accounts/activity', (req, res) => {
   res.json({ ok: true, bonus });
 });
 
-// Admin: get all currently active users and what they're playing
+// Admin: get all currently active users — both in-game and just-online.
+// "in-game" comes from the gameActivity heartbeat map (90s TTL).
+// "just-online" pulls anyone whose lastSeen has updated in the last 5 minutes
+// via touchLastSeen (every authenticated API call refreshes it).
 app.get('/api/admin/activity', requireAdmin, (req, res) => {
   const now    = Date.now();
   const active = [];
+  const ingameBy = new Map(); // username → gameSlug
   for (const [token, data] of gameActivity) {
     if (now - data.lastSeen > ACTIVITY_TTL_MS) { gameActivity.delete(token); continue; }
     active.push({ username: data.username, gameSlug: data.gameSlug, lastSeen: data.lastSeen });
+    ingameBy.set(data.username, data.gameSlug);
   }
-  res.json({ ok: true, activity: active });
+  // Recently-active users (lastSeen within ~5 minutes) — covers people who
+  // are on the site but not actively in a game.
+  const ONLINE_WINDOW_MIN = 5;
+  let onlineUsernames = [];
+  try { onlineUsernames = us.getOnlineUsers(ONLINE_WINDOW_MIN); } catch {}
+  const online = onlineUsernames.map(username => ({
+    username,
+    gameSlug: ingameBy.get(username) || null,
+    inGame: ingameBy.has(username),
+  }));
+  // Live socket count — purely informational (counts every websocket, may
+  // include duplicates from multi-tab users).
+  const socketCount = io.sockets.sockets.size;
+  res.json({ ok: true, activity: active, online, socketCount, windowMinutes: ONLINE_WINDOW_MIN });
 });
 
 // ── Casino Rich List (public) ─────────────────────────────────────────────────
@@ -484,7 +503,10 @@ app.post('/api/admin/kick/:username', requireAdmin, (req, res) => {
 
 // ── Big Win Log ────────────────────────────────────────────────────────────────
 
-// Client reports a big win (profit >= $50k) — fire-and-forget, auth required
+// Client reports a big win — auth required.
+// Two thresholds:
+//   - public Big Wins Board: $10k+
+//   - admin big-win log:    $5M+
 app.post('/api/accounts/big-win', (req, res) => {
   const token = getToken(req);
   const me = us.getMe(token);
@@ -492,8 +514,9 @@ app.post('/api/accounts/big-win', (req, res) => {
   const { game, bet, payout, profit, multiplier, details } = req.body || {};
   if (!game || bet == null || payout == null) return res.json({ ok: false });
   const realProfit = Math.floor(profit ?? (payout - bet));
-  if (realProfit < 50_000) return res.json({ ok: false }); // server-side guard
-  wl.logWin({
+  if (realProfit < 10_000) return res.json({ ok: false }); // server-side floor
+
+  const entry = {
     username:   me.username,
     game,
     bet:        Math.floor(bet),
@@ -502,7 +525,12 @@ app.post('/api/accounts/big-win', (req, res) => {
     multiplier: multiplier ?? null,
     details:    details || '',
     timestamp:  Date.now(),
-  });
+  };
+
+  // Public board always gets the entry.
+  pw.logWin(entry);
+  // Admin log is whales only.
+  if (realProfit >= 5_000_000) wl.logWin({ ...entry });
 
   // Broadcast to all clients for live feed
   io.emit('bigWin', { username: me.username, game, profit: realProfit, multiplier: multiplier ?? null, timestamp: Date.now() });
@@ -520,25 +548,45 @@ app.post('/api/accounts/big-win', (req, res) => {
   res.json({ ok: true });
 });
 
-// Admin: view all big wins
+// Admin: view big wins. Returns the public board ($10k+) merged with the
+// whale-only persisted log ($5M+). Public entries are deduped by id when an
+// entry was promoted to whale status. `whaleIds` flags which entries crossed
+// the $5M threshold so the UI can highlight them.
 app.get('/api/admin/wins', requireAdmin, (req, res) => {
-  res.json({ ok: true, wins: wl.getWins() });
+  const publicWins = pw.getWins();
+  const whales     = wl.getWins();
+  const whaleKeys  = new Set(whales.map(w => `${w.username}|${w.timestamp}`));
+  // Tag public entries that are whales for UI highlighting
+  const wins = publicWins.map(w => ({
+    ...w,
+    isWhale: whaleKeys.has(`${w.username}|${w.timestamp}`) || (w.profit || 0) >= 5_000_000,
+  }));
+  // Append any whale entries the public store has already aged out
+  const seen = new Set(wins.map(w => `${w.username}|${w.timestamp}`));
+  for (const w of whales) {
+    const key = `${w.username}|${w.timestamp}`;
+    if (!seen.has(key)) wins.push({ ...w, isWhale: true });
+  }
+  wins.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  res.json({ ok: true, wins });
 });
 
-// Admin: clear the win log
+// Admin: clear both win logs
 app.delete('/api/admin/wins', requireAdmin, (req, res) => {
   wl.clearWins();
+  pw.clearWins();
   res.json({ ok: true });
 });
 
-// Admin: delete a single win entry by id
+// Admin: delete a single win entry by id (tries both logs)
 app.delete('/api/admin/wins/:id', requireAdmin, (req, res) => {
   wl.deleteWin(req.params.id);
   res.json({ ok: true });
 });
 
-// Auto-clear the big-win log every hour so the feed stays fresh and the
-// file doesn't accumulate stale entries indefinitely.
+// Auto-clear ONLY the persisted whale log every hour. The public ring buffer
+// rotates on its own as new wins arrive (max 50 entries) and doesn't need
+// scheduled clearing.
 const WIN_LOG_CLEAR_INTERVAL_MS = 60 * 60 * 1000;
 setInterval(() => {
   try {
@@ -926,9 +974,23 @@ app.post('/api/admin/game-odds/wildcard/override', requireAdmin, (req, res) => {
 
 // ── Weekly Reset ──────────────────────────────────────────────────────────────
 
-// Admin: manually trigger weekly reset (also called by scheduled task)
-app.post('/api/admin/weekly-reset', requireAdmin, (req, res) => {
-  const { amount } = req.body || {};
+const WEEKLY_RESET_FILE = path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'weeklyResetState.json');
+function readWeeklyResetState() {
+  try { return JSON.parse(require('fs').readFileSync(WEEKLY_RESET_FILE, 'utf8')); }
+  catch { return { lastResetAt: 0 }; }
+}
+function writeWeeklyResetState(state) {
+  try {
+    const fs = require('fs');
+    const dir = path.dirname(WEEKLY_RESET_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(WEEKLY_RESET_FILE, JSON.stringify(state, null, 2));
+  } catch (e) { console.error('[weeklyReset] write error:', e.message); }
+}
+
+// Core reset routine — usable both from the admin manual endpoint and the
+// scheduled cron. Returns a summary object.
+function runWeeklyReset(amount, source = 'manual') {
   const RESET_AMOUNT = Number(amount) > 0 ? Math.floor(Number(amount)) : 5000;
 
   // Crown the richest player as this week's champion BEFORE resetting balances
@@ -950,21 +1012,43 @@ app.post('/api/admin/weekly-reset', requireAdmin, (req, res) => {
 
   const count = us.bulkResetBalances(RESET_AMOUNT);
 
-  // Kick everyone and kill all sessions so they see a fresh login
-  const allUsers = us.listUsers(getToken(req));
-  let sessionsKilled = 0;
-  if (allUsers.ok) {
-    for (const u of allUsers.users) {
-      const r = us.kickUser(getToken(req), u.username);
-      if (r.ok) sessionsKilled += r.sessionsKilled;
-    }
-  }
-  // Broadcast forced-logout event so clients redirect to login
+  // Kill every session except owner so users see a fresh login.
+  const sessionsKilled = us.killAllSessionsExceptOwner();
   io.emit('forceLogout', { reason: 'Weekly reset — please log back in!' });
 
-  al.log('weekly_reset', { count, amount: RESET_AMOUNT, sessionsKilled });
-  res.json({ ok: true, count, amount: RESET_AMOUNT, sessionsKilled });
+  writeWeeklyResetState({ lastResetAt: Date.now(), source, amount: RESET_AMOUNT });
+  al.log('weekly_reset', { count, amount: RESET_AMOUNT, sessionsKilled, source });
+  console.log(`[weeklyReset] ${source}: reset ${count} accounts to $${RESET_AMOUNT.toLocaleString()}, killed ${sessionsKilled} sessions`);
+  return { count, amount: RESET_AMOUNT, sessionsKilled };
+}
+
+// Admin: manually trigger weekly reset
+app.post('/api/admin/weekly-reset', requireAdmin, (req, res) => {
+  const summary = runWeeklyReset(req.body?.amount, 'manual:' + req.user.username);
+  res.json({ ok: true, ...summary });
 });
+
+// Read-only: when the next auto reset will fire (admin UI display)
+app.get('/api/admin/weekly-reset/status', requireAdmin, (req, res) => {
+  res.json({ ok: true, ...readWeeklyResetState(), nowMs: Date.now() });
+});
+
+// Scheduled auto-reset: fires every Sunday at noon (server local time) IF the
+// last reset was more than 6 days ago. Polled once a minute so a missed tick
+// (server restart, downtime) catches up the next minute.
+const WEEKLY_RESET_DAY  = 0;     // Sunday
+const WEEKLY_RESET_HOUR = 12;    // 12:00 noon local
+const WEEKLY_RESET_MIN_GAP_MS = 6 * 24 * 60 * 60 * 1000;
+setInterval(() => {
+  try {
+    const now = new Date();
+    if (now.getDay() !== WEEKLY_RESET_DAY) return;
+    if (now.getHours() < WEEKLY_RESET_HOUR) return;
+    const state = readWeeklyResetState();
+    if (Date.now() - (state.lastResetAt || 0) < WEEKLY_RESET_MIN_GAP_MS) return;
+    runWeeklyReset(5000, 'cron');
+  } catch (e) { console.error('[weeklyReset cron]', e.message); }
+}, 60 * 1000);
 
 // ── Weekly Champion ───────────────────────────────────────────────────────────
 
@@ -1362,7 +1446,7 @@ app.post('/api/admin/coin-rain', requireAdmin, (req, res) => {
 
 app.get('/api/wins/recent', (req, res) => {
   const limit = Math.min(parseInt(req.query.limit || '20', 10), 50);
-  const wins  = wl.getWins().slice(0, limit);
+  const wins  = pw.getWins().slice(0, limit);
   res.json({ ok: true, wins });
 });
 
@@ -1764,7 +1848,9 @@ app.post('/api/prestige', requireAuth, (req, res) => {
 app.get('/api/wins/today', (req, res) => {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
-  const wins = wl.getWins()
+  // Pull from public store (broader feed) so the daily leaderboard isn't
+  // empty when there are no $5M whale wins.
+  const wins = pw.getWins()
     .filter(w => w.timestamp >= todayStart.getTime())
     .sort((a, b) => b.profit - a.profit)
     .slice(0, 20);

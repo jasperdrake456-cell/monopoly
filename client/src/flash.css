@@ -1,0 +1,161 @@
+/* ============================================================================
+ * flash.css — sitewide visual sizzle.
+ * Adds gradient backgrounds, glow effects, shimmer animations, and a few
+ * utility classes (.flash-card, .flash-text, .flash-glow, .flash-shimmer)
+ * usable from any component. Also enhances some site-wide selectors so even
+ * components that don't opt in get a small lift.
+ * ========================================================================== */
+
+/* Animated nebula behind the whole app */
+body {
+  background:
+    radial-gradient(ellipse at 20% -10%, rgba(244, 114, 182, 0.10) 0%, transparent 45%),
+    radial-gradient(ellipse at 90% 20%, rgba(139, 92, 246, 0.10) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 110%, rgba(56, 189, 248, 0.08) 0%, transparent 55%),
+    #0a0a0f !important;
+  background-attachment: fixed !important;
+}
+
+/* ── Shared keyframes ──────────────────────────────────────────────────── */
+@keyframes flash-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+@keyframes flash-pulse-glow {
+  0%, 100% { box-shadow: 0 0 24px rgba(244, 114, 182, 0.35), 0 0 48px rgba(192, 132, 252, 0.20); }
+  50%      { box-shadow: 0 0 36px rgba(244, 114, 182, 0.65), 0 0 72px rgba(192, 132, 252, 0.40); }
+}
+@keyframes flash-rainbow-rotate {
+  0%   { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+@keyframes flash-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+@keyframes flash-sparkle {
+  0%, 100% { opacity: 0.0; transform: scale(0.8); }
+  50%      { opacity: 1.0; transform: scale(1.2); }
+}
+
+/* ── Gradient animated text ────────────────────────────────────────────── */
+.flash-text,
+.flash-text-rainbow {
+  background: linear-gradient(90deg, #fbbf24, #f472b6, #c084fc, #38bdf8, #fbbf24);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: flash-shimmer 4s linear infinite;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+/* ── Glow on hover for any clickable element ───────────────────────────── */
+.flash-glow {
+  transition: transform 0.18s ease, box-shadow 0.25s ease, filter 0.18s ease;
+}
+.flash-glow:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(244, 114, 182, 0.35), 0 0 0 2px rgba(244, 114, 182, 0.25);
+  filter: brightness(1.10) saturate(1.15);
+}
+
+/* ── Card with conic gradient border ───────────────────────────────────── */
+.flash-card {
+  position: relative;
+  background: linear-gradient(180deg, rgba(20, 18, 35, 0.92) 0%, rgba(15, 13, 28, 0.92) 100%);
+  border-radius: 14px;
+  padding: 18px 20px;
+  overflow: hidden;
+  isolation: isolate;
+}
+.flash-card::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  z-index: -1;
+  background: conic-gradient(from 0deg, #fbbf24, #f472b6, #c084fc, #38bdf8, #fbbf24);
+  border-radius: 16px;
+  filter: blur(2px);
+  opacity: 0.55;
+  animation: flash-rainbow-rotate 14s linear infinite;
+}
+
+.flash-pulse {
+  animation: flash-pulse-glow 2.4s ease-in-out infinite;
+}
+.flash-float {
+  animation: flash-float 3s ease-in-out infinite;
+}
+
+/* ── Sitewide quiet upgrades ───────────────────────────────────────────── */
+
+/* Major H1/H2 headings get a subtle gradient */
+.gv-page-title,
+.home-section-title,
+.vp-title,
+.crash-title,
+.slots-title {
+  background: linear-gradient(90deg, #fbbf24 0%, #f472b6 45%, #c084fc 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: flash-shimmer 6s linear infinite;
+  letter-spacing: 0.4px;
+}
+
+/* Generic primary buttons get a soft glow on hover */
+button:not(:disabled):hover {
+  filter: brightness(1.08) saturate(1.10);
+}
+
+/* Pretty scrollbar */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+}
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(244, 114, 182, 0.55), rgba(139, 92, 246, 0.55));
+  border-radius: 8px;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(244, 114, 182, 0.85), rgba(139, 92, 246, 0.85));
+}
+
+/* Selection color */
+::selection {
+  background: rgba(244, 114, 182, 0.45);
+  color: #fff;
+}
+
+/* Sparkle dots (decorative, position via container) */
+.flash-sparkle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, rgba(255,255,255,0) 70%);
+  pointer-events: none;
+  animation: flash-sparkle 2.4s ease-in-out infinite;
+}
+
+/* Game card hover lift (matches existing .game-card classes) */
+.game-card,
+.home-game-card,
+.dashboard-game-card {
+  transition: transform 0.22s ease, box-shadow 0.25s ease, filter 0.22s ease !important;
+}
+.game-card:hover,
+.home-game-card:hover,
+.dashboard-game-card:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 14px 40px rgba(244, 114, 182, 0.30), 0 4px 14px rgba(0, 0, 0, 0.45) !important;
+  filter: brightness(1.08) saturate(1.12) !important;
+}

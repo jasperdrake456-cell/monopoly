@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import AccountWidget from '../components/AccountWidget';
+import NavMenu from '../components/NavMenu';
 import { useAuth } from '../contexts/AuthContext';
 import { useChampion, invalidateChampionCache } from '../hooks/useChampion';
 import LiveWinsTicker from '../components/LiveWinsTicker';
@@ -171,41 +172,8 @@ export default function HomePage() {
       <header className="home-header">
         <div className="home-logo" style={{ display:'flex', alignItems:'center', gap:10 }}>🎮 Game Vault <OnlineCount /></div>
         <div className="home-header-right">
-          <Link to="/cases" className="home-trivia-btn" style={{ background: 'linear-gradient(135deg, rgba(251,191,36,0.22), rgba(244,114,182,0.18), rgba(192,132,252,0.18))', borderColor: 'rgba(251,191,36,0.6)', color: '#fde047', fontWeight: 900, letterSpacing: '0.5px', boxShadow: '0 0 14px rgba(251,191,36,0.35)' }}>📦 CASES</Link>
-          <Link to="/jokers" className="home-trivia-btn" style={{ background: 'linear-gradient(135deg, rgba(244,114,182,0.22), rgba(192,132,252,0.18))', borderColor: 'rgba(244,114,182,0.6)', color: '#f9a8d4', fontWeight: 900, letterSpacing: '0.5px', boxShadow: '0 0 14px rgba(244,114,182,0.35)' }}>🃏 JOKERS</Link>
-          <Link to="/joker-leaderboard" className="home-trivia-btn" style={{ background: 'rgba(192,132,252,0.12)', borderColor: 'rgba(192,132,252,0.45)', color: '#d8b4fe', fontWeight: 800 }}>🏆 Joker Ranks</Link>
-          <Link to="/auction" className="home-trivia-btn" style={{ background: 'rgba(251,191,36,0.12)', borderColor: 'rgba(251,191,36,0.45)', color: '#fcd34d', fontWeight: 800 }}>🏛️ Auction</Link>
-          {isLoggedIn && <Link to="/trading" className="home-trivia-btn" style={{ background: 'rgba(96,165,250,0.12)', borderColor: 'rgba(96,165,250,0.45)', color: '#93c5fd', fontWeight: 800 }}>🤝 Trade</Link>}
-          <Link to="/daily-spin" className="home-trivia-btn" style={{ background: 'rgba(124,58,237,0.18)', borderColor: 'rgba(192,132,252,0.4)', color: '#c084fc' }}>🎡 Daily Spin</Link>
-          <Link to="/lottery"    className="home-trivia-btn" style={{ background: 'rgba(168,85,247,0.14)', borderColor: 'rgba(168,85,247,0.4)', color: '#d8b4fe' }}>🎟️ Lottery</Link>
-          <Link to="/wager-race" className="home-trivia-btn" style={{ background: 'rgba(245,158,11,0.12)', borderColor: 'rgba(245,158,11,0.4)', color: '#fcd34d' }}>🏁 Wager Race</Link>
-          <Link to="/pvp"        className="home-trivia-btn" style={{ background: 'rgba(239,68,68,0.12)',  borderColor: 'rgba(239,68,68,0.4)',  color: '#fca5a5' }}>🪙 PvP Flip</Link>
-          <Link to="/vip"        className="home-trivia-btn" style={{ background: 'rgba(167,139,250,0.12)', borderColor: 'rgba(167,139,250,0.4)', color: '#a78bfa' }}>👑 VIP</Link>
-          <Link to="/stats"      className="home-trivia-btn" style={{ background: 'rgba(59,130,246,0.12)',  borderColor: 'rgba(59,130,246,0.4)',  color: '#93c5fd' }}>📊 Stats</Link>
-          <Link to="/trivia"     className="home-trivia-btn">🎯 Trivia</Link>
-          <Link to="/leaderboard" className="home-trivia-btn">🏆 Leaderboard</Link>
-          {isChampion && <Link to="/champion-panel" className="home-trivia-btn" style={{ background: 'rgba(255,215,0,0.12)', borderColor: 'rgba(255,215,0,0.45)', color: '#FFD700', fontWeight: 700 }}>👑 Champion Panel</Link>}
-          <Link to="/achievements" className="home-trivia-btn" style={{ background: 'rgba(245,158,11,0.1)', borderColor: 'rgba(245,158,11,0.35)', color: '#fcd34d' }}>🏅 Achievements</Link>
-          <Link to="/redeem"      className="home-trivia-btn" style={{ background: 'rgba(251,191,36,0.1)', borderColor: 'rgba(251,191,36,0.35)', color: '#fbbf24' }}>🎟️ Redeem</Link>
-          {isLoggedIn && <Link to="/crypto" className="home-trivia-btn" style={{ background: 'rgba(34,197,94,0.12)', borderColor: 'rgba(34,197,94,0.45)', color: '#86efac', fontWeight:800 }}>📈 Crypto</Link>}
-          {isLoggedIn && <Link to="/bank" className="home-trivia-btn" style={{ background: 'rgba(250,204,21,0.12)', borderColor: 'rgba(250,204,21,0.45)', color: '#fde047', fontWeight:800 }}>🏦 Bank</Link>}
+          <NavMenu isLoggedIn={isLoggedIn} isAdmin={isAdmin} isChampion={isChampion} />
           {isLoggedIn && <GiftButton />}
-          <Link to="/predictions" className="home-trivia-btn" style={{ background: 'rgba(236,72,153,0.12)', borderColor: 'rgba(236,72,153,0.45)', color: '#f9a8d4', fontWeight:800 }}>🔮 Predict</Link>
-          <Link to="/meme-coins" className="home-trivia-btn" style={{ background: 'rgba(251,146,60,0.12)', borderColor: 'rgba(251,146,60,0.45)', color: '#fdba74', fontWeight:800 }}>🪙 Meme Coins</Link>
-          <Link to="/tournaments" className="home-trivia-btn" style={{ background: 'linear-gradient(135deg, rgba(251,191,36,0.18), rgba(236,72,153,0.15))', borderColor: 'rgba(251,191,36,0.55)', color: '#fbbf24', fontWeight:900, letterSpacing:'0.5px' }}>🏆 Tournaments</Link>
-          <Link to="/season-pass" className="home-trivia-btn" style={{ background: 'linear-gradient(135deg, rgba(192,132,252,0.18), rgba(236,72,153,0.12))', borderColor: 'rgba(192,132,252,0.5)', color: '#c084fc', fontWeight:900 }}>🎫 Season Pass</Link>
-          {isLoggedIn && <Link to="/pets" className="home-trivia-btn" style={{ background: 'rgba(94,234,212,0.12)', borderColor: 'rgba(94,234,212,0.45)', color: '#5eead4', fontWeight:800 }}>🐾 Pets</Link>}
-          {isLoggedIn && <Link to="/factory" className="home-trivia-btn" style={{ background: 'rgba(74,222,128,0.12)', borderColor: 'rgba(74,222,128,0.45)', color: '#4ade80', fontWeight:800 }}>🏭 Factory</Link>}
-          <Link to="/duels" className="home-trivia-btn" style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.18), rgba(251,191,36,0.1))', borderColor: 'rgba(239,68,68,0.5)', color: '#f87171', fontWeight:900 }}>⚔️ Duels</Link>
-          {isLoggedIn && <Link to="/boost" className="home-trivia-btn" style={{ background: 'rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.35)', color: '#fca5a5' }}>🚀 Boost</Link>}
-          {isLoggedIn && <Link to="/profile" className="home-trivia-btn" style={{ background: 'rgba(96,165,250,0.1)', borderColor: 'rgba(96,165,250,0.35)', color: '#93c5fd' }}>👤 Profile</Link>}
-          {isLoggedIn && <Link to="/prestige" className="home-trivia-btn" style={{ background: 'rgba(251,191,36,0.1)', borderColor: 'rgba(251,191,36,0.35)', color: '#fbbf24' }}>⭐ Prestige</Link>}
-          {isLoggedIn && <Link to="/titles" className="home-trivia-btn" style={{ background: 'rgba(192,132,252,0.1)', borderColor: 'rgba(192,132,252,0.35)', color: '#c084fc' }}>🏷️ Titles</Link>}
-          {isLoggedIn && <Link to="/transactions" className="home-trivia-btn" style={{ background: 'rgba(56,189,248,0.1)', borderColor: 'rgba(56,189,248,0.35)', color: '#7dd3fc' }}>📜 History</Link>}
-          <Link to="/house-stats" className="home-trivia-btn" style={{ background: 'rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.35)', color: '#fca5a5' }}>🏛️ House Stats</Link>
-          <Link to="/search"     className="home-trivia-btn" style={{ background: 'rgba(148,163,184,0.1)', borderColor: 'rgba(148,163,184,0.35)', color: '#94a3b8' }}>🔍 Search</Link>
-          <Link to="/win-streaks" className="home-trivia-btn" style={{ background: 'rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.35)', color: '#fca5a5' }}>🔥 Streaks</Link>
-          {isAdmin && <Link to="/admin" className="home-trivia-btn" style={{ background: 'rgba(239,68,68,0.15)', borderColor: 'rgba(239,68,68,0.4)', color: '#fca5a5' }}>🛡️ Admin</Link>}
           <AccountWidget />
         </div>
       </header>
