@@ -263,6 +263,127 @@ function SecondaryAdminsCard({ token, authFetch }) {
   );
 }
 
+// ── Event Odds Admin Card ─────────────────────────────────────────────────────
+// Per-game probabilistic knobs (e.g. slots jackpot rate, mines hit rate).
+// Reads the catalog from the server so every event documented in
+// gameOdds.EVENT_CATALOG is editable here without code changes.
+function EventOddsCard({ token, authFetch, setStatus }) {
+  const [data, setData] = React.useState(null); // { catalog, overrides }
+  const [edits, setEdits] = React.useState({}); // `${slug}|${key}` -> string
+
+  const load = React.useCallback(() => {
+    authFetch('/api/admin/event-odds', token).then(d => { if (d.ok) setData(d); });
+  }, [token, authFetch]);
+  React.useEffect(() => { load(); }, [load]);
+
+  if (!data) return null;
+  const slugs = Object.keys(data.catalog || {});
+  if (slugs.length === 0) return null;
+
+  function setEdit(slug, key, val) {
+    setEdits(prev => ({ ...prev, [`${slug}|${key}`]: val }));
+  }
+  async function commit(slug, key) {
+    const k = `${slug}|${key}`;
+    const raw = edits[k];
+    if (raw === undefined) return;
+    const val = parseFloat(raw);
+    if (isNaN(val)) return;
+    const d = await authFetch(`/api/admin/event-odds/${slug}/${encodeURIComponent(key)}`, token, {
+      method: 'POST', body: JSON.stringify({ value: val }),
+    });
+    if (d.ok) {
+      load();
+      setEdits(prev => { const cp = { ...prev }; delete cp[k]; return cp; });
+      setStatus(`${slug}/${key} → ${val}`);
+    }
+  }
+  async function reset(slug, key) {
+    const d = await authFetch(`/api/admin/event-odds/${slug}/${encodeURIComponent(key)}`, token, { method: 'DELETE' });
+    if (d.ok) { load(); setStatus(`${slug}/${key} reset`); }
+  }
+
+  return (
+    <>
+      <div className="admin-section-title" style={{ marginTop:36 }}>
+        🎲 Event Odds (per-game RNG knobs)
+      </div>
+      <div className="admin-wins-subtext" style={{ marginBottom: 12 }}>
+        Tune probabilistic events per game (e.g. slots jackpot rate, mines hit rate).
+        Set <strong>force-loss</strong> to a value between 0–1 to make that fraction of rounds a guaranteed loss.
+        Rigged users always lose regardless.
+      </div>
+      <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+        {slugs.map(slug => {
+          const events = data.catalog[slug] || [];
+          if (events.length === 0) return null;
+          const overrides = data.overrides?.[slug] || {};
+          return (
+            <div key={slug} style={{
+              padding:'10px 12px',
+              borderRadius: 8,
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(192,132,252,0.18)',
+            }}>
+              <div style={{ fontWeight:800, color:'#c084fc', marginBottom: 8, fontSize:'0.95rem', letterSpacing:'0.4px' }}>
+                {slug.toUpperCase()}
+              </div>
+              {events.map(ev => {
+                const k = `${slug}|${ev.key}`;
+                const saved = overrides[ev.key];
+                const isOverridden = saved !== undefined;
+                const editVal = edits[k] ?? (isOverridden ? String(saved) : '');
+                const placeholder = ev.default !== undefined ? String(ev.default) : '0';
+                const isDirty = edits[k] !== undefined && edits[k] !== '';
+                return (
+                  <div key={ev.key} style={{ display:'flex', alignItems:'center', gap:10, padding:'5px 0' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight:600, fontSize:'0.86rem', color:'#e2e8f0' }}>{ev.label}</div>
+                      <div style={{ fontSize:'0.72rem', color:'#94a3b8' }}>{ev.hint}</div>
+                    </div>
+                    <span style={{
+                      fontSize: '0.74rem', fontWeight: 700, minWidth: 56, textAlign:'center',
+                      color: isOverridden ? '#86efac' : '#6b7280',
+                      background: isOverridden ? 'rgba(134,239,172,0.12)' : 'transparent',
+                      borderRadius: 4, padding: '2px 6px',
+                    }}>
+                      {isOverridden ? saved : 'default'}
+                    </span>
+                    <input
+                      type="number" min={0} max={25} step={0.01}
+                      placeholder={placeholder}
+                      value={editVal}
+                      onChange={e => setEdit(slug, ev.key, e.target.value)}
+                      style={{
+                        width: 90, padding: '4px 8px', fontSize: '0.86rem', textAlign: 'center',
+                        background: '#1e1e2e', border: `1px solid ${isDirty ? '#c084fc' : '#374151'}`,
+                        borderRadius: 6, color: '#e2e8f0', outline: 'none',
+                      }}
+                    />
+                    <button
+                      className="admin-btn admin-btn--primary admin-btn--sm"
+                      disabled={!isDirty}
+                      onClick={() => commit(slug, ev.key)}
+                      style={{ minWidth: 44 }}
+                    >Set</button>
+                    {isOverridden && (
+                      <button
+                        className="admin-btn admin-btn--ghost admin-btn--sm"
+                        title="Reset to default"
+                        onClick={() => reset(slug, ev.key)}
+                      >↩</button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
 function CoinRainAdminCard({ token, authFetch }) {
   const [amount,  setAmount]  = React.useState('1000');
   const [message, setMessage] = React.useState('🌧️ Coin Rain!');
@@ -1554,6 +1675,9 @@ export default function AdminPage() {
               </div>
             )}
           </div>
+
+          {/* ── Event-Odds (per-game probabilistic knobs) ─────────────────── */}
+          <EventOddsCard token={token} authFetch={authFetch} setStatus={setStatus} />
 
           {/* ── Suggestions Review ────────────────────────────────────────── */}
           <div className="admin-section-title" style={{ marginTop:36 }}>

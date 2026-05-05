@@ -11,19 +11,26 @@
  *   .flash-rainbow    rainbow rotating background
  * ========================================================================== */
 
-/* ── Brighter animated background ───────────────────────────────────────── */
+/* ── BLINDING animated background ───────────────────────────────────────── */
 body {
   background:
-    radial-gradient(ellipse at 18% 0%,   rgba(244, 114, 182, 0.22) 0%, transparent 42%),
-    radial-gradient(ellipse at 82% 18%,  rgba(139, 92, 246, 0.22)  0%, transparent 50%),
-    radial-gradient(ellipse at 50% 105%, rgba(56, 189, 248, 0.18)  0%, transparent 55%),
-    radial-gradient(ellipse at 95% 92%,  rgba(251, 191, 36, 0.18)  0%, transparent 48%),
-    radial-gradient(ellipse at 5% 65%,   rgba(34, 197, 94, 0.14)   0%, transparent 50%),
-    #0a0a0f !important;
+    radial-gradient(ellipse at 18% 0%,   rgba(244, 114, 182, 0.55) 0%, transparent 42%),
+    radial-gradient(ellipse at 82% 18%,  rgba(139, 92, 246, 0.55)  0%, transparent 50%),
+    radial-gradient(ellipse at 50% 105%, rgba(56, 189, 248, 0.50)  0%, transparent 55%),
+    radial-gradient(ellipse at 95% 92%,  rgba(251, 191, 36, 0.50)  0%, transparent 48%),
+    radial-gradient(ellipse at 5% 65%,   rgba(34, 197, 94, 0.45)   0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%,  rgba(255, 255, 255, 0.06) 0%, transparent 60%),
+    #1a0a1f !important;
   background-attachment: fixed !important;
+  animation: flash-bg-shift 8s ease-in-out infinite alternate;
+}
+@keyframes flash-bg-shift {
+  0%   { filter: brightness(1.0)  saturate(1.15) hue-rotate(0deg);   }
+  50%  { filter: brightness(1.15) saturate(1.30) hue-rotate(15deg);  }
+  100% { filter: brightness(1.0)  saturate(1.15) hue-rotate(-15deg); }
 }
 
-/* Rotating conic disco overlay — low opacity, behind content. */
+/* Rotating conic disco overlay — heavy now, blends like spotlights */
 body::before {
   content: '';
   position: fixed;
@@ -31,19 +38,20 @@ body::before {
   z-index: -1;
   background: conic-gradient(
     from 0deg,
-    rgba(244, 114, 182, 0.10),
-    rgba(192, 132, 252, 0.10),
-    rgba(56, 189, 248, 0.10),
-    rgba(34, 197, 94, 0.10),
-    rgba(251, 191, 36, 0.10),
-    rgba(244, 114, 182, 0.10)
+    rgba(244, 114, 182, 0.45),
+    rgba(192, 132, 252, 0.45),
+    rgba(56, 189, 248, 0.40),
+    rgba(34, 197, 94, 0.40),
+    rgba(251, 191, 36, 0.45),
+    rgba(244, 114, 182, 0.45)
   );
-  animation: flash-disco-rotate 36s linear infinite;
+  animation: flash-disco-rotate 18s linear infinite;
   pointer-events: none;
-  filter: blur(60px);
+  filter: blur(80px);
+  mix-blend-mode: screen;
 }
 
-/* Twinkling starfield (a bunch of pinpoints from radial-gradients). */
+/* Twinkling starfield — denser, brighter, faster */
 body::after {
   content: '';
   position: fixed;
@@ -51,19 +59,35 @@ body::after {
   z-index: -1;
   pointer-events: none;
   background-image:
-    radial-gradient(2px 2px at 12% 8%,   rgba(255,255,255,0.85), transparent 60%),
-    radial-gradient(1px 1px at 28% 22%,  rgba(255,255,255,0.7),  transparent 60%),
-    radial-gradient(2px 2px at 47% 12%,  rgba(255,255,255,0.9),  transparent 60%),
-    radial-gradient(1px 1px at 68% 28%,  rgba(255,255,255,0.7),  transparent 60%),
-    radial-gradient(2px 2px at 84% 6%,   rgba(255,255,255,0.85), transparent 60%),
-    radial-gradient(1px 1px at 92% 35%,  rgba(255,255,255,0.7),  transparent 60%),
-    radial-gradient(2px 2px at 8% 48%,   rgba(255,255,255,0.85), transparent 60%),
-    radial-gradient(1px 1px at 38% 58%,  rgba(255,255,255,0.7),  transparent 60%),
-    radial-gradient(2px 2px at 60% 70%,  rgba(255,255,255,0.85), transparent 60%),
-    radial-gradient(1px 1px at 78% 82%,  rgba(255,255,255,0.7),  transparent 60%),
-    radial-gradient(2px 2px at 22% 88%,  rgba(255,255,255,0.85), transparent 60%),
-    radial-gradient(1px 1px at 50% 95%,  rgba(255,255,255,0.7),  transparent 60%);
-  animation: flash-twinkle 4.5s ease-in-out infinite alternate;
+    radial-gradient(3px 3px at 6% 4%,    #fff, transparent 60%),
+    radial-gradient(2px 2px at 12% 8%,   #fde047, transparent 60%),
+    radial-gradient(3px 3px at 18% 14%,  #f472b6, transparent 60%),
+    radial-gradient(2px 2px at 28% 22%,  #fff, transparent 60%),
+    radial-gradient(3px 3px at 33% 8%,   #c084fc, transparent 60%),
+    radial-gradient(2px 2px at 38% 18%,  #38bdf8, transparent 60%),
+    radial-gradient(3px 3px at 47% 12%,  #fff, transparent 60%),
+    radial-gradient(2px 2px at 54% 26%,  #fde047, transparent 60%),
+    radial-gradient(3px 3px at 60% 4%,   #f472b6, transparent 60%),
+    radial-gradient(2px 2px at 68% 28%,  #fff, transparent 60%),
+    radial-gradient(3px 3px at 76% 18%,  #c084fc, transparent 60%),
+    radial-gradient(2px 2px at 84% 6%,   #fff, transparent 60%),
+    radial-gradient(3px 3px at 90% 24%,  #38bdf8, transparent 60%),
+    radial-gradient(2px 2px at 96% 12%,  #fde047, transparent 60%),
+    radial-gradient(3px 3px at 8% 48%,   #fff, transparent 60%),
+    radial-gradient(2px 2px at 22% 56%,  #f472b6, transparent 60%),
+    radial-gradient(3px 3px at 38% 58%,  #fff, transparent 60%),
+    radial-gradient(2px 2px at 50% 50%,  #c084fc, transparent 60%),
+    radial-gradient(3px 3px at 60% 70%,  #38bdf8, transparent 60%),
+    radial-gradient(2px 2px at 74% 64%,  #fde047, transparent 60%),
+    radial-gradient(3px 3px at 86% 76%,  #fff, transparent 60%),
+    radial-gradient(2px 2px at 14% 78%,  #f472b6, transparent 60%),
+    radial-gradient(3px 3px at 28% 88%,  #fff, transparent 60%),
+    radial-gradient(2px 2px at 42% 92%,  #c084fc, transparent 60%),
+    radial-gradient(3px 3px at 58% 86%,  #fde047, transparent 60%),
+    radial-gradient(2px 2px at 78% 96%,  #38bdf8, transparent 60%),
+    radial-gradient(3px 3px at 94% 88%,  #fff, transparent 60%);
+  animation: flash-twinkle 1.8s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95));
 }
 
 /* ── Keyframes ─────────────────────────────────────────────────────────── */
@@ -72,8 +96,8 @@ body::after {
   100% { transform: rotate(360deg); }
 }
 @keyframes flash-twinkle {
-  0%, 100% { opacity: 0.45; }
-  50%      { opacity: 1.0;  }
+  0%, 100% { opacity: 0.65; transform: scale(0.95); }
+  50%      { opacity: 1.0;  transform: scale(1.05); }
 }
 @keyframes flash-shimmer {
   0%   { background-position: -200% 0; }
@@ -222,14 +246,17 @@ body::after {
 .vp-title,
 .crash-title,
 .slots-title {
-  background: linear-gradient(90deg, #fde047 0%, #f472b6 35%, #c084fc 65%, #38bdf8 100%);
-  background-size: 200% auto;
+  background: linear-gradient(90deg, #fde047 0%, #f472b6 30%, #c084fc 55%, #38bdf8 80%, #fde047 100%);
+  background-size: 250% auto;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: flash-shimmer 4s linear infinite;
+  animation: flash-shimmer 2.2s linear infinite;
   letter-spacing: 0.4px;
-  filter: drop-shadow(0 0 18px rgba(244, 114, 182, 0.55));
+  filter:
+    drop-shadow(0 0 8px  rgba(255, 255, 255, 0.85))
+    drop-shadow(0 0 18px rgba(244, 114, 182, 0.85))
+    drop-shadow(0 0 32px rgba(192, 132, 252, 0.65));
 }
 
 /* All buttons get brighter hover */
@@ -303,21 +330,24 @@ button:not(:disabled):hover {
   filter: brightness(1.18) saturate(1.25) !important;
 }
 
-/* Nav highlight pills: subtle always-on glow pulse */
-.navmenu-pill--cases,
-.navmenu-pill--jokers,
-.navmenu-pill--tournaments,
-.navmenu-pill--champion {
-  animation: flash-pulse-soft 3s ease-in-out infinite;
+/* Nav highlight pills: HARD strobing pulse */
+.navmenu-pill,
+.navmenu-trigger {
+  animation: flash-pulse-soft 1.6s ease-in-out infinite;
 }
 @keyframes flash-pulse-soft {
-  0%, 100% { box-shadow: 0 0 14px rgba(244, 114, 182, 0.40); }
-  50%      { box-shadow: 0 0 26px rgba(244, 114, 182, 0.85), 0 0 48px rgba(192, 132, 252, 0.45); }
-}
-
-/* "More ▾" trigger gets a brighter idle shimmer */
-.navmenu-trigger {
-  animation: flash-pulse-soft 3.6s ease-in-out infinite;
+  0%, 100% {
+    box-shadow:
+      0 0 18px rgba(244, 114, 182, 0.85),
+      0 0 36px rgba(192, 132, 252, 0.55),
+      0 0 64px rgba(56, 189, 248, 0.35);
+  }
+  50% {
+    box-shadow:
+      0 0 32px rgba(251, 191, 36, 1.0),
+      0 0 64px rgba(244, 114, 182, 0.85),
+      0 0 96px rgba(192, 132, 252, 0.65);
+  }
 }
 
 /* Stat tiles / value chips look more lit */

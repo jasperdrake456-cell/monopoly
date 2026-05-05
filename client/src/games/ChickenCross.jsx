@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
+import { loadEventOdds, getEventOdds } from '../utils/eventOdds';
 import './ChickenCross.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -55,6 +56,7 @@ export default function ChickenCross() {
 
   useEffect(() => {
     initJokerBonuses();
+    loadEventOdds('chicken-cross');
     function tick() {
       const ms = msUntilNextDaily();
       const h  = Math.floor(ms / 3600000);
@@ -89,8 +91,11 @@ export default function ChickenCross() {
   function clickCell(row, col) {
     if (phase !== 'playing' || row !== currentRow) return;
 
-    // Rigged: the clicked tile is always a car
-    const isCar = isRiggedMode() ? true : gridRef.current[row][col];
+    // Rigged user OR admin force-loss: the clicked tile is always a car
+    const forceLoss = getEventOdds('chicken-cross', 'force-loss', 0);
+    const isCar = (isRiggedMode() || (forceLoss > 0 && Math.random() < forceLoss))
+      ? true
+      : gridRef.current[row][col];
 
     if (isCar) {
       // Bust — reveal this car + all hidden cars

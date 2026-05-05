@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
+import { loadEventOdds, getEventOdds } from '../utils/eventOdds';
 import './Hilo.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -88,6 +89,7 @@ export default function Hilo() {
 
   useEffect(() => {
     initJokerBonuses();
+    loadEventOdds('hilo');
     function tick() {
       const ms = msUntilNextDaily();
       const h = Math.floor(ms / 3600000);
@@ -127,9 +129,11 @@ export default function Hilo() {
     setAnimating(true);
     setLastGuess(direction);
 
-    // Rigged: always wrong — swap the next card for one guaranteed to lose
+    // Rigged user OR admin force-loss → swap the next card for one guaranteed to lose
     let effectiveNext = nextCard;
-    if (isRiggedMode()) {
+    const forceLoss = getEventOdds('hilo', 'force-loss', 0);
+    const rigLose = isRiggedMode() || (forceLoss > 0 && Math.random() < forceLoss);
+    if (rigLose) {
       // Pick a card value that defeats the guess
       const allValues = [2,3,4,5,6,7,8,9,10,11,12,13,14];
       const losingValues = direction === 'higher'

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
+import { loadEventOdds, getEventOdds } from '../utils/eventOdds';
 import './Tower.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -69,6 +70,7 @@ export default function Tower() {
 
   useEffect(() => {
     initJokerBonuses();
+    loadEventOdds('tower');
     function tick() {
       const ms = msUntilNextDaily();
       const h = Math.floor(ms / 3600000);
@@ -105,8 +107,11 @@ export default function Tower() {
   function pickTile(floor, col) {
     if (phase !== 'playing') return;
     if (floor !== currentFloor) return; // can only pick active floor
-    // Rigged: the clicked tile is always a bomb
-    const isBomb = isRiggedMode() ? true : tower[floor][col];
+    // Rigged user OR admin force-loss → tile is always a bomb
+    const forceLoss = getEventOdds('tower', 'force-loss', 0);
+    const isBomb = (isRiggedMode() || (forceLoss > 0 && Math.random() < forceLoss))
+      ? true
+      : tower[floor][col];
 
     const newStates = cellStates.map(r => [...r]);
 

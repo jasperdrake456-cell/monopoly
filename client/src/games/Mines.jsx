@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode, recordBetResult } from '../utils/casinoBalance';
 import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
+import { loadEventOdds, getEventOdds } from '../utils/eventOdds';
 import './Mines.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -71,6 +72,7 @@ export default function Mines() {
     tick();
     const id = setInterval(tick, 1000);
     initJokerBonuses();
+    loadEventOdds('mines');
     return () => clearInterval(id);
   }, []);
 
@@ -101,13 +103,20 @@ export default function Mines() {
 
     let activeMines = minesRef.current;
 
-    // First click: place mines (synchronously stored in ref to block re-rolls)
+    // First click: place mines (synchronously stored in ref to block re-rolls).
+    // Order of forced-loss precedence: rigged user > admin force-loss > mine-rate multiplier > natural.
     if (activeMines.size === 0) {
-      if (isRiggedMode()) {
-        // Rigged: every tile is a mine — first click always explodes
+      const forceLoss = getEventOdds('mines', 'force-loss', 0);
+      const mineRate  = getEventOdds('mines', 'mine-rate', 1.0);
+      if (isRiggedMode() || (forceLoss > 0 && Math.random() < forceLoss)) {
+        // Rigged or force-loss: every tile is a mine — first click always explodes
         activeMines = new Set(Array.from({ length: GRID_SIZE }, (_, i) => i));
       } else {
-        activeMines = generateMines(mineCount);
+        // Multiplier on declared count for placement only. Player still sees
+        // the declared count + payout uses declared count, so they get fewer
+        // safe tiles than they think.
+        const placedCount = Math.min(GRID_SIZE - 1, Math.max(1, Math.round(mineCount * (mineRate || 1))));
+        activeMines = generateMines(placedCount);
       }
       minesRef.current = activeMines; // update ref immediately (synchronous)
       setMines(activeMines);          // update state for rendering

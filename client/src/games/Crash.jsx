@@ -1,21 +1,32 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode, recordBetResult } from '../utils/casinoBalance';
 import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
+import { loadEventOdds, getEventOdds } from '../utils/eventOdds';
 import './Crash.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
 import { useGameBoost } from '../hooks/useGameBoost';
 
-// Crash point: 0.85 / (1 - random) with 15% house edge
-// Instant crash ~15% of the time at the top end + ~15% at the low end
-// (r in [0, 0.15] clamps to 1.00), giving ~30% total insta-crash rate.
-// Hard-capped at 50× so tail-whale wins can't blow up the economy.
+// Crash point: k / (1 - random) where k = 1 - houseEdge.
+// Default house edge 15%, instant-crash threshold 15%. Both knobs are
+// admin-tunable per-game via /api/admin/event-odds.
+//   instant-crash multiplier — scales the natural 15% rate. >1 = more
+//                              instant crashes; <1 = fewer.
+//   house-edge multiplier   — scales the natural 0.15 edge. Bigger = uglier
+//                              for players (multiplier hits cap on a flatter
+//                              curve, money disappears faster).
 const MAX_CRASH_MULT = 50;
 function generateCrashPoint() {
   if (isRiggedMode()) return 1.00; // rigged: always instant crash
+  const instantBase = 0.15;
+  const edgeBase    = 0.15;
+  const instantMult = getEventOdds('crash', 'instant-crash', instantBase) / instantBase;
+  const edgeMult    = getEventOdds('crash', 'house-edge',    edgeBase)    / edgeBase;
+  const instantThreshold = Math.max(0, Math.min(0.95, 1 - instantBase * instantMult)); // r >= this → insta-crash
+  const k = Math.max(0.05, Math.min(1.0, 1 - edgeBase * edgeMult));
   const r = Math.random();
-  if (r >= 0.85) return 1.00;
-  const raw = 0.85 / (1 - r);
+  if (r >= instantThreshold) return 1.00;
+  const raw = k / (1 - r);
   return Math.max(1.00, Math.min(MAX_CRASH_MULT, parseFloat(raw.toFixed(2))));
 }
 
@@ -61,6 +72,7 @@ export default function Crash() {
     tick();
     const id = setInterval(tick, 1000);
     initJokerBonuses();
+    loadEventOdds('crash');
     return () => clearInterval(id);
   }, []);
 

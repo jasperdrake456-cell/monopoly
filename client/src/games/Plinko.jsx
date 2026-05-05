@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
+import { loadEventOdds, getEventOdds } from '../utils/eventOdds';
 import './Plinko.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -38,8 +39,9 @@ const STEP_MS = 500;
 // then back-generates a valid path (bucket R steps + remaining L steps,
 // shuffled randomly) so the animation still looks natural.
 function dropBall() {
-  if (isRiggedMode()) {
-    // Rigged: always land in center bucket (lowest multiplier)
+  // Rigged user OR admin force-loss → lock to center bucket (lowest payout)
+  const edgeBias = getEventOdds('plinko', 'edge-bias', 0);
+  if (isRiggedMode() || (edgeBias > 0 && Math.random() < edgeBias)) {
     return { path: ['R','R','R','R','L','L','L','L'], bucket: 4 };
   }
 
@@ -89,6 +91,7 @@ export default function Plinko() {
 
   React.useEffect(() => {
     initJokerBonuses();
+    loadEventOdds('plinko');
     function tick() {
       const ms = msUntilNextDaily();
       const h = Math.floor(ms / 3600000);

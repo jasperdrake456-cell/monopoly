@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode, recordBetResult } from '../utils/casinoBalance';
 import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
+import { loadEventOdds, getEventOdds } from '../utils/eventOdds';
 import './Dice.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -35,6 +36,7 @@ export default function Dice() {
 
   useEffect(() => {
     initJokerBonuses();
+    loadEventOdds('dice');
     function tick() {
       const ms = msUntilNextDaily();
       const h  = Math.floor(ms / 3600000);
@@ -60,8 +62,10 @@ export default function Dice() {
 
     // Short "rolling" animation then resolve
     setTimeout(() => {
-      // Rigged: always roll on the losing side
-      const rolled = isRiggedMode()
+      // Rigged user OR admin force-loss → roll on the losing side guaranteed
+      const forceLoss = getEventOdds('dice', 'force-loss', 0);
+      const rigLose   = isRiggedMode() || (forceLoss > 0 && Math.random() < forceLoss);
+      const rolled = rigLose
         ? (direction === 'over'
             ? parseFloat((Math.random() * Math.max(0, target - 0.01)).toFixed(2))
             : parseFloat((Math.min(100, target + 0.01) + Math.random() * (100 - target)).toFixed(2)))

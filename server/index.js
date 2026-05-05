@@ -942,7 +942,9 @@ app.get('/api/game-config/:slug', (req, res) => {
   const happyMult     = ch.getHappyHourMultiplier();
   const boost         = parseFloat((baseBoost * happyMult).toFixed(4));
   const happyHourActive = happyMult > 1.0;
-  res.json({ ok: true, slug, wildcard, isWildcard: slug === wildcard, boost, wildcardBoost: go.getWildcardBoost(), happyHourActive });
+  // Per-game probabilistic event-odds overrides (slots jackpot rate, mines hit rate, etc.)
+  const eventOdds = go.getEventOddsForGame(slug);
+  res.json({ ok: true, slug, wildcard, isWildcard: slug === wildcard, boost, wildcardBoost: go.getWildcardBoost(), happyHourActive, eventOdds });
 });
 
 // Public: get today's wildcard
@@ -961,6 +963,26 @@ app.post('/api/admin/game-odds/:slug', requireAdmin, (req, res) => {
 app.delete('/api/admin/game-odds/:slug', requireAdmin, (req, res) => {
   al.log('reset_game_odds', { slug: req.params.slug });
   res.json(go.resetGameBoost(req.params.slug));
+});
+
+// Admin: list ALL event-odds (catalog + overrides)
+app.get('/api/admin/event-odds', requireAdmin, (req, res) => {
+  res.json({ ok: true, ...go.getAllEventOdds() });
+});
+
+// Admin: set per-game event probability override
+app.post('/api/admin/event-odds/:slug/:event', requireAdmin, (req, res) => {
+  const { value } = req.body || {};
+  const result = go.setEventOdds(req.params.slug, req.params.event, value);
+  if (result.ok) al.log('set_event_odds', { slug: req.params.slug, event: req.params.event, value, by: req.user.username });
+  res.json(result);
+});
+
+// Admin: reset per-game event probability to default
+app.delete('/api/admin/event-odds/:slug/:event', requireAdmin, (req, res) => {
+  const result = go.resetEventOdds(req.params.slug, req.params.event);
+  if (result.ok) al.log('reset_event_odds', { slug: req.params.slug, event: req.params.event, by: req.user.username });
+  res.json(result);
 });
 
 // Admin: set wildcard override

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
+import { loadEventOdds, getEventOdds } from '../utils/eventOdds';
 import './Wheel.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -99,6 +100,7 @@ export default function Wheel() {
 
   useEffect(() => {
     initJokerBonuses();
+    loadEventOdds('wheel');
     function tick() {
       const ms = msUntilNextDaily();
       const h = Math.floor(ms / 3600000);
@@ -146,8 +148,10 @@ export default function Wheel() {
         pointerAt >= seg.startAngle && pointerAt < seg.startAngle + seg.sweep
       ) || wheelSegs[wheelSegs.length - 1];
 
-      // Rigged: always report a loss regardless of where the wheel landed
-      const won = isRiggedMode() ? false : (landedSeg.color === selectedColor);
+      // Rigged user OR admin force-loss → always report a loss regardless of land
+      const forceLoss = getEventOdds('wheel', 'force-loss', 0);
+      const rigLose   = isRiggedMode() || (forceLoss > 0 && Math.random() < forceLoss);
+      const won = rigLose ? false : (landedSeg.color === selectedColor);
       const payout = won ? Math.floor(bet * landedSeg.mult * boost) : 0;
       if (won) {
         addBalance(payout);

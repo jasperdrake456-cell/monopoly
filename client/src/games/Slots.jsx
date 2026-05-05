@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { getBalance, addBalance, subtractBalance, msUntilNextDaily, reportBigWin, isRiggedMode } from '../utils/casinoBalance';
 import { initJokerBonuses, applyJokerBonus } from '../utils/jokerBonus';
+import { loadEventOdds, getEventOdds } from '../utils/eventOdds';
 import './Slots.css';
 import useBanCheck from '../hooks/useBanCheck';
 import useGameActivity from '../hooks/useGameActivity';
@@ -157,7 +158,7 @@ export default function Slots() {
     return () => clearInterval(countdownRef.current);
   }, [broke]);
 
-  useEffect(() => { initJokerBonuses(); }, []);
+  useEffect(() => { initJokerBonuses(); loadEventOdds('slots'); }, []);
 
   // ── Jackpot: load current amount + listen for wins ─────────────────────────
   useEffect(() => {
@@ -203,10 +204,27 @@ export default function Slots() {
   function handleSpin() {
     if (disabled || broke || bet <= 0 || bet > balance) return;
 
-    // Rigged: return a no-win combo — different non-cherry symbols, no payout
-    const finalMids = isRiggedMode()
-      ? ['🔔', '🍊', '🍋']
-      : [rand(), rand(), rand()];
+    // Rigged users always lose. Otherwise apply admin event-odds knobs:
+    //   force-loss: X% of spins forced to a no-win combo
+    //   jackpot:    chance to force 7️⃣7️⃣7️⃣ (independent of natural odds)
+    //   diamond:    chance to force 💎💎💎
+    let finalMids;
+    if (isRiggedMode()) {
+      finalMids = ['🔔', '🍊', '🍋'];
+    } else {
+      const forceLoss = getEventOdds('slots', 'force-loss', 0);
+      const jackpot   = getEventOdds('slots', 'jackpot', 0);
+      const diamond   = getEventOdds('slots', 'diamond-jackpot', 0);
+      if (forceLoss > 0 && Math.random() < forceLoss) {
+        finalMids = ['🔔', '🍊', '🍋'];
+      } else if (jackpot > 0 && Math.random() < jackpot) {
+        finalMids = ['7️⃣', '7️⃣', '7️⃣'];
+      } else if (diamond > 0 && Math.random() < diamond) {
+        finalMids = ['💎', '💎', '💎'];
+      } else {
+        finalMids = [rand(), rand(), rand()];
+      }
+    }
     const outcome = evaluate(finalMids);
 
     subtractBalance(bet);
