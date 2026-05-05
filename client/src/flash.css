@@ -11,26 +11,28 @@
  *   .flash-rainbow    rainbow rotating background
  * ========================================================================== */
 
-/* ── BLINDING animated background ───────────────────────────────────────── */
+/* ── EVEN BRIGHTER animated background ─────────────────────────────────── */
 body {
   background:
-    radial-gradient(ellipse at 18% 0%,   rgba(244, 114, 182, 0.55) 0%, transparent 42%),
-    radial-gradient(ellipse at 82% 18%,  rgba(139, 92, 246, 0.55)  0%, transparent 50%),
-    radial-gradient(ellipse at 50% 105%, rgba(56, 189, 248, 0.50)  0%, transparent 55%),
-    radial-gradient(ellipse at 95% 92%,  rgba(251, 191, 36, 0.50)  0%, transparent 48%),
-    radial-gradient(ellipse at 5% 65%,   rgba(34, 197, 94, 0.45)   0%, transparent 50%),
-    radial-gradient(ellipse at 50% 50%,  rgba(255, 255, 255, 0.06) 0%, transparent 60%),
-    #1a0a1f !important;
+    radial-gradient(ellipse at 18% 0%,   rgba(244, 114, 182, 0.85) 0%, transparent 45%),
+    radial-gradient(ellipse at 82% 18%,  rgba(139, 92, 246, 0.85)  0%, transparent 52%),
+    radial-gradient(ellipse at 50% 105%, rgba(56, 189, 248, 0.80)  0%, transparent 58%),
+    radial-gradient(ellipse at 95% 92%,  rgba(251, 191, 36, 0.80)  0%, transparent 50%),
+    radial-gradient(ellipse at 5% 65%,   rgba(34, 197, 94, 0.75)   0%, transparent 52%),
+    radial-gradient(ellipse at 50% 50%,  rgba(255, 255, 255, 0.18) 0%, transparent 65%),
+    radial-gradient(ellipse at 30% 80%,  rgba(239, 68, 68, 0.55)   0%, transparent 50%),
+    radial-gradient(ellipse at 70% 40%,  rgba(94, 234, 212, 0.55)  0%, transparent 50%),
+    #2d0f3a !important;
   background-attachment: fixed !important;
-  animation: flash-bg-shift 8s ease-in-out infinite alternate;
+  animation: flash-bg-shift 4s ease-in-out infinite alternate;
 }
 @keyframes flash-bg-shift {
-  0%   { filter: brightness(1.0)  saturate(1.15) hue-rotate(0deg);   }
-  50%  { filter: brightness(1.15) saturate(1.30) hue-rotate(15deg);  }
-  100% { filter: brightness(1.0)  saturate(1.15) hue-rotate(-15deg); }
+  0%   { filter: brightness(1.10) saturate(1.30) hue-rotate(0deg);   }
+  50%  { filter: brightness(1.45) saturate(1.65) hue-rotate(30deg);  }
+  100% { filter: brightness(1.10) saturate(1.30) hue-rotate(-30deg); }
 }
 
-/* Rotating conic disco overlay — heavy now, blends like spotlights */
+/* Rotating conic disco overlay — pumped up: spinning faster, brighter */
 body::before {
   content: '';
   position: fixed;
@@ -38,17 +40,66 @@ body::before {
   z-index: -1;
   background: conic-gradient(
     from 0deg,
-    rgba(244, 114, 182, 0.45),
-    rgba(192, 132, 252, 0.45),
-    rgba(56, 189, 248, 0.40),
-    rgba(34, 197, 94, 0.40),
-    rgba(251, 191, 36, 0.45),
-    rgba(244, 114, 182, 0.45)
+    rgba(244, 114, 182, 0.85),
+    rgba(192, 132, 252, 0.85),
+    rgba(56, 189, 248, 0.80),
+    rgba(34, 197, 94, 0.80),
+    rgba(251, 191, 36, 0.90),
+    rgba(239, 68, 68, 0.80),
+    rgba(244, 114, 182, 0.85)
   );
-  animation: flash-disco-rotate 18s linear infinite;
+  animation: flash-disco-rotate 8s linear infinite;
   pointer-events: none;
-  filter: blur(80px);
+  filter: blur(70px);
   mix-blend-mode: screen;
+}
+
+/* Second disco layer — counter-rotating, different colors, on top of the
+   page content with low opacity. Adds the "moving spotlights" feel. */
+html::before {
+  content: '';
+  position: fixed;
+  inset: -50%;
+  z-index: 9998;
+  background: conic-gradient(
+    from 180deg,
+    rgba(255, 255, 255, 0.16),
+    rgba(251, 191,  36, 0.30),
+    transparent 25%,
+    rgba(244, 114, 182, 0.30),
+    transparent 50%,
+    rgba(56,  189, 248, 0.30),
+    transparent 75%,
+    rgba(255, 255, 255, 0.16)
+  );
+  animation: flash-disco-rotate-rev 6s linear infinite;
+  pointer-events: none;
+  filter: blur(40px);
+  mix-blend-mode: overlay;
+}
+@keyframes flash-disco-rotate-rev {
+  0%   { transform: rotate(360deg); }
+  100% { transform: rotate(0deg);   }
+}
+
+/* Full-screen strobe flash — brief whitish pulse every 3.5s */
+html::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0);
+  animation: flash-strobe-screen 3.5s ease-in-out infinite;
+  mix-blend-mode: screen;
+}
+@keyframes flash-strobe-screen {
+  0%, 92%, 100% { background: rgba(255, 255, 255, 0); }
+  93%           { background: rgba(255, 255, 255, 0.18); }
+  94%           { background: rgba(244, 114, 182, 0.20); }
+  95%           { background: rgba(255, 255, 255, 0.18); }
+  96%           { background: rgba(192, 132, 252, 0.20); }
+  97%           { background: rgba(255, 255, 255, 0); }
 }
 
 /* Twinkling starfield — denser, brighter, faster */
@@ -259,9 +310,28 @@ body::after {
     drop-shadow(0 0 32px rgba(192, 132, 252, 0.65));
 }
 
-/* All buttons get brighter hover */
+/* All buttons: always-on glow + brighter still on hover */
+button:not(:disabled) {
+  filter: brightness(1.10) saturate(1.15);
+  box-shadow:
+    0 0 8px  rgba(244, 114, 182, 0.30),
+    0 0 18px rgba(192, 132, 252, 0.18) !important;
+}
 button:not(:disabled):hover {
-  filter: brightness(1.18) saturate(1.20);
+  filter: brightness(1.30) saturate(1.30);
+  box-shadow:
+    0 0 16px rgba(251, 191,  36, 0.85),
+    0 0 32px rgba(244, 114, 182, 0.65),
+    0 0 48px rgba(192, 132, 252, 0.45) !important;
+}
+
+/* Game cards: always have a soft glow now (pre-hover) */
+.game-card,
+.home-game-card,
+.dashboard-game-card {
+  box-shadow:
+    0 0 12px rgba(244, 114, 182, 0.30),
+    0 0 24px rgba(192, 132, 252, 0.18) !important;
 }
 
 /* Pretty bright scrollbar */
@@ -290,9 +360,35 @@ button:not(:disabled):hover {
 
 /* Selection */
 ::selection {
-  background: rgba(244, 114, 182, 0.55);
+  background: rgba(244, 114, 182, 0.85);
   color: #fff;
-  text-shadow: 0 0 6px #fff;
+  text-shadow: 0 0 12px #fff, 0 0 24px #f472b6;
+}
+
+/* Inputs glow too */
+input, textarea, select {
+  box-shadow: 0 0 8px rgba(192, 132, 252, 0.25) !important;
+}
+input:focus, textarea:focus, select:focus {
+  box-shadow:
+    0 0 14px rgba(244, 114, 182, 0.65),
+    0 0 28px rgba(192, 132, 252, 0.45) !important;
+  outline: none !important;
+}
+
+/* Body content gets a subtle inner neon edge */
+#root {
+  position: relative;
+}
+#root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 60px  rgba(244, 114, 182, 0.35),
+    inset 0 0 140px rgba(192, 132, 252, 0.20);
 }
 
 /* Sparkle dots */
